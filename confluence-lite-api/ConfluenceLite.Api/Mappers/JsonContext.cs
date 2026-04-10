@@ -1,0 +1,57 @@
+using System.Text.Json.Serialization;
+using ConfluenceLite.Api.DTOs;
+
+namespace ConfluenceLite.Api.Mappers;
+
+/// <summary>
+/// JSON序列化源生成器上下文 - Native AOT 必需
+/// </summary>
+[JsonSerializable(typeof(ApiResponse<object>))]
+[JsonSerializable(typeof(ApiResponse<string>))]
+[JsonSerializable(typeof(ApiResponse<int>))]
+[JsonSerializable(typeof(ApiResponse<bool>))]
+[JsonSerializable(typeof(ApiResponse<UserDto>))]
+[JsonSerializable(typeof(ApiResponse<WorkspaceDto>))]
+[JsonSerializable(typeof(ApiResponse<PageDto>))]
+[JsonSerializable(typeof(ApiResponse<LoginResponse>))]
+[JsonSerializable(typeof(ApiResponse<List<UserDto>>))]
+[JsonSerializable(typeof(ApiResponse<List<WorkspaceDto>>))]
+[JsonSerializable(typeof(ApiResponse<List<PageDto>>))]
+[JsonSerializable(typeof(ApiResponse<PagedResponse<UserDto>>))]
+[JsonSerializable(typeof(ApiResponse<PagedResponse<WorkspaceDto>>))]
+[JsonSerializable(typeof(ApiResponse<PagedResponse<PageDto>>))]
+[JsonSerializable(typeof(ApiResponse<PagedResponse<CommentDto>>))]
+[JsonSerializable(typeof(PagedResponse<UserDto>))]
+[JsonSerializable(typeof(PagedResponse<WorkspaceDto>))]
+[JsonSerializable(typeof(PagedResponse<PageDto>))]
+[JsonSerializable(typeof(PagedResponse<CommentDto>))]
+[JsonSerializable(typeof(UserDto))]
+[JsonSerializable(typeof(List<UserDto>))]
+[JsonSerializable(typeof(WorkspaceDto))]
+[JsonSerializable(typeof(List<WorkspaceDto>))]
+[JsonSerializable(typeof(PageDto))]
+[JsonSerializable(typeof(List<PageDto>))]
+[JsonSerializable(typeof(PageTreeNodeDto))]
+[JsonSerializable(typeof(List<PageTreeNodeDto>))]
+[JsonSerializable(typeof(CommentDto))]
+[JsonSerializable(typeof(List<CommentDto>))]
+[JsonSerializable(typeof(UserSummaryDto))]
+[JsonSerializable(typeof(WorkspaceSummaryDto))]
+[JsonSerializable(typeof(LoginResponse))]
+[JsonSerializable(typeof(LoginRequest))]
+[JsonSerializable(typeof(CreateUserRequest))]
+[JsonSerializable(typeof(UpdateUserRequest))]
+[JsonSerializable(typeof(ChangePasswordRequest))]
+[JsonSerializable(typeof(CreateWorkspaceRequest))]
+[JsonSerializable(typeof(UpdateWorkspaceRequest))]
+[JsonSerializable(typeof(CreatePageRequest))]
+[JsonSerializable(typeof(UpdatePageRequest))]
+[JsonSerializable(typeof(CreateCommentRequest))]
+[JsonSerializable(typeof(UpdateCommentRequest))]
+[JsonSerializable(typeof(PagedRequest))]
+[JsonSerializable(typeof(HealthResponse))]
+[JsonSerializable(typeof(ApiInfoResponse))]
+[JsonSerializable(typeof(ApiEndpoints))]
+public partial class AppJsonContext : JsonSerializerContext
+{
+}

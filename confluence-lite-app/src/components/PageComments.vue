@@ -126,7 +126,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Comment as CommentIcon, ChevronDown as DownIcon, AtSign as AtIcon, Smile as EmojiIcon, Link as LinkIcon } from 'lucide-vue-next';
+import { MessageSquare as CommentIcon, ChevronDown as DownIcon, AtSign as AtIcon, Smile as EmojiIcon, Link as LinkIcon } from 'lucide-vue-next';
 
 // Props
 const props = defineProps({
@@ -280,7 +280,7 @@ const addReply = (commentId, event) => {
 <style scoped>
 .comments-section {
     max-width: 900px;
-    margin: 3rem 2rem 0;
+    margin:0;
     padding-top: 2rem;
     border-top: 1px solid #dfe1e6;
 }

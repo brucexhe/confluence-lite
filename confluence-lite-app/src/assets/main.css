@@ -106,3 +106,19 @@ button {
   transform: translateY(-1px);
   box-shadow: var(--shadow-lg);
 }
+
+/* Confluence Global Light Button Class */
+.light-btn {
+    background-color: rgba(9, 30, 66, 0.04) !important;
+    border: none !important;
+    color: #42526e !important;
+    border-radius: 3px !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    transition: background-color 0.1s !important;
+}
+
+.light-btn:hover {
+    background-color: rgba(9, 30, 66, 0.08) !important;
+    color: #172b4d !important;
+}

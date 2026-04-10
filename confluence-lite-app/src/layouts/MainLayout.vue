@@ -96,7 +96,7 @@
                                     </div>
                                 </a-menu-item>
                                 <a-menu-divider />
-                                <a-menu-item key="3" style="padding: 4px 16px">
+                                <a-menu-item key="3" style="padding: 4px 16px" @click="$router.push('/spaces')">
                                     <span style="color: #0052cc; font-size: 14px; font-weight: 500">
                                         View all spaces
                                     </span>
@@ -164,20 +164,6 @@
 
             <!-- Main Content Area -->
             <main class="content-area">
-                <div class="content-header" v-show="!route?.query?.edit">
-                    <a-breadcrumb>
-                        <a-breadcrumb-item>Engineering Space</a-breadcrumb-item>
-                        <a-breadcrumb-item>Overview</a-breadcrumb-item>
-                    </a-breadcrumb>
-                    <div class="page-actions" v-if="!route?.query?.edit">
-                        <a-button @click="router.push({ query: { edit: 'true' } })">
-                            <span style="font-size: 14px">Edit</span>
-                        </a-button>
-                        <a-button><span style="font-size: 14px">Share</span></a-button>
-                        <a-button><span style="font-size: 16px; font-weight: bold; line-height: 1">...</span></a-button>
-                    </div>
-                </div>
-
                 <div class="page-content">
                     <router-view />
                 </div>
@@ -343,7 +329,7 @@ onUnmounted(() => {
 
 /* Confluence 7 Create Button */
 .create-btn {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: #0052cc;
     color: #ffffff;
     border: none;
     border-radius: 3px;
@@ -358,7 +344,7 @@ onUnmounted(() => {
 }
 
 .create-btn:hover {
-    background-color: rgba(255, 255, 255, 0.25);
+    background-color: #0065ff;
 }
 
 .user-profile {
@@ -449,34 +435,5 @@ onUnmounted(() => {
     flex: 1;
     background-color: var(--color-bg-secondary);
     overflow-y: auto;
-}
-
-.content-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 2rem 0;
-}
-
-.page-actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-:deep(.page-actions .ant-btn) {
-    border: none !important;
-    background-color: rgba(9, 30, 66, 0.04) !important;
-    color: #42526e !important;
-    border-radius: 3px !important;
-    font-weight: 500 !important;
-    height: 32px !important;
-    padding: 4px 12px !important;
-    box-shadow: none !important;
-    transition: background-color 0.1s !important;
-}
-
-:deep(.page-actions .ant-btn:hover) {
-    background-color: rgba(9, 30, 66, 0.08) !important;
-    color: #172b4d !important;
 }
 </style>

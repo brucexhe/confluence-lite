@@ -291,3 +291,7 @@ code {
         border-right-color: var(--border);
     }
 }
+
+.light-btn {
+    background: rgba(9, 30, 66, 0.04) !important;
+}

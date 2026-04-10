@@ -52,7 +52,7 @@ const recentActivity = ref([
 <style scoped>
 .workspace-home {
   max-width: 1200px;
-  padding: 1rem 3rem 4rem 3rem;
+  padding: 20px 2rem 0;
 }
 .welcome-header {
   margin-bottom: 2rem;

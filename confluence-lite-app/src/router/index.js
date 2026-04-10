@@ -17,7 +17,8 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         { path: '', name: 'home', component: WorkspaceHome },
-        { path: 'page/:id', name: 'page', component: () => import('../views/Workspace/Page.vue') }
+        { path: 'page/:id', name: 'page', component: () => import('../views/Workspace/Page.vue') },
+        { path: 'spaces', name: 'space-list', component: () => import('../views/Workspace/List.vue') }
       ]
     }
   ]

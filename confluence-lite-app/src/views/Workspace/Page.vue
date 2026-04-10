@@ -84,6 +84,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Editor from "@tinymce/tinymce-vue"; // Editor 组件很轻量，可以直接导入
+import PageComments from "../../components/PageComments.vue";
 
 // 注意：不在顶部直接 import TinyMCE 核心库，否则会导致页面初始加载变慢
 // 我们使用动态 import + 预加载策略
@@ -131,6 +132,11 @@ const route = useRoute();
 const router = useRouter();
 const pageId = computed(() => route.params.id);
 const isEditing = computed(() => route.query.edit === "true");
+
+// 用户首字母（用于评论头像）
+const userInitial = computed(() => {
+    return 'U'; // TODO: 从用户 store 获取
+});
 
 const pageTitle = ref("");
 const pageContent = ref("");

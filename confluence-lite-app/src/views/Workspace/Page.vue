@@ -130,24 +130,24 @@ const editorConfig = {
         "bold italic forecolor backcolor | alignleft aligncenter " +
         "alignright alignjustify | bullist numlist outdent indent | " +
         "table image | removeformat | help",
-    
+
     // 开启本地图片粘贴和上传的沉浸式支持
     paste_data_images: true,
     image_title: true,
     automatic_uploads: true,
-    file_picker_types: 'image',
+    file_picker_types: "image",
     file_picker_callback: (cb, value, meta) => {
-        const input = document.createElement('input');
-        input.setAttribute('type', 'file');
-        input.setAttribute('accept', 'image/*');
+        const input = document.createElement("input");
+        input.setAttribute("type", "file");
+        input.setAttribute("accept", "image/*");
         input.onchange = function () {
             const file = this.files[0];
             const reader = new FileReader();
             reader.onload = function () {
-                const id = 'blobid' + (new Date()).getTime();
+                const id = "blobid" + new Date().getTime();
                 // 暂时使用本地 Blobs，不需要后端 API 就能展示完美图片效果
                 const blobCache = tinymce.activeEditor.editorUpload.blobCache;
-                const base64 = reader.result.split(',')[1];
+                const base64 = reader.result.split(",")[1];
                 const blobInfo = blobCache.create(id, file, base64);
                 blobCache.add(blobInfo);
                 cb(blobInfo.blobUri(), { title: file.name });
@@ -186,7 +186,7 @@ const cancelEdit = () => {
 <style scoped>
 .page-view {
     max-width: 900px;
-    padding: 1rem 3rem 4rem 3rem;
+    padding: 10px 2rem 0;
     animation: fadeIn 0.3s ease-in-out;
 }
 

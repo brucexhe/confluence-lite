@@ -8,7 +8,7 @@ using ConfluenceLite.Api.Services;
 using ConfluenceLite.Api.Middleware;
 using ConfluenceLite.Api.Mappers;
 using ConfluenceLite.Api.DTOs;
-using Microsoft.AspNetCore.Mvc;
+using ConfluenceLite.Api.Routes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,21 +100,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ========== 添加 API 探索器和控制器 (禁用一些不兼容的功能) ==========
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-        options.JsonSerializerOptions.TypeInfoResolver = AppJsonContext.Default;
-    });
-
-// 禁用 API Explorer
-builder.Services.Configure<ApiBehaviorOptions>(options =>
+// ========== 添加 OpenAPI 支持 (开发环境) ==========
+if (builder.Environment.IsDevelopment())
 {
-    options.SuppressInferBindingSourcesForParameters = true;
-    options.SuppressModelStateInvalidFilter = true;
-});
+    builder.Services.AddEndpointsApiExplorer();
+}
 
 // ========== JWT 配置 ==========
 builder.Services.AddAuthentication()
@@ -131,16 +121,16 @@ app.UseCors("AllowSpecificOrigins");
 // JWT 认证中间件
 app.UseMiddleware<JwtAuthMiddleware>();
 
-// 路由映射
-app.MapControllers();
+// ========== 注册 Minimal API 路由 ==========
+ApiRoutes.RegisterRoutes(app);
 
-// 健康检查
+// ========== 健康检查 ==========
 app.MapGet("/health", () =>
 {
     return Results.Json(new HealthResponse(), AppJsonContext.Default.HealthResponse);
 });
 
-// API 根路径
+// ========== API 根路径 ==========
 app.MapGet("/", () =>
 {
     return Results.Json(new ApiInfoResponse(), AppJsonContext.Default.ApiInfoResponse);

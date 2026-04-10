@@ -13,10 +13,13 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(ApiResponse<UserDto>))]
 [JsonSerializable(typeof(ApiResponse<WorkspaceDto>))]
 [JsonSerializable(typeof(ApiResponse<PageDto>))]
+[JsonSerializable(typeof(ApiResponse<CommentDto>))]
 [JsonSerializable(typeof(ApiResponse<LoginResponse>))]
 [JsonSerializable(typeof(ApiResponse<List<UserDto>>))]
 [JsonSerializable(typeof(ApiResponse<List<WorkspaceDto>>))]
 [JsonSerializable(typeof(ApiResponse<List<PageDto>>))]
+[JsonSerializable(typeof(ApiResponse<List<PageTreeNodeDto>>))]
+[JsonSerializable(typeof(ApiResponse<List<CommentDto>>))]
 [JsonSerializable(typeof(ApiResponse<PagedResponse<UserDto>>))]
 [JsonSerializable(typeof(ApiResponse<PagedResponse<WorkspaceDto>>))]
 [JsonSerializable(typeof(ApiResponse<PagedResponse<PageDto>>))]
@@ -52,6 +55,7 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(HealthResponse))]
 [JsonSerializable(typeof(ApiInfoResponse))]
 [JsonSerializable(typeof(ApiEndpoints))]
+[JsonSerializable(typeof(bool))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

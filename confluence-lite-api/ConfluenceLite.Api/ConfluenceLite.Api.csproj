@@ -15,6 +15,9 @@
     <!-- Core packages for Native AOT -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
 
+    <!-- Swagger/OpenAPI -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+
     <!-- PostgreSQL AOT-compatible driver -->
     <PackageReference Include="Npgsql" Version="9.0.3" />
 
@@ -23,14 +26,6 @@
 
     <!-- JWT Authentication -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
-
-    <!-- Password hashing -->
-    <PackageReference Include="Microsoft.AspNetCore.Cryptography.KeyDerivation" Version="10.0.5" />
-
-    <!-- Configuration -->
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

@@ -369,6 +369,8 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .sidebar-resizer {
@@ -385,6 +387,24 @@ onUnmounted(() => {
 .sidebar-resizer:hover,
 .layout-wrapper.is-resizing .sidebar-resizer {
     background-color: #0052cc; /* Confluence blue hover */
+}
+
+/* Custom scrollbar for sidebar */
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(9, 30, 66, 0.13);
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(9, 30, 66, 0.25);
 }
 
 .space-header {
@@ -417,8 +437,6 @@ onUnmounted(() => {
 
 .sidebar-section {
     padding: 1rem;
-    flex: 1;
-    overflow-y: auto;
 }
 
 .section-title {

@@ -4,7 +4,6 @@
       class="confluence-tree"
       :tree-data="treeData"
       :load-data="onLoadData"
-      :height="600"
       :show-icon="true"
       blockNode
       v-model:selectedKeys="selectedKeys"
@@ -127,14 +126,5 @@ const onSelect = (selectedKeysValue, info) => {
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
-}
-
-/* Custom scrollbar to match Atlassian styling */
-:deep(.ant-tree-list::-webkit-scrollbar) {
-  width: 6px;
-}
-:deep(.ant-tree-list::-webkit-scrollbar-thumb) {
-  background: rgba(9, 30, 66, 0.13);
-  border-radius: 4px;
 }
 </style>

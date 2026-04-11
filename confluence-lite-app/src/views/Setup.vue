@@ -203,7 +203,7 @@ async function testConnection() {
 }
 
 function nextStep() {
-  if (currentStep.value < steps.length - 1) {
+  if (currentStep.value < 2) {
     currentStep.value++
   }
 }
@@ -287,7 +287,7 @@ function goToHome() {
 .shape-2 { width: 400px; height: 400px; bottom: -100px; left: -50px; }
 
 .setup-card {
-  width: 680px;
+  width: 500px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -344,7 +344,7 @@ function goToHome() {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid #ebecf0;
 }

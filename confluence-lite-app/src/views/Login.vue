@@ -38,9 +38,10 @@
             />
           </div>
           
-          <button type="submit" class="premium-btn login-btn">
-            Sign In
+          <button type="submit" class="premium-btn login-btn" :disabled="loading">
+            {{ loading ? '登录中...' : 'Sign In' }}
           </button>
+          <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
         </form>
       </div>
     </div>
@@ -53,11 +54,23 @@ import { useAuthStore } from '../store/auth'
 
 const username = ref('')
 const password = ref('')
+const loading = ref(false)
+const errorMsg = ref('')
 const authStore = useAuthStore()
 
-const handleLogin = () => {
-  if (username.value && password.value) {
-    authStore.login(username.value, password.value)
+const handleLogin = async () => {
+  if (!username.value || !password.value) return
+  loading.value = true
+  errorMsg.value = ''
+  try {
+    const ok = await authStore.login(username.value, password.value)
+    if (!ok) {
+      errorMsg.value = '用户名或密码错误'
+    }
+  } catch {
+    errorMsg.value = '登录失败，请检查网络连接'
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -176,6 +189,13 @@ const handleLogin = () => {
   width: 100%;
   padding: 0.875rem;
   font-size: 1rem;
+}
+
+.error-msg {
+  color: #bf2600;
+  font-size: 0.875rem;
+  text-align: center;
+  margin: 0;
 }
 
 @media (max-width: 768px) {

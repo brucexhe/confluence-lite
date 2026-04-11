@@ -66,6 +66,7 @@ public static class ApiRoutes
         userGroup.MapPost("/login", async (
             LoginRequest request,
             UserService userService,
+            WorkspaceService workspaceService,
             TokenService tokenService) =>
         {
             if (request == null)
@@ -75,12 +76,21 @@ public static class ApiRoutes
             if (user == null || error != null)
                 return Results.Unauthorized();
 
+            // 获取用户的空间列表
+            var workspaces = await workspaceService.GetUserWorkspacesAsync(user.Id);
+
             var response = new LoginResponse
             {
                 Token = tokenService.GenerateToken(user.Id, user.Username),
                 TokenType = "Bearer",
                 ExpiresIn = 1440,
-                User = user
+                User = user,
+                Workspaces = workspaces.Select(w => new WorkspaceSummaryDto
+                {
+                    Id = w.Id,
+                    Name = w.Name,
+                    Key = w.Key
+                }).ToList()
             };
 
             return Results.Ok(ApiResponse<LoginResponse>.Ok(response, "登录成功"));

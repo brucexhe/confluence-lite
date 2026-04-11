@@ -4,7 +4,7 @@
         <div class="page-header" v-if="!isEditing">
             <a-breadcrumb>
                 <a-breadcrumb-item>
-                    <a href="/spaces">Engineering Space</a>
+                    <router-link :to="`/${$route.params.spaceKey}`">Engineering Space</router-link>
                 </a-breadcrumb-item>
                 <a-breadcrumb-item>Overview</a-breadcrumb-item>
             </a-breadcrumb>

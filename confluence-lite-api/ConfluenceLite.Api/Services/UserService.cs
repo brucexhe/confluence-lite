@@ -207,6 +207,7 @@ public class UserService
             Email = user.Email,
             DisplayName = user.DisplayName,
             Status = user.Status,
+            IsAdmin = user.IsAdmin,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt
         };

@@ -44,6 +44,11 @@ public class LoginResponse
     /// 用户信息
     /// </summary>
     public UserDto User { get; set; } = new();
+
+    /// <summary>
+    /// 用户的空间列表
+    /// </summary>
+    public List<WorkspaceSummaryDto> Workspaces { get; set; } = new();
 }
 
 /// <summary>
@@ -132,6 +137,7 @@ public class UserDto
     public string? Email { get; set; }
     public string? DisplayName { get; set; }
     public int Status { get; set; }
+    public bool IsAdmin { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

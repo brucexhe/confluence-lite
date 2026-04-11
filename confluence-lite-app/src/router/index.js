@@ -5,7 +5,6 @@ import Login from '../views/Login.vue'
 import Setup from '../views/Setup.vue'
 import WorkspaceHome from '../views/Workspace/Index.vue'
 
-// Simple error page component for API unreachable
 const ErrorPage = {
   render() {
     return h('div', {
@@ -48,14 +47,37 @@ const router = createRouter({
       meta: { public: true }
     },
     {
+      path: '/spaces',
+      name: 'space-list',
+      component: () => import('../views/Workspace/List.vue'),
+      meta: { public: true }
+    },
+    {
       path: '/',
+      name: 'home',
+      meta: { requiresAuth: true },
+      component: MainLayout
+    },
+    {
+      path: '/:spaceKey',
       component: MainLayout,
       meta: { requiresAuth: true },
       children: [
-        { path: '', name: 'home', component: WorkspaceHome },
-        { path: 'page/:id', name: 'page', component: () => import('../views/Workspace/Page.vue') },
-        { path: 'spaces', name: 'space-list', component: () => import('../views/Workspace/List.vue') }
+        {
+          path: '',
+          name: 'space-home',
+          component: WorkspaceHome
+        },
+        {
+          path: 'page/:id',
+          name: 'page',
+          component: () => import('../views/Workspace/Page.vue')
+        }
       ]
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      redirect: '/'
     }
   ]
 })
@@ -82,7 +104,6 @@ async function checkInstalled() {
   }
 }
 
-// Allow re-check after setup completes
 window.__resetInstallCheck = () => {
   _installChecked = false
   _isInstalled = false
@@ -92,19 +113,16 @@ window.__resetInstallCheck = () => {
 router.beforeEach(async (to, from, next) => {
   const { installed, apiAvailable } = await checkInstalled()
 
-  // API unavailable → show error (block all pages)
   if (!apiAvailable && to.name !== 'error') {
     next({ name: 'error' })
     return
   }
 
-  // Not installed → force to setup page
   if (apiAvailable && !installed && to.name !== 'setup') {
     next({ name: 'setup' })
     return
   }
 
-  // Already installed → don't allow setup page
   if (apiAvailable && installed && to.name === 'setup') {
     next({ path: '/' })
     return
@@ -112,13 +130,38 @@ router.beforeEach(async (to, from, next) => {
 
   // Auth check
   const isAuthenticated = localStorage.getItem('auth_token')
+
+  // Not logged in → login page (except public routes)
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'login' })
-  } else if (to.name === 'login' && isAuthenticated) {
-    next({ path: '/' })
-  } else {
-    next()
+    return
   }
+
+  // Logged in + on home/login → redirect to first space
+  if ((to.name === 'login' || to.name === 'home') && isAuthenticated) {
+    const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
+    if (spaces.length > 0) {
+      next({ path: `/${spaces[0].key}` })
+    } else {
+      // No spaces → try fetch from API
+      try {
+        const res = await fetch('/api/workspace/my', {
+          headers: { 'Authorization': `Bearer ${isAuthenticated}` }
+        })
+        const data = await res.json()
+        if (data.success && data.data && data.data.length > 0) {
+          next({ path: `/${data.data[0].key}` })
+        } else {
+          next({ name: 'login' })
+        }
+      } catch {
+        next({ name: 'login' })
+      }
+    }
+    return
+  }
+
+  next()
 })
 
 export default router

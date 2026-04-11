@@ -27,6 +27,10 @@ export const useAuthStore = defineStore('auth', () => {
         }
         localStorage.setItem('auth_token', token.value)
         localStorage.setItem('auth_user', JSON.stringify(user.value))
+        // 保存空间列表
+        if (data.data.workspaces) {
+          localStorage.setItem('auth_spaces', JSON.stringify(data.data.workspaces))
+        }
         router.push('/')
         return true
       }
@@ -41,10 +45,11 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
+    localStorage.removeItem('auth_spaces')
     router.push('/login')
   }
 
-  function setFromSetup(setupData, displayName) {
+  function setFromSetup(setupData, displayName, spaceKey) {
     token.value = setupData.token
     user.value = {
       id: setupData.userId,
@@ -53,6 +58,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
     localStorage.setItem('auth_token', token.value)
     localStorage.setItem('auth_user', JSON.stringify(user.value))
+    localStorage.setItem('auth_spaces', JSON.stringify([
+      { id: setupData.workspaceId, name: '', key: spaceKey }
+    ]))
   }
 
   return { token, user, login, logout, setFromSetup }

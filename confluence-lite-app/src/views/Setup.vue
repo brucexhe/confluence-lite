@@ -142,9 +142,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../store/auth'
 
 const API_BASE = ''
 const router = useRouter()
+const authStore = useAuthStore()
 
 const currentStep = ref(0)
 
@@ -255,14 +257,15 @@ async function runInstall() {
 
 function goToHome() {
   if (installResult.value) {
-    localStorage.setItem('auth_token', installResult.value.token)
-    localStorage.setItem('auth_user', JSON.stringify({
-      id: installResult.value.userId,
-      name: adminConfig.value.displayName || adminConfig.value.username,
-      role: 'admin'
-    }))
+    const spaceKey = spaceConfig.value.key.toUpperCase()
+    authStore.setFromSetup(
+      installResult.value,
+      adminConfig.value.displayName || adminConfig.value.username,
+      spaceKey
+    )
+    window.__resetInstallCheck()
+    window.location.href = `/${spaceKey}`
   }
-  window.location.href = '/'
 }
 </script>
 

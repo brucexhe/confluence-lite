@@ -20,6 +20,11 @@ builder.Services.Configure<AppConfiguration>(
 var appConfig = new AppConfiguration();
 builder.Configuration.GetSection("App").Bind(appConfig);
 
+// ========== 检查安装状态 ==========
+var installedPath = Path.Combine(builder.Environment.ContentRootPath, "INSTALLED");
+var isInstalled = File.Exists(installedPath);
+Console.WriteLine($"[Setup] INSTALLED file check: {(isInstalled ? "Found" : "Not found")} at {installedPath}");
+
 // ========== 注册 JwtOptions 到 DI 容器 ==========
 builder.Services.AddSingleton(appConfig.Jwt);
 
@@ -51,44 +56,22 @@ var db = new SqlSugarClient(new ConnectionConfig
 builder.Services.AddSingleton<ISqlSugarClient>(db);
 builder.Services.AddSingleton<AppDbContext>();
 
-// 初始化数据库表
-if (appConfig.Database.AutoCreateTables)
+// 仅在已安装状态下初始化数据库
+if (isInstalled && appConfig.Database.AutoCreateTables)
 {
     try
     {
-        db.CodeFirst.InitTables(
-            typeof(User),
-            typeof(Workspace),
-            typeof(Page),
-            typeof(PageComment),
-            typeof(UserGroup),
-            typeof(UserGroupMember),
-            typeof(WorkspacePermission),
-            typeof(WorkspaceCategory),
-            typeof(PageVersion),
-            typeof(PageRestriction),
-            typeof(PageLabel),
-            typeof(PageTemplate),
-            typeof(Attachment),
-            typeof(Draft),
-            typeof(ContentProperty),
-            typeof(Notification),
-            typeof(Watcher),
-            typeof(Mention),
-            typeof(Share),
-            typeof(SearchHistory),
-            typeof(ActivityEvent),
-            typeof(AuditLog),
-            typeof(UserFavorite)
-        );
-        Console.WriteLine("[Database] Tables initialized successfully");
+        DatabaseInitializer.Initialize(db);
     }
     catch (Exception ex)
     {
         Console.WriteLine($"[Database] Warning: Failed to initialize tables: {ex.Message}");
         Console.WriteLine("[Database] Application will start but database operations may fail");
-        Console.WriteLine("[Database] Please ensure PostgreSQL is running and the connection string is correct");
     }
+}
+else if (!isInstalled)
+{
+    Console.WriteLine("[Setup] First-time setup mode — database will be initialized during setup wizard");
 }
 
 // ========== 服务注册 - Native AOT 兼容 ==========
@@ -97,6 +80,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<WorkspaceService>();
 builder.Services.AddScoped<PageService>();
 builder.Services.AddScoped<CommentService>();
+builder.Services.AddScoped<SetupService>();
 
 // ========== JSON 配置 - Native AOT 使用源生成器 ==========
 builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>

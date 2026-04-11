@@ -8,7 +8,7 @@ namespace ConfluenceLite.Api.Data;
 /// </summary>
 public class AppDbContext
 {
-    private readonly ISqlSugarClient _db;
+    private ISqlSugarClient _db;
 
     public AppDbContext(ISqlSugarClient db)
     {
@@ -19,6 +19,30 @@ public class AppDbContext
     /// 获取数据库客户端
     /// </summary>
     public ISqlSugarClient Db => _db;
+
+    /// <summary>
+    /// 重新配置数据库连接 (安装向导使用，无需重启)
+    /// </summary>
+    public void Reconfigure(string connectionString, bool enableSqlLog = true)
+    {
+        _db = new SqlSugarClient(new ConnectionConfig
+        {
+            ConnectionString = connectionString,
+            DbType = SqlSugar.DbType.PostgreSQL,
+            IsAutoCloseConnection = true,
+            InitKeyType = InitKeyType.Attribute,
+            AopEvents = new AopEvents
+            {
+                OnLogExecuting = (sql, p) =>
+                {
+                    if (enableSqlLog)
+                    {
+                        Console.WriteLine($"[SQL] {sql}");
+                    }
+                }
+            }
+        });
+    }
 
     /// <summary>
     /// 初始化数据库表结构

@@ -16,6 +16,48 @@ public static class ApiRoutes
     /// </summary>
     public static void RegisterRoutes(WebApplication app)
     {
+        // ========== 安装向导路由 (无需认证) ==========
+        var setupGroup = app.MapGroup("/api/setup")
+            .WithTags("Setup");
+
+        // 检查安装状态
+        setupGroup.MapGet("/status", (SetupService setupService) =>
+        {
+            var installed = setupService.IsInstalled();
+            return Results.Ok(ApiResponse<SetupStatusResponse>.Ok(
+                new SetupStatusResponse { Installed = installed }));
+        });
+
+        // 测试数据库连接
+        setupGroup.MapPost("/test-connection", async (
+            DatabaseConfigRequest request,
+            SetupService setupService) =>
+        {
+            if (setupService.IsInstalled())
+                return Results.BadRequest(ApiResponse<TestConnectionResponse>.Fail("系统已安装"));
+
+            var (result, error) = await setupService.TestConnectionAsync(request);
+            if (error != null)
+                return Results.BadRequest(ApiResponse<TestConnectionResponse>.Fail(error));
+
+            return Results.Ok(ApiResponse<TestConnectionResponse>.Ok(result!));
+        });
+
+        // 执行安装
+        setupGroup.MapPost("/install", async (
+            SetupRequest request,
+            SetupService setupService) =>
+        {
+            if (setupService.IsInstalled())
+                return Results.BadRequest(ApiResponse<SetupResponse>.Fail("系统已安装"));
+
+            var (result, error) = await setupService.InstallAsync(request);
+            if (error != null || result == null)
+                return Results.BadRequest(ApiResponse<SetupResponse>.Fail(error ?? "安装失败"));
+
+            return Results.Ok(ApiResponse<SetupResponse>.Ok(result, "安装成功"));
+        });
+
         // ========== 用户相关路由 ==========
         var userGroup = app.MapGroup("/api/user")
             .WithTags("Users");

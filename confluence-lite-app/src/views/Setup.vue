@@ -68,7 +68,7 @@
               <a-input v-model:value="adminConfig.username" placeholder="admin" />
             </a-form-item>
             <a-form-item label="显示名称" class="form-item-flex">
-              <a-input v-model:value="adminConfig.displayName" placeholder="Administrator" />
+              <a-input v-model:value="adminConfig.displayName" placeholder="Admin" />
             </a-form-item>
           </div>
           <div class="form-row">
@@ -140,7 +140,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 
@@ -169,14 +169,22 @@ const adminConfig = ref({
   password: '',
   confirmPassword: '',
   email: '',
-  displayName: 'Administrator'
+  displayName: 'Admin'
 })
 
 // Step 3: Space
 const spaceConfig = ref({
-  name: '我的知识库',
-  key: 'HOME'
+  name: '',
+  key: ''
 })
+
+// 当管理员用户名变化时，自动填充空间名和key
+watch(() => adminConfig.value.username, (val) => {
+  if (val) {
+    spaceConfig.value.name = val
+    spaceConfig.value.key = val.toUpperCase()
+  }
+}, { immediate: true })
 
 // Step 4: Install
 const installing = ref(false)

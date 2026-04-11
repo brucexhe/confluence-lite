@@ -159,3 +159,24 @@ public class SetupResponse
     /// </summary>
     public long PageId { get; set; }
 }
+
+/// <summary>
+/// 安装标记文件内容
+/// </summary>
+public class InstalledInfo
+{
+    /// <summary>
+    /// 安装时间
+    /// </summary>
+    public string InstalledAt { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 系统版本
+    /// </summary>
+    public string Version { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 管理员用户名
+    /// </summary>
+    public string AdminUser { get; set; } = string.Empty;
+}

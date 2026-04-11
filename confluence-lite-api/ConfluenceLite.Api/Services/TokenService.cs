@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using ConfluenceLite.Api.Data;
 
@@ -33,7 +34,7 @@ public class TokenService
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        var key = new SymmetricSecurityKey(Convert.FromBase64String(_options.Secret));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 
         var token = new JwtSecurityToken(
@@ -57,7 +58,7 @@ public class TokenService
         try
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Convert.FromBase64String(_options.Secret);
+            var key = Encoding.UTF8.GetBytes(_options.Secret);
 
             var validationParameters = new TokenValidationParameters
             {

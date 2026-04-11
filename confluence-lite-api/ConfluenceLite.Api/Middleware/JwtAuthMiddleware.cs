@@ -45,7 +45,7 @@ public class JwtAuthMiddleware
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Convert.FromBase64String(_jwtOptions.Secret);
+                var key = System.Text.Encoding.UTF8.GetBytes(_jwtOptions.Secret);
 
                 var validationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {

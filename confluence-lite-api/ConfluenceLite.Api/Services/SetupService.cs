@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
+using ConfluenceLite.Api.Mappers;
 using ConfluenceLite.Api.Models;
 using Npgsql;
 
@@ -151,7 +152,7 @@ public class SetupService
             };
 
             adminUserId = await _db.Db.Insertable(adminUser)
-                .ExecuteReturnSnowflakeIdAsync();
+                .ExecuteReturnBigIdentityAsync();
         }
         catch (Exception ex)
         {
@@ -173,7 +174,7 @@ public class SetupService
             };
 
             workspaceId = await _db.Db.Insertable(workspace)
-                .ExecuteReturnSnowflakeIdAsync();
+                .ExecuteReturnBigIdentityAsync();
         }
         catch (Exception ex)
         {
@@ -196,7 +197,7 @@ public class SetupService
             };
 
             pageId = await _db.Db.Insertable(overviewPage)
-                .ExecuteReturnSnowflakeIdAsync();
+                .ExecuteReturnBigIdentityAsync();
 
             // 更新空间首页ID
             await _db.Db.Updateable<Workspace>()
@@ -326,14 +327,13 @@ public class SetupService
     /// </summary>
     private void CreateInstalledFile(string adminUser)
     {
-        var installedInfo = new
+        var info = new InstalledInfo
         {
-            installedAt = DateTime.UtcNow.ToString("O"),
-            version = "1.0.0",
-            adminUser
+            InstalledAt = DateTime.UtcNow.ToString("O"),
+            Version = "1.0.0",
+            AdminUser = adminUser
         };
-
-        var json = JsonSerializer.Serialize(installedInfo);
+        var json = JsonSerializer.Serialize(info, AppJsonContext.Default.InstalledInfo);
         File.WriteAllText(GetInstalledFilePath(), json);
     }
 

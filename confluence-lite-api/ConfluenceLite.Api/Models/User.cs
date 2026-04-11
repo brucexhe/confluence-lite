@@ -45,6 +45,52 @@ public class User
     public int Status { get; set; } = 1;
 
     /// <summary>
+    /// 头像URL
+    /// </summary>
+    [SugarColumn(Length = 500)]
+    public string? AvatarUrl { get; set; }
+
+    /// <summary>
+    /// 个人简介
+    /// </summary>
+    [SugarColumn(ColumnDataType = "text")]
+    public string? Bio { get; set; }
+
+    /// <summary>
+    /// 时区
+    /// </summary>
+    [SugarColumn(Length = 50, IsNullable = false)]
+    public string TimeZone { get; set; } = "UTC";
+
+    /// <summary>
+    /// 语言区域
+    /// </summary>
+    [SugarColumn(Length = 10, IsNullable = false)]
+    public string Locale { get; set; } = "zh-CN";
+
+    /// <summary>
+    /// 最后登录时间
+    /// </summary>
+    public DateTime? LastLoginAt { get; set; }
+
+    /// <summary>
+    /// 是否管理员
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public bool IsAdmin { get; set; }
+
+    /// <summary>
+    /// 是否已删除
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// 删除时间
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
     /// 创建时间
     /// </summary>
     [SugarColumn(IsNullable = false)]

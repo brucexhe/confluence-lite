@@ -60,7 +60,26 @@ if (appConfig.Database.AutoCreateTables)
             typeof(User),
             typeof(Workspace),
             typeof(Page),
-            typeof(PageComment)
+            typeof(PageComment),
+            typeof(UserGroup),
+            typeof(UserGroupMember),
+            typeof(WorkspacePermission),
+            typeof(WorkspaceCategory),
+            typeof(PageVersion),
+            typeof(PageRestriction),
+            typeof(PageLabel),
+            typeof(PageTemplate),
+            typeof(Attachment),
+            typeof(Draft),
+            typeof(ContentProperty),
+            typeof(Notification),
+            typeof(Watcher),
+            typeof(Mention),
+            typeof(Share),
+            typeof(SearchHistory),
+            typeof(ActivityEvent),
+            typeof(AuditLog),
+            typeof(UserFavorite)
         );
         Console.WriteLine("[Database] Tables initialized successfully");
     }

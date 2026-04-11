@@ -55,6 +55,33 @@ public class Page
     public int SortOrder { get; set; }
 
     /// <summary>
+    /// 当前版本号
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public int Version { get; set; } = 1;
+
+    /// <summary>
+    /// 最后修改者用户ID
+    /// </summary>
+    public long? LastModifierId { get; set; }
+
+    /// <summary>
+    /// 是否已删除
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// 删除时间
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
+    /// 删除者用户ID
+    /// </summary>
+    public long? DeletedById { get; set; }
+
+    /// <summary>
     /// 创建时间
     /// </summary>
     [SugarColumn(IsNullable = false)]

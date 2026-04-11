@@ -45,6 +45,40 @@ public class Workspace
     public int Status { get; set; } = 1;
 
     /// <summary>
+    /// 图标
+    /// </summary>
+    [SugarColumn(Length = 50)]
+    public string? Icon { get; set; }
+
+    /// <summary>
+    /// 主题色 (十六进制颜色码)
+    /// </summary>
+    [SugarColumn(Length = 7)]
+    public string? Color { get; set; }
+
+    /// <summary>
+    /// 空间主页ID
+    /// </summary>
+    public long? HomePageId { get; set; }
+
+    /// <summary>
+    /// 是否个人空间
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public bool IsPersonal { get; set; }
+
+    /// <summary>
+    /// 是否已删除
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public bool IsDeleted { get; set; }
+
+    /// <summary>
+    /// 删除时间
+    /// </summary>
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>
     /// 创建时间
     /// </summary>
     [SugarColumn(IsNullable = false)]

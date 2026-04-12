@@ -112,12 +112,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ========== 添加 OpenAPI 支持 (开发环境) ==========
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddEndpointsApiExplorer();
-}
-
 // ========== JWT 配置 ==========
 builder.Services.AddAuthentication()
     .AddJwtBearer();

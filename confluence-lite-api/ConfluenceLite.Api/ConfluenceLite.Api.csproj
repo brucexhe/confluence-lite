@@ -15,12 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Core packages for Native AOT -->
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
-
-    <!-- Swagger/OpenAPI -->
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
-
     <!-- PostgreSQL AOT-compatible driver -->
     <PackageReference Include="Npgsql" Version="9.0.3" />
 

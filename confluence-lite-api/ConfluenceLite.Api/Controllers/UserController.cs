@@ -15,11 +15,13 @@ namespace ConfluenceLite.Api.Controllers;
 public class UserController : ControllerBase
 {
     private readonly UserService _userService;
+    private readonly WorkspaceService _workspaceService;
     private readonly TokenService _tokenService;
 
-    public UserController(UserService userService, TokenService tokenService)
+    public UserController(UserService userService, WorkspaceService workspaceService, TokenService tokenService)
     {
         _userService = userService;
+        _workspaceService = workspaceService;
         _tokenService = tokenService;
     }
 
@@ -45,12 +47,21 @@ public class UserController : ControllerBase
 
         var token = _tokenService.GenerateToken(user.Id, user.Username);
 
+        var workspaces = await _workspaceService.GetUserWorkspacesAsync(user.Id);
+
         var response = new LoginResponse
         {
             Token = token,
             TokenType = "Bearer",
             ExpiresIn = 1440, // 24小时
-            User = user
+            User = user,
+            Workspaces = workspaces.Select(w => new WorkspaceSummaryDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                Key = w.Key,
+                Icon = w.Icon
+            }).ToList()
         };
 
         return Ok(ApiResponse<LoginResponse>.Ok(response, "登录成功"));

@@ -35,6 +35,31 @@ import { useRoute, useRouter } from "vue-router";
 import Editor from "@tinymce/tinymce-vue";
 import { pageApi } from "../../api";
 
+// TinyMCE core
+import "tinymce/tinymce";
+import "tinymce/skins/content/default/content.css?raw";
+// TinyMCE plugins
+import "tinymce/plugins/image";
+import "tinymce/plugins/table";
+import "tinymce/plugins/lists";
+import "tinymce/plugins/code";
+import "tinymce/plugins/fullscreen";
+import "tinymce/plugins/autoresize";
+import "tinymce/plugins/advlist";
+import "tinymce/plugins/autolink";
+import "tinymce/plugins/link";
+import "tinymce/plugins/charmap";
+import "tinymce/plugins/preview";
+import "tinymce/plugins/anchor";
+import "tinymce/plugins/searchreplace";
+import "tinymce/plugins/visualblocks";
+import "tinymce/plugins/media";
+import "tinymce/skins/ui/oxide/skin.css";
+import "tinymce/themes/silver";
+import "tinymce/icons/default";
+import "tinymce/models/dom";
+import "tinymce/icons/default/icons";
+
 const route = useRoute();
 const router = useRouter();
 const pageId = computed(() => route.params.id);
@@ -93,43 +118,7 @@ async function loadPageTree() {
     } catch { /* ignore */ }
 }
 
-// 懒加载 TinyMCE
-const loadTinyMCE = async () => {
-    const [tm, css] = await Promise.all([
-        import("tinymce/tinymce"),
-        import("tinymce/skins/content/default/content.css?raw"),
-    ]);
-    Promise.all([
-        import("tinymce/plugins/image"),
-        import("tinymce/plugins/table"),
-        import("tinymce/plugins/lists"),
-        import("tinymce/plugins/wordcount"),
-        import("tinymce/plugins/code"),
-        import("tinymce/plugins/fullscreen"),
-        import("tinymce/plugins/autoresize"),
-        import("tinymce/plugins/advlist"),
-        import("tinymce/plugins/autolink"),
-        import("tinymce/plugins/link"),
-        import("tinymce/plugins/charmap"),
-        import("tinymce/plugins/preview"),
-        import("tinymce/plugins/anchor"),
-        import("tinymce/plugins/searchreplace"),
-        import("tinymce/plugins/visualblocks"),
-        import("tinymce/plugins/insertdatetime"),
-        import("tinymce/plugins/media"),
-        import("tinymce/plugins/help"),
-        import("tinymce/skins/ui/oxide/skin.css"),
-        import("tinymce/themes/silver"),
-        import("tinymce/icons/default"),
-        import("tinymce/models/dom"),
-        import("tinymce/icons/default/icons")
-    ]);
-    return { tinymce: tm.default, contentCss: css.default };
-};
-
-const editorReady = ref(false);
-const tinymce = ref(null);
-const contentCss = ref("");
+const editorReady = ref(true);
 
 // 编辑模式：加载已有页面数据
 const loadPageData = async () => {
@@ -148,13 +137,6 @@ const loadPageData = async () => {
 onMounted(async () => {
     loadPageData();
     loadPageTree();
-    loadTinyMCE().then(({ tinymce: tm, contentCss: css }) => {
-        tinymce.value = tm;
-        contentCss.value = css;
-        editorReady.value = true;
-    }).catch(err => {
-        console.error("TinyMCE 加载失败:", err);
-    });
 });
 
 const editorConfig = computed(() => ({
@@ -164,13 +146,13 @@ const editorConfig = computed(() => ({
     plugins: [
         "autoresize", "advlist", "autolink", "lists", "link", "image",
         "charmap", "preview", "anchor", "searchreplace", "visualblocks",
-        "code", "fullscreen", "insertdatetime", "media", "table", "help", "wordcount",
+        "code", "fullscreen",  "media", "table",
     ],
     toolbar:
         "undo redo | formatselect | " +
         "bold italic forecolor backcolor | alignleft aligncenter " +
-        "alignright alignjustify | bullist numlist outdent indent | " +
-        "table image | removeformat | help",
+        "alignright alignjustify | bullist numlist | " +
+        "table image | removeformat",
     paste_data_images: true,
     image_title: true,
     automatic_uploads: true,
@@ -184,7 +166,7 @@ const editorConfig = computed(() => ({
             const reader = new FileReader();
             reader.onload = function () {
                 const id = "blobid" + new Date().getTime();
-                const blobCache = tinymce.value?.activeEditor?.editorUpload?.blobCache;
+                const blobCache = window.tinymce?.activeEditor?.editorUpload?.blobCache;
                 if (!blobCache) return;
                 const base64 = reader.result.split(",")[1];
                 const blobInfo = blobCache.create(id, file, base64);
@@ -196,7 +178,6 @@ const editorConfig = computed(() => ({
         input.click();
     },
     content_style:
-        (contentCss.value || "") +
         '\nbody { margin: 0 !important; max-width: 900px !important; padding:5px 2rem 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; }',
 }));
 
@@ -252,7 +233,7 @@ const cancelEdit = () => {
 
 <style scoped>
 .editor-container {
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.2s ease-in-out;
     margin-top: 0;
     display: flex;
     flex-direction: column;

@@ -31,15 +31,6 @@
                     @keydown="handleKeyDown"
                 />
                 <div class="comment-actions">
-                    <a-button size="small" class="toolbar-btn">
-                        <AtIcon :size="14" />
-                    </a-button>
-                    <a-button size="small" class="toolbar-btn">
-                        <EmojiIcon :size="14" />
-                    </a-button>
-                    <a-button size="small" class="toolbar-btn">
-                        <LinkIcon :size="14" />
-                    </a-button>
                     <div class="spacer"></div>
                     <span class="hint">Press <kbd>Enter</kbd> to submit</span>
                     <a-button type="primary" size="small" @click="addComment" :disabled="!newComment.trim()">
@@ -50,19 +41,19 @@
         </div>
 
         <!-- Comments List -->
-        <div class="comments-list">
+        <a-spin v-if="loading" style="display:block;padding:2rem 0;text-align:center;" />
+        <div v-else class="comments-list">
             <div v-for="comment in sortedComments" :key="comment.id" class="comment-item">
-                <a-avatar class="comment-avatar" :style="{ backgroundColor: comment.color }">
-                    {{ comment.author.charAt(0) }}
+                <a-avatar class="comment-avatar" :style="{ backgroundColor: avatarColor(comment.user?.name || '') }">
+                    {{ (comment.user?.name || 'U').charAt(0).toUpperCase() }}
                 </a-avatar>
                 <div class="comment-content-wrapper">
                     <div class="comment-meta">
-                        <span class="comment-author">{{ comment.author }}</span>
+                        <span class="comment-author">{{ comment.user?.name || 'Unknown' }}</span>
                         <a-dropdown>
-                            <span class="comment-time">{{ comment.time }}</span>
+                            <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
                             <template #overlay>
                                 <a-menu>
-                                    <a-menu-item @click="editComment(comment.id)">Edit</a-menu-item>
                                     <a-menu-item @click="deleteComment(comment.id)" danger>Delete</a-menu-item>
                                 </a-menu>
                             </template>
@@ -70,16 +61,16 @@
                     </div>
                     <div class="comment-body" v-html="comment.content"></div>
 
-                    <!-- Reply Section -->
+                    <!-- Replies -->
                     <div class="comment-replies" v-if="comment.replies && comment.replies.length > 0">
                         <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
-                            <a-avatar class="reply-avatar" :style="{ backgroundColor: reply.color, fontSize: '12px' }">
-                                {{ reply.author.charAt(0) }}
+                            <a-avatar class="reply-avatar" :style="{ backgroundColor: avatarColor(reply.user?.name || ''), fontSize: '12px' }">
+                                {{ (reply.user?.name || 'U').charAt(0).toUpperCase() }}
                             </a-avatar>
                             <div class="reply-content-wrapper">
                                 <div class="reply-meta">
-                                    <span class="reply-author">{{ reply.author }}</span>
-                                    <span class="reply-time">{{ reply.time }}</span>
+                                    <span class="reply-author">{{ reply.user?.name || 'Unknown' }}</span>
+                                    <span class="reply-time">{{ formatTime(reply.createdAt) }}</span>
                                 </div>
                                 <div class="reply-body">{{ reply.content }}</div>
                             </div>
@@ -125,74 +116,82 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { MessageSquare as CommentIcon, ChevronDown as DownIcon, AtSign as AtIcon, Smile as EmojiIcon, Link as LinkIcon } from 'lucide-vue-next';
+import { ref, computed, onMounted, watch } from 'vue';
+import { MessageSquare as CommentIcon, ChevronDown as DownIcon } from 'lucide-vue-next';
+import { commentApi } from '../api';
 
-// Props
 const props = defineProps({
     userInitial: {
         type: String,
         default: 'U'
+    },
+    pageId: {
+        type: [String, Number],
+        required: true
     }
 });
 
-// State
+const loading = ref(false);
 const newComment = ref('');
 const sortOrder = ref('newest');
+const comments = ref([]);
 
-const comments = ref([
-    {
-        id: 1,
-        author: 'Alice Chen',
-        time: '2 hours ago',
-        content: 'This page looks great! I especially like the <strong>architecture overview</strong> section. Maybe we could add more details about the API endpoints?',
-        color: '#3b82f6',
-        showReply: false,
-        replyText: '',
-        replies: [
-            {
-                id: 101,
-                author: 'Admin',
-                time: '1 hour ago',
-                content: 'Good point! I\'ll add the API documentation section this week.',
-                color: '#10b981'
-            }
-        ]
-    },
-    {
-        id: 2,
-        author: 'Bob Smith',
-        time: '5 hours ago',
-        content: 'Could you update the diagram? The current version is missing the new microservice component.',
-        color: '#8b5cf6',
-        showReply: false,
-        replyText: '',
-        replies: []
-    },
-    {
-        id: 3,
-        author: 'Carol Wang',
-        time: '1 day ago',
-        content: 'Thanks for documenting this! It really helps the new team members get on board quickly.',
-        color: '#f59e0b',
-        showReply: false,
-        replyText: '',
-        replies: []
+// Avatar colors
+const avatarColors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
+function avatarColor(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    return avatarColors[Math.abs(hash) % avatarColors.length];
+}
+
+function formatTime(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now - date;
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return '刚刚';
+    if (minutes < 60) return `${minutes} 分钟前`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} 小时前`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days} 天前`;
+    return date.toLocaleDateString('zh-CN');
+}
+
+// Load comments from API
+async function loadComments() {
+    if (!props.pageId) return;
+    loading.value = true;
+    try {
+        const data = await commentApi.getList(props.pageId);
+        comments.value = (data || []).map(c => ({
+            ...c,
+            showReply: false,
+            replyText: '',
+        }));
+    } catch (e) {
+        console.error('加载评论失败:', e);
+    } finally {
+        loading.value = false;
     }
-]);
+}
 
-// Computed
+onMounted(loadComments);
+watch(() => props.pageId, loadComments);
+
 const sortText = computed(() => {
     return sortOrder.value === 'newest' ? 'Newest first' : 'Oldest first';
 });
 
 const sortedComments = computed(() => {
     return [...comments.value].sort((a, b) => {
-        return sortOrder.value === 'newest' ? b.id - a.id : a.id - b.id;
+        return sortOrder.value === 'newest'
+            ? new Date(b.createdAt) - new Date(a.createdAt)
+            : new Date(a.createdAt) - new Date(b.createdAt);
     });
 });
 
-// Methods
 const handleSortChange = ({ key }) => {
     sortOrder.value = key;
 };
@@ -204,38 +203,26 @@ const handleKeyDown = (e) => {
     }
 };
 
-const addComment = () => {
+const addComment = async () => {
     if (!newComment.value.trim()) return;
-
-    const comment = {
-        id: Date.now(),
-        author: 'Current User',
-        time: 'Just now',
-        content: formatComment(newComment.value),
-        color: '#0052cc',
-        showReply: false,
-        replyText: '',
-        replies: []
-    };
-
-    comments.value.unshift(comment);
-    newComment.value = '';
+    try {
+        await commentApi.create(props.pageId, {
+            pageId: Number(props.pageId),
+            content: newComment.value,
+        });
+        newComment.value = '';
+        await loadComments();
+    } catch (e) {
+        console.error('发表评论失败:', e);
+    }
 };
 
-const formatComment = (text) => {
-    // Simple @mention highlighting
-    return text.replace(/@(\w+)/g, '<span class="mention">@$1</span>');
-};
-
-const editComment = (id) => {
-    console.log('Edit comment:', id);
-    // TODO: Implement edit functionality
-};
-
-const deleteComment = (id) => {
-    const index = comments.value.findIndex(c => c.id === id);
-    if (index !== -1) {
-        comments.value.splice(index, 1);
+const deleteComment = async (id) => {
+    try {
+        await commentApi.remove(id);
+        await loadComments();
+    } catch (e) {
+        console.error('删除评论失败:', e);
     }
 };
 
@@ -254,26 +241,23 @@ const cancelReply = (id) => {
     }
 };
 
-const addReply = (commentId, event) => {
+const addReply = async (commentId, event) => {
     if (event && event.key === 'Enter' && event.shiftKey) return;
-
     const comment = comments.value.find(c => c.id === commentId);
     if (!comment || !comment.replyText?.trim()) return;
 
-    if (!comment.replies) {
-        comment.replies = [];
+    try {
+        await commentApi.create(props.pageId, {
+            pageId: Number(props.pageId),
+            content: comment.replyText,
+            parentId: commentId,
+        });
+        comment.showReply = false;
+        comment.replyText = '';
+        await loadComments();
+    } catch (e) {
+        console.error('回复评论失败:', e);
     }
-
-    comment.replies.push({
-        id: Date.now(),
-        author: 'Current User',
-        time: 'Just now',
-        content: comment.replyText,
-        color: '#0052cc'
-    });
-
-    comment.showReply = false;
-    comment.replyText = '';
 };
 </script>
 
@@ -355,17 +339,6 @@ const addReply = (commentId, event) => {
     gap: 4px;
 }
 
-.toolbar-btn {
-    border: none !important;
-    background: transparent !important;
-    color: #6b778c !important;
-    padding: 4px 8px !important;
-}
-
-.toolbar-btn:hover {
-    background-color: rgba(9, 30, 66, 0.08) !important;
-}
-
 .spacer {
     flex: 1;
 }
@@ -439,14 +412,6 @@ const addReply = (commentId, event) => {
     font-size: 14px;
     line-height: 1.6;
     color: #172b4d;
-}
-
-.comment-body :deep(.mention) {
-    background-color: #deebff;
-    color: #0052cc;
-    border-radius: 3px;
-    padding: 0 4px;
-    font-weight: 500;
 }
 
 /* Replies */

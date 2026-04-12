@@ -59,7 +59,7 @@
             <div class="page-content" v-html="pageContent"></div>
 
             <!-- Comments Section -->
-            <PageComments :userInitial="userInitial" />
+            <PageComments :userInitial="userInitial" :pageId="pageId" />
         </div>
     </div>
 </template>

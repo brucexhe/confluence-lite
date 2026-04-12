@@ -113,7 +113,7 @@ const onSelect = (keys, info) => {
 :deep(.confluence-tree .ant-tree-node-content-wrapper) {
   border-radius: 3px;
   transition: background-color 0.1s;
-  padding: 2px 6px;
+  padding: 2px 2px;
   display: flex !important;
   align-items: center;
   overflow: hidden;
@@ -152,7 +152,7 @@ const onSelect = (keys, info) => {
 .node-title {
   font-size: 14px;
   line-height: 24px;
-  margin-left: 4px;
+  margin-left: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

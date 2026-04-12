@@ -102,7 +102,7 @@
                     <a-input-search placeholder="Search..." class="confluence-search" style="width: 200px" />
                 </div>
                 <button class="create-btn" @click="createPage">Create</button>
-                <div class="user-profile" @click="handleLogout" title="Click to logout">
+                <a-dropdown :trigger="['click']">
                     <a-avatar
                         style="
                             background-color: #ffffff;
@@ -113,10 +113,31 @@
                             line-height: 28px;
                             font-size: 14px;
                         "
+                        @click.prevent
                     >
                         {{ userInitials }}
                     </a-avatar>
-                </div>
+                    <template #overlay>
+                        <a-menu style="min-width: 120px; padding: 4px 0;">
+                            <a-menu-item @click="navigateTo('/spaces')">
+                                <span style="font-size: 14px; color: #172b4d;">空间列表</span>
+                            </a-menu-item>
+                            <a-menu-item @click="navigateTo('/recent')">
+                                <span style="font-size: 14px; color: #172b4d;">最近浏览</span>
+                            </a-menu-item>
+                            <a-menu-item @click="navigateTo('/profile')">
+                                <span style="font-size: 14px; color: #172b4d;">用户信息</span>
+                            </a-menu-item>
+                            <a-menu-item @click="navigateTo('/settings')">
+                                <span style="font-size: 14px; color: #172b4d;">系统设置</span>
+                            </a-menu-item>
+                            <a-menu-divider />
+                            <a-menu-item @click="handleLogout">
+                                <span style="font-size: 14px; color: #ef4444;">退出登录</span>
+                            </a-menu-item>
+                        </a-menu>
+                    </template>
+                </a-dropdown>
             </div>
         </header>
 
@@ -230,6 +251,10 @@ const userInitials = computed(() => {
 
 const handleLogout = () => {
     authStore.logout();
+};
+
+const navigateTo = (path) => {
+    router.push(path);
 };
 
 const createPage = () => {
@@ -393,13 +418,6 @@ onUnmounted(() => {
 
 .create-btn:hover {
     background-color: #0065ff;
-}
-
-.user-profile {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    margin-left: 0.25rem;
 }
 
 /* Main Container */

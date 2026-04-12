@@ -158,6 +158,21 @@ export const pageApi = {
   /** 删除 */
   remove(id) {
     return request(`/api/page/${id}`, { method: 'DELETE' })
+  },
+
+  /** 获取页面版本列表 */
+  getVersions(pageId) {
+    return request(`/api/page/${pageId}/versions`)
+  },
+
+  /** 获取单个版本详情 */
+  getVersion(versionId) {
+    return request(`/api/page/versions/${versionId}`)
+  },
+
+  /** 删除版本 */
+  deleteVersion(versionId) {
+    return request(`/api/page/versions/${versionId}`, { method: 'DELETE' })
   }
 }
 

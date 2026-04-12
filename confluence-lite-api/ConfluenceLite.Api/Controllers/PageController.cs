@@ -177,6 +177,58 @@ public class PageController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(true, "页面已删除"));
     }
 
+    // ========== 版本历史接口 ==========
+
+    /// <summary>
+    /// 获取页面的版本列表
+    /// </summary>
+    [HttpGet("{pageId}/versions")]
+    [ProducesResponseType(typeof(ApiResponse<List<PageVersionListDto>>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPageVersions(long pageId)
+    {
+        var versions = await _pageService.GetPageVersionsAsync(pageId);
+        return Ok(ApiResponse<List<PageVersionListDto>>.Ok(versions));
+    }
+
+    /// <summary>
+    /// 获取单个版本详情
+    /// </summary>
+    [HttpGet("versions/{versionId}")]
+    [ProducesResponseType(typeof(ApiResponse<PageVersionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<PageVersionDto>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPageVersion(long versionId)
+    {
+        var version = await _pageService.GetPageVersionAsync(versionId);
+        if (version == null)
+        {
+            return NotFound(ApiResponse<PageVersionDto>.Fail("版本不存在"));
+        }
+        return Ok(ApiResponse<PageVersionDto>.Ok(version));
+    }
+
+    /// <summary>
+    /// 删除页面版本
+    /// </summary>
+    [HttpDelete("versions/{versionId}")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> DeletePageVersion(long versionId)
+    {
+        var currentUser = HttpContext.Items["CurrentUser"] as CurrentUser;
+        if (currentUser == null || !currentUser.IsAuthenticated)
+        {
+            return Unauthorized(ApiResponse<bool>.Fail("未授权，请先登录"));
+        }
+
+        var (success, error) = await _pageService.DeletePageVersionAsync(versionId);
+        if (!success || error != null)
+        {
+            return NotFound(ApiResponse<bool>.Fail(error ?? "删除版本失败"));
+        }
+        return Ok(ApiResponse<bool>.Ok(true, "版本已删除"));
+    }
+
     // ========== 评论相关接口 ==========
 
     /// <summary>

@@ -21,6 +21,9 @@
         </div>
 
         <div class="editor-actions">
+            <span v-if="autoSaveStatus === 'saving'" class="auto-save-hint">保存中...</span>
+            <span v-else-if="autoSaveStatus === 'saved'" class="auto-save-hint">已自动保存</span>
+            <div class="spacer"></div>
             <a-button type="primary" @click="savePage" style="margin-right: 8px; background-color: #0052cc">
                 {{ isCreating ? 'Create' : 'Update' }}
             </a-button>
@@ -30,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Editor from "@tinymce/tinymce-vue";
 import { pageApi } from "../../api";
@@ -69,6 +72,40 @@ const parentId = computed(() => route.query.parentId || null);
 // 页面数据
 const pageTitle = ref("");
 const pageContent = ref("");
+
+// 自动保存
+const autoSaveStatus = ref(''); // '', 'saving', 'saved'
+let autoSaveTimer = null;
+let lastSavedTitle = '';
+let lastSavedContent = '';
+
+function startAutoSave() {
+    stopAutoSave();
+    if (isCreating.value) return;
+    autoSaveTimer = setInterval(async () => {
+        if (isCreating.value) return;
+        if (pageTitle.value === lastSavedTitle && pageContent.value === lastSavedContent) return;
+        try {
+            autoSaveStatus.value = 'saving';
+            await pageApi.update(pageId.value, {
+                title: pageTitle.value,
+                content: pageContent.value,
+            });
+            lastSavedTitle = pageTitle.value;
+            lastSavedContent = pageContent.value;
+            autoSaveStatus.value = 'saved';
+        } catch {
+            autoSaveStatus.value = '';
+        }
+    }, 30000);
+}
+
+function stopAutoSave() {
+    if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+        autoSaveTimer = null;
+    }
+}
 
 // 面包屑
 const spaceName = computed(() => {
@@ -128,6 +165,8 @@ const loadPageData = async () => {
         if (data) {
             pageTitle.value = data.title || "";
             pageContent.value = data.content || "";
+            lastSavedTitle = pageTitle.value;
+            lastSavedContent = pageContent.value;
         }
     } catch (e) {
         console.error("加载页面失败:", e);
@@ -135,8 +174,13 @@ const loadPageData = async () => {
 };
 
 onMounted(async () => {
-    loadPageData();
+    await loadPageData();
     loadPageTree();
+    startAutoSave();
+});
+
+onUnmounted(() => {
+    stopAutoSave();
 });
 
 const editorConfig = computed(() => ({
@@ -328,7 +372,13 @@ const cancelEdit = () => {
     border-top: 1px solid #dfe1e6;
     margin-top: auto;
     display: flex;
+    align-items: center;
     justify-content: flex-end;
+}
+
+.auto-save-hint {
+    font-size: 12px;
+    color: #6b778c;
 }
 
 /* Base TinyMCE customisation for Classic mode natively sticky */

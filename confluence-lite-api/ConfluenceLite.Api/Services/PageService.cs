@@ -269,6 +269,108 @@ public class PageService
         }
 
         await _db.Db.Deleteable<Page>().In(pageId).ExecuteCommandAsync();
+        // 删除页面的所有版本
+        await _db.Db.Deleteable<PageVersion>().Where(v => v.PageId == pageId).ExecuteCommandAsync();
+    }
+
+    /// <summary>
+    /// 保存页面版本快照
+    /// </summary>
+    private async Task SaveVersionAsync(long pageId, Page page, long editorId)
+    {
+        // 获取当前最大版本号
+        var maxVersion = await _db.Db.Queryable<PageVersion>()
+            .Where(v => v.PageId == pageId)
+            .MaxAsync<int?>(v => v.VersionNumber);
+
+        var version = new PageVersion
+        {
+            PageId = pageId,
+            VersionNumber = (maxVersion ?? 0) + 1,
+            Title = page.Title,
+            Content = page.Content,
+            EditorId = editorId,
+            CreatedAt = DateTime.Now
+        };
+
+        await _db.Db.Insertable(version).ExecuteCommandAsync();
+    }
+
+    /// <summary>
+    /// 获取页面版本列表
+    /// </summary>
+    public async Task<List<PageVersionListDto>> GetPageVersionsAsync(long pageId)
+    {
+        var versions = await _db.Db.Queryable<PageVersion>()
+            .Where(v => v.PageId == pageId)
+            .OrderByDescending(v => v.VersionNumber)
+            .ToListAsync();
+
+        var dtos = new List<PageVersionListDto>();
+        foreach (var v in versions)
+        {
+            var editor = await _db.Users.GetByIdAsync(v.EditorId);
+            dtos.Add(new PageVersionListDto
+            {
+                Id = v.Id,
+                PageId = v.PageId,
+                VersionNumber = v.VersionNumber,
+                Title = v.Title,
+                ChangeComment = v.ChangeComment,
+                EditorId = v.EditorId,
+                CreatedAt = v.CreatedAt,
+                Editor = editor == null ? null : new UserSummaryDto
+                {
+                    Id = editor.Id,
+                    Username = editor.Username,
+                    DisplayName = editor.DisplayName
+                }
+            });
+        }
+        return dtos;
+    }
+
+    /// <summary>
+    /// 获取单个版本详情
+    /// </summary>
+    public async Task<PageVersionDto?> GetPageVersionAsync(long versionId)
+    {
+        var v = await _db.PageVersions.GetByIdAsync(versionId);
+        if (v == null) return null;
+
+        var editor = await _db.Users.GetByIdAsync(v.EditorId);
+        return new PageVersionDto
+        {
+            Id = v.Id,
+            PageId = v.PageId,
+            VersionNumber = v.VersionNumber,
+            Title = v.Title,
+            Content = v.Content,
+            ChangeComment = v.ChangeComment,
+            EditorId = v.EditorId,
+            CreatedAt = v.CreatedAt,
+            Editor = editor == null ? null : new UserSummaryDto
+            {
+                Id = editor.Id,
+                Username = editor.Username,
+                DisplayName = editor.DisplayName
+            }
+        };
+    }
+
+    /// <summary>
+    /// 删除页面版本
+    /// </summary>
+    public async Task<(bool success, string? error)> DeletePageVersionAsync(long versionId)
+    {
+        var version = await _db.PageVersions.GetByIdAsync(versionId);
+        if (version == null)
+        {
+            return (false, "版本不存在");
+        }
+
+        await _db.PageVersions.DeleteAsync(version);
+        return (true, null);
     }
 
     private async Task<PageDto> MapToDtoAsync(Page page)

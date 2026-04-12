@@ -65,41 +65,11 @@
         </div>
 
         <!-- Version History Drawer -->
-        <a-drawer
+        <PageVersionHistory
             v-model:open="historyVisible"
-            title="版本历史"
-            width="520"
-            :body-style="{ padding: '0' }"
-        >
-            <a-spin v-if="versionLoading" style="display:block;padding:2rem;text-align:center;" />
-            <template v-else-if="viewingVersion">
-                <div class="version-detail-header">
-                    <a-button type="link" size="small" @click="viewingVersion = null">← 返回列表</a-button>
-                    <span style="font-weight:500;">v{{ viewingVersion.versionNumber }} {{ viewingVersion.title }}</span>
-                </div>
-                <div style="padding: 0 16px 16px; font-size: 12px; color: #6b778c;">
-                    {{ viewingVersion.editor?.displayName || viewingVersion.editor?.username || 'Unknown' }}
-                    · {{ formatTime(viewingVersion.createdAt) }}
-                </div>
-                <div class="version-content" v-html="viewingVersion.content"></div>
-            </template>
-            <template v-else>
-                <div v-if="versions.length === 0" style="padding:2rem;text-align:center;color:#6b778c;">暂无历史版本</div>
-                <div v-for="v in versions" :key="v.id" class="version-item">
-                    <div class="version-item-main" @click="viewVersion(v.id)">
-                        <span class="version-number">v{{ v.versionNumber }}</span>
-                        <div class="version-item-info">
-                            <span class="version-title">{{ v.title }}</span>
-                            <span class="version-meta">
-                                {{ v.editor?.displayName || v.editor?.username || 'Unknown' }}
-                                · {{ formatTime(v.createdAt) }}
-                            </span>
-                        </div>
-                    </div>
-                    <a-button type="text" size="small" danger @click="deleteVersion(v.id)">删除</a-button>
-                </div>
-            </template>
-        </a-drawer>
+            :pageId="pageId"
+            @restored="loadPageData"
+        />
     </div>
 </template>
 
@@ -107,6 +77,7 @@
 import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PageComments from "../../components/PageComments.vue";
+import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import { pageApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 
@@ -289,47 +260,12 @@ const handleDelete = async () => {
 };
 
 const handleShare = () => console.log('Share clicked - TODO');
-const handleViewHistory = () => { historyVisible.value = true; loadVersions(); };
+const handleViewHistory = () => { historyVisible.value = true };
 const handleWatch = () => console.log('Watch Page clicked - TODO');
 const handleMove = () => console.log('Move Page clicked - TODO');
 
 // 版本历史
 const historyVisible = ref(false);
-const versions = ref([]);
-const versionLoading = ref(false);
-const viewingVersion = ref(null); // 正在查看的版本内容
-
-async function loadVersions() {
-    versionLoading.value = true;
-    viewingVersion.value = null;
-    try {
-        const data = await pageApi.getVersions(pageId.value);
-        versions.value = data || [];
-    } catch (e) {
-        console.error('加载版本历史失败:', e);
-    } finally {
-        versionLoading.value = false;
-    }
-}
-
-async function viewVersion(versionId) {
-    try {
-        const data = await pageApi.getVersion(versionId);
-        viewingVersion.value = data;
-    } catch (e) {
-        console.error('加载版本详情失败:', e);
-    }
-}
-
-async function deleteVersion(versionId) {
-    if (!confirm('确定要删除此版本吗？')) return;
-    try {
-        await pageApi.deleteVersion(versionId);
-        await loadVersions();
-    } catch (e) {
-        console.error('删除版本失败:', e);
-    }
-}
 </script>
 
 <style scoped>
@@ -538,72 +474,5 @@ async function deleteVersion(versionId) {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-/* Version History Drawer */
-.version-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.version-item:last-child {
-    border-bottom: none;
-}
-
-.version-item-main {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    flex: 1;
-}
-
-.version-item-main:hover .version-title {
-    color: #0052cc;
-}
-
-.version-number {
-    font-size: 12px;
-    font-weight: 600;
-    color: #0052cc;
-    background: #deebff;
-    padding: 2px 8px;
-    border-radius: 3px;
-    flex-shrink: 0;
-}
-
-.version-item-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.version-title {
-    font-size: 14px;
-    color: #172b4d;
-    font-weight: 500;
-}
-
-.version-meta {
-    font-size: 12px;
-    color: #6b778c;
-}
-
-.version-detail-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.version-content {
-    padding: 16px;
-    font-size: 14px;
-    line-height: 1.714;
-    color: #172b4d;
 }
 </style>

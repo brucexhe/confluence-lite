@@ -92,28 +92,4 @@ public class Page
     /// </summary>
     [SugarColumn(IsNullable = false)]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// 导航属性 - 所属工作空间
-    /// </summary>
-    [SugarColumn(IsIgnore = true)]
-    public Workspace? Workspace { get; set; }
-
-    /// <summary>
-    /// 导航属性 - 创建者
-    /// </summary>
-    [SugarColumn(IsIgnore = true)]
-    public User? Creator { get; set; }
-
-    /// <summary>
-    /// 导航属性 - 父页面
-    /// </summary>
-    [SugarColumn(IsIgnore = true)]
-    public Page? Parent { get; set; }
-
-    /// <summary>
-    /// 导航属性 - 子页面列表
-    /// </summary>
-    [SugarColumn(IsIgnore = true)]
-    public List<Page>? Children { get; set; }
 }

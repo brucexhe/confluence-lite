@@ -228,6 +228,9 @@ public class SetupService
             return (null, $"创建安装标记文件失败: {ex.Message}");
         }
 
+        // 10. 更新运行时数据库连接，后续请求无需重启
+        _db.UpdateConnection(connectionString);
+
         // 10. 生成 JWT Token
         var token = _tokenService.GenerateToken(adminUserId, request.AdminUsername);
 

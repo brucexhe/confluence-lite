@@ -9,16 +9,27 @@ namespace ConfluenceLite.Api.Data;
 public class AppDbContext
 {
     private ISqlSugarClient _db;
+    private readonly ConnectionConfig _config;
 
-    public AppDbContext(ISqlSugarClient db)
+    public AppDbContext(ISqlSugarClient db, ConnectionConfig config)
     {
         _db = db;
+        _config = config;
     }
 
     /// <summary>
     /// 获取数据库客户端
     /// </summary>
     public ISqlSugarClient Db => _db;
+
+    /// <summary>
+    /// 更新连接字符串并重建客户端（安装向导完成后调用）
+    /// </summary>
+    public void UpdateConnection(string connectionString)
+    {
+        _config.ConnectionString = connectionString;
+        _db = new SqlSugarClient(_config);
+    }
 
     /// <summary>
     /// 创建新的数据库客户端 (安装向导使用，连接到用户配置的数据库)

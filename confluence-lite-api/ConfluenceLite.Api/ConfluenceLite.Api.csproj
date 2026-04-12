@@ -7,9 +7,12 @@
     <PublishAot>true</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
-    <EnableAotRelease>true</EnableAotRelease>
     <StripSymbols>true</StripSymbols>
   </PropertyGroup>
+
+  <ItemGroup>
+    <TrimmerRootDescriptor Include="rd.xml" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- Core packages for Native AOT -->

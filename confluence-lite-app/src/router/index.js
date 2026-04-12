@@ -4,6 +4,7 @@ import MainLayout from '../layouts/MainLayout.vue'
 import Login from '../views/Login.vue'
 import Setup from '../views/Setup.vue'
 import WorkspaceHome from '../views/Workspace/Index.vue'
+import { setupApi, workspaceApi } from '../api'
 
 const ErrorPage = {
   render() {
@@ -90,10 +91,8 @@ let _apiAvailable = true
 async function checkInstalled() {
   if (_installChecked) return { installed: _isInstalled, apiAvailable: _apiAvailable }
   try {
-    const res = await fetch('/api/setup/status')
-    if (!res.ok) throw new Error('API error')
-    const data = await res.json()
-    _isInstalled = data.data?.installed === true
+    const data = await setupApi.getStatus()
+    _isInstalled = data?.installed === true
     _apiAvailable = true
     _installChecked = true
     return { installed: _isInstalled, apiAvailable: true }
@@ -145,12 +144,9 @@ router.beforeEach(async (to, from, next) => {
     } else {
       // No spaces → try fetch from API
       try {
-        const res = await fetch('/api/workspace/my', {
-          headers: { 'Authorization': `Bearer ${isAuthenticated}` }
-        })
-        const data = await res.json()
-        if (data.success && data.data && data.data.length > 0) {
-          next({ path: `/${data.data[0].key}` })
+        const data = await workspaceApi.getMy()
+        if (data && data.length > 0) {
+          next({ path: `/${data[0].key}` })
         } else {
           next({ name: 'login' })
         }

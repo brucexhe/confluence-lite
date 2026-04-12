@@ -143,8 +143,8 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
+import { setupApi } from '../api'
 
-const API_BASE = ''
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -196,14 +196,9 @@ async function testConnection() {
   testing.value = true
   testResult.value = null
   try {
-    const res = await fetch(`${API_BASE}/api/setup/test-connection`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dbConfig.value)
-    })
-    const data = await res.json()
-    testResult.value = data.data
-    connectionTested.value = data.data?.success === true
+    const data = await setupApi.testConnection(dbConfig.value)
+    testResult.value = data
+    connectionTested.value = data?.success === true
   } catch (e) {
     testResult.value = { success: false, error: `请求失败: ${e.message}` }
     connectionTested.value = false
@@ -242,23 +237,18 @@ async function runInstall() {
 
   try {
     installStatus.value = '正在初始化数据库...'
-    const res = await fetch(`${API_BASE}/api/setup/install`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    const data = await res.json()
+    const data = await setupApi.install(payload)
 
-    if (data.success && data.data) {
+    if (data) {
       installStatus.value = '安装完成！'
-      installResult.value = data.data
+      installResult.value = data
       installing.value = false
     } else {
-      installError.value = data.message || '安装失败'
+      installError.value = '安装失败'
       installing.value = false
     }
   } catch (e) {
-    installError.value = `请求失败: ${e.message}`
+    installError.value = e.message || '安装失败'
     installing.value = false
   }
 }
@@ -302,9 +292,12 @@ function goToHome() {
   background: white;
   border-radius: 12px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-  padding: 40px;
+  padding: 30px;
   position: relative;
   z-index: 1;
+}
+.setup-card :deep(.ant-form-item) {
+  margin-bottom: 12px;
 }
 
 .setup-header {

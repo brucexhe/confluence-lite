@@ -260,7 +260,7 @@ const handleMove = () => console.log('Move Page clicked - TODO');
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 2rem 0;
+    padding: 10px 40px 0;
     margin-bottom: 1rem;
 }
 
@@ -306,7 +306,7 @@ const handleMove = () => console.log('Move Page clicked - TODO');
 }
 
 .page-view { 
-    padding: 10px 2rem 0;
+    padding: 0px 40px 0;
     animation: fadeIn 0.3s ease-in-out;
 }
 
@@ -434,7 +434,7 @@ const handleMove = () => console.log('Move Page clicked - TODO');
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
     border-bottom: 5px solid #97a0af;
-    opacity: 0.5;
+    opacity: 0;
 }
 
 :deep(.page-content table th[data-sortable]:hover::after) {

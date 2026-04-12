@@ -155,6 +155,8 @@ const editorConfig = computed(() => ({
         "table image | removeformat",
     table_header_type: "section",
     table_use_colgroups: false,
+    table_default_styles: {},
+    table_default_attributes: {},
     setup(editor) {
         editor.on('ExecCommand', (e) => {
             if (e.command === 'mceInsertContent' || e.command === 'mceTableInsert') {
@@ -203,7 +205,7 @@ const editorConfig = computed(() => ({
         input.click();
     },
     content_style: `
-body { margin: 0 !important; padding:5px 2rem 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; }
+body { margin: 0 !important; padding:5px 40px 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; }
 table { border-collapse: collapse !important; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; }
 table th, table td { border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; }
 table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; }
@@ -270,7 +272,7 @@ const cancelEdit = () => {
 }
 
 .editor-breadcrumb {
-    padding: 10px 2rem 0;
+    padding: 10px 40px 0;
     max-width: 900px;
 }
 
@@ -292,9 +294,8 @@ const cancelEdit = () => {
     max-width: 900px;
 }
 
-#teleport-title-dest {
-    max-width: 900px;
-    padding: 15px 2rem 0;
+#teleport-title-dest { 
+    padding: 15px 40px 0;
 }
 
 .editor-title-input {

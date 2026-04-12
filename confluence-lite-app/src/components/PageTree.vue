@@ -6,7 +6,7 @@
       v-else
       class="confluence-tree"
       :tree-data="treeData"
-      :show-icon="true"
+      :show-icon="false"
       blockNode
       v-model:selectedKeys="selectedKeys"
       v-model:expandedKeys="expandedKeys"

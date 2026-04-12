@@ -207,12 +207,19 @@ const handleMove = () => console.log('Move Page clicked - TODO');
     font-size: 14px;
 }
 
-.page-header :deep(.ant-breadcrumb-link) {
-    color: #42526e;
+.page-header :deep(.ant-breadcrumb-link),
+.page-header :deep(.ant-breadcrumb-separator) {
+    color: #0052cc;
 }
 
 .page-header :deep(.ant-breadcrumb-link:hover) {
-    color: #0052cc;
+    text-decoration: underline;
+    background: none;
+}
+
+.page-header :deep(.ant-breadcrumb > span:last-child .ant-breadcrumb-link) {
+    color: #172b4d;
+    font-weight: 500;
 }
 
 .page-actions {

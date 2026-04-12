@@ -1,12 +1,24 @@
 <template>
     <div class="editor-container">
-        <!-- Title Input -->
-        <div id="teleport-title-dest">
-            <input type="text" class="editor-title-input" v-model="pageTitle" placeholder="Page Title" />
-        </div>
-
         <editor v-if="editorReady" v-model="pageContent" :init="editorConfig" api-key="no-api-key" @init="onEditorInit" />
         <div v-else class="editor-loading">Loading editor...</div>
+
+        <!-- Breadcrumb + Title: will be teleported inside TinyMCE after toolbar -->
+        <div id="teleport-below-toolbar">
+            <div class="editor-breadcrumb">
+                <a-breadcrumb>
+                    <a-breadcrumb-item>
+                        <router-link :to="`/${$route.params.spaceKey}`">{{ spaceName }}</router-link>
+                    </a-breadcrumb-item>
+                    <a-breadcrumb-item v-for="crumb in parentCrumbs" :key="crumb.id">
+                        <router-link :to="`/${$route.params.spaceKey}/page/${crumb.id}`">{{ crumb.title }}</router-link>
+                    </a-breadcrumb-item>
+                </a-breadcrumb>
+            </div>
+            <div id="teleport-title-dest">
+                <input type="text" class="editor-title-input" v-model="pageTitle" placeholder="Page Title" />
+            </div>
+        </div>
 
         <div class="editor-actions">
             <a-button type="primary" @click="savePage" style="margin-right: 8px; background-color: #0052cc">
@@ -32,6 +44,54 @@ const parentId = computed(() => route.query.parentId || null);
 // 页面数据
 const pageTitle = ref("");
 const pageContent = ref("");
+
+// 面包屑
+const spaceName = computed(() => {
+    const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
+    const key = route.params.spaceKey
+    const space = spaces.find(s => s.key === key)
+    return space?.name || key || ''
+});
+
+const pageTreeMap = ref(new Map())
+const parentCrumbs = computed(() => {
+    // 编辑已有页面：从当前页面往上找
+    // 创建子页面：从父页面往上找
+    const targetId = isCreating.value
+        ? (parentId.value ? Number(parentId.value) : null)
+        : Number(pageId.value)
+    if (!targetId) return []
+    const crumbs = []
+    let currentId = targetId
+    const visited = new Set()
+    while (currentId) {
+        const node = pageTreeMap.value.get(currentId)
+        if (!node || visited.has(currentId)) break
+        visited.add(currentId)
+        crumbs.unshift({ id: node.id, title: node.title })
+        currentId = node.parentId
+    }
+    return crumbs
+})
+
+async function loadPageTree() {
+    const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
+    const key = route.params.spaceKey
+    const space = spaces.find(s => s.key === key)
+    if (!space?.id) return
+    try {
+        const tree = await pageApi.getTree(space.id)
+        const map = new Map()
+        function walk(nodes) {
+            for (const node of nodes) {
+                map.set(node.id, node)
+                if (node.children?.length) walk(node.children)
+            }
+        }
+        walk(tree || [])
+        pageTreeMap.value = map
+    } catch { /* ignore */ }
+}
 
 // 懒加载 TinyMCE
 const loadTinyMCE = async () => {
@@ -87,6 +147,7 @@ const loadPageData = async () => {
 
 onMounted(async () => {
     loadPageData();
+    loadPageTree();
     loadTinyMCE().then(({ tinymce: tm, contentCss: css }) => {
         tinymce.value = tm;
         contentCss.value = css;
@@ -141,10 +202,10 @@ const editorConfig = computed(() => ({
 
 const onEditorInit = () => {
     setTimeout(() => {
-        const titleEl = document.querySelector("#teleport-title-dest");
+        const block = document.querySelector("#teleport-below-toolbar");
         const headerEl = document.querySelector(".tox-editor-header");
-        if (titleEl && headerEl) {
-            headerEl.after(titleEl);
+        if (block && headerEl) {
+            headerEl.after(block);
         }
     }, 10);
 };
@@ -196,6 +257,29 @@ const cancelEdit = () => {
     display: flex;
     flex-direction: column;
     min-height: calc(100vh - 40px);
+}
+
+.editor-breadcrumb {
+    padding: 10px 2rem 0;
+    max-width: 900px;
+}
+
+.editor-breadcrumb :deep(.ant-breadcrumb) {
+    font-size: 14px;
+}
+
+.editor-breadcrumb :deep(.ant-breadcrumb-link),
+.editor-breadcrumb :deep(.ant-breadcrumb-separator) {
+    color: #0052cc;
+}
+
+.editor-breadcrumb :deep(.ant-breadcrumb-link:hover) {
+    text-decoration: underline;
+    background: none;
+}
+
+#teleport-below-toolbar {
+    max-width: 900px;
 }
 
 #teleport-title-dest {

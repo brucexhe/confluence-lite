@@ -54,6 +54,18 @@ a:hover {
   color: var(--color-primary-hover);
 }
 
+/* Ant Breadcrumb overrides */
+.ant-breadcrumb a {
+  background: none !important;
+  color: #0052CC;
+}
+
+.ant-breadcrumb a:hover {
+  background: none !important;
+  color: #0052CC;
+  text-decoration: underline;
+}
+
 button {
   font-family: inherit;
   cursor: pointer;

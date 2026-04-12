@@ -176,53 +176,8 @@ onMounted(async () => {
      
 });
 
-watch(pageId, () => {
-    loadPageData();
-    loadPageTree();
-});
+  
  
-
-const enterEditMode = () => {
-    router.push({ query: { edit: 'true' } });
-};
-
-const savePage = async () => {
-    if (!pageTitle.value.trim()) {
-        alert('请输入页面标题');
-        return;
-    }
-    try {
-        if (isCreating.value) {
-            const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
-            const space = spaces.find(s => s.key === route.params.spaceKey)
-            const data = await pageApi.create({
-                title: pageTitle.value,
-                content: pageContent.value,
-                workspaceId: space?.id,
-                status: 1,
-            });
-            // 创建成功后跳转到新页面
-            router.replace(`/${route.params.spaceKey}/page/${data.id}`);
-        } else {
-            await pageApi.update(pageId.value, {
-                title: pageTitle.value,
-                content: pageContent.value,
-            });
-            cancelEdit();
-            loadPageData();
-        }
-    } catch (e) {
-        console.error("保存页面失败:", e);
-    }
-};
-
-const cancelEdit = () => {
-    if (isCreating.value) {
-        router.push(`/${route.params.spaceKey}`);
-    } else {
-        router.push({ path: route.path });
-    }
-};
 
 const handleDelete = async () => {
     if (!confirm('确定要删除此页面吗？')) return;

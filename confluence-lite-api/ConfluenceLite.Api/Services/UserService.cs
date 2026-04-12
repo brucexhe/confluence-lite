@@ -2,6 +2,7 @@ using SqlSugar;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Models;
 using ConfluenceLite.Api.DTOs;
+using Npgsql;
 
 namespace ConfluenceLite.Api.Services;
 
@@ -11,12 +12,10 @@ namespace ConfluenceLite.Api.Services;
 public class UserService
 {
     private readonly AppDbContext _db;
-    private readonly ISqlSugarClient _client;
 
     public UserService(AppDbContext db)
     {
         _db = db;
-        _client = db.Db;
     }
 
     /// <summary>
@@ -24,7 +23,7 @@ public class UserService
     /// </summary>
     public async Task<(UserDto? user, string? error)> LoginAsync(LoginRequest request)
     {
-        var user = await _client.Queryable<User>()
+        var user = await _db.Db.Queryable<User>()
             .Where(u => u.Username == request.Username && u.Status == 1)
             .FirstAsync();
 
@@ -47,7 +46,7 @@ public class UserService
     public async Task<(UserDto? user, string? error)> CreateUserAsync(CreateUserRequest request)
     {
         // 检查用户名是否存在
-        var exists = await _client.Queryable<User>()
+        var exists = await _db.Db.Queryable<User>()
             .Where(u => u.Username == request.Username)
             .AnyAsync();
 
@@ -59,7 +58,7 @@ public class UserService
         // 如果指定了邮箱，检查邮箱是否存在
         if (!string.IsNullOrEmpty(request.Email))
         {
-            var emailExists = await _client.Queryable<User>()
+            var emailExists = await _db.Db.Queryable<User>()
                 .Where(u => u.Email == request.Email)
                 .AnyAsync();
 
@@ -80,7 +79,15 @@ public class UserService
             UpdatedAt = DateTime.UtcNow
         };
 
-        var userId = await _client.Insertable(user).ExecuteReturnIdentityAsync();
+        int userId;
+        try
+        {
+            userId = await _db.Db.Insertable(user).ExecuteReturnIdentityAsync();
+        }
+        catch (NpgsqlException ex) when (ex.SqlState == "23505")
+        {
+            return (null, "用户名已存在");
+        }
         user.Id = userId;
 
         return (MapToDto(user), null);
@@ -91,7 +98,7 @@ public class UserService
     /// </summary>
     public async Task<UserDto?> GetUserByIdAsync(long id)
     {
-        var user = await _client.Queryable<User>().InSingleAsync(id);
+        var user = await _db.Users.GetByIdAsync(id);
         return user == null ? null : MapToDto(user);
     }
 
@@ -100,9 +107,9 @@ public class UserService
     /// </summary>
     public async Task<PagedResponse<UserDto>> GetUserListAsync(PagedRequest request)
     {
-        var total = await _client.Queryable<User>().CountAsync();
+        var total = await _db.Db.Queryable<User>().CountAsync();
 
-        var users = await _client.Queryable<User>()
+        var users = await _db.Db.Queryable<User>()
             .OrderBy(u => u.Id)
             .Skip(request.Skip)
             .Take(request.PageSize)
@@ -122,7 +129,7 @@ public class UserService
     /// </summary>
     public async Task<(UserDto? user, string? error)> UpdateUserAsync(long id, UpdateUserRequest request)
     {
-        var user = await _client.Queryable<User>().InSingleAsync(id);
+        var user = await _db.Users.GetByIdAsync(id);
         if (user == null)
         {
             return (null, "用户不存在");
@@ -131,7 +138,7 @@ public class UserService
         // 如果更新邮箱，检查是否重复
         if (!string.IsNullOrEmpty(request.Email) && request.Email != user.Email)
         {
-            var emailExists = await _client.Queryable<User>()
+            var emailExists = await _db.Db.Queryable<User>()
                 .Where(u => u.Email == request.Email && u.Id != id)
                 .AnyAsync();
 
@@ -154,7 +161,7 @@ public class UserService
 
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _client.Updateable(user).ExecuteCommandAsync();
+        await _db.Users.UpdateAsync(user);
 
         return (MapToDto(user), null);
     }
@@ -164,7 +171,7 @@ public class UserService
     /// </summary>
     public async Task<(bool success, string? error)> ChangePasswordAsync(long userId, ChangePasswordRequest request)
     {
-        var user = await _client.Queryable<User>().InSingleAsync(userId);
+        var user = await _db.Users.GetByIdAsync(userId);
         if (user == null)
         {
             return (false, "用户不存在");
@@ -178,7 +185,7 @@ public class UserService
         user.PasswordHash = PasswordService.HashPassword(request.NewPassword);
         user.UpdatedAt = DateTime.UtcNow;
 
-        await _client.Updateable(user).ExecuteCommandAsync();
+        await _db.Users.UpdateAsync(user);
 
         return (true, null);
     }
@@ -188,17 +195,17 @@ public class UserService
     /// </summary>
     public async Task<(bool success, string? error)> DeleteUserAsync(long id)
     {
-        var user = await _client.Queryable<User>().InSingleAsync(id);
+        var user = await _db.Users.GetByIdAsync(id);
         if (user == null)
         {
             return (false, "用户不存在");
         }
 
-        await _client.Deleteable<User>().In(id).ExecuteCommandAsync();
+        await _db.Users.DeleteAsync(user);
         return (true, null);
     }
 
-    private UserDto MapToDto(User user)
+    private static UserDto MapToDto(User user)
     {
         return new UserDto
         {

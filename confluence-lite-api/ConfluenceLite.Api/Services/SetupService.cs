@@ -120,13 +120,13 @@ public class SetupService
             return (null, $"保存配置失败: {ex.Message}");
         }
 
-        // 4. 重新配置数据库连接
-        _db.Reconfigure(connectionString);
+        // 4. 创建新的数据库连接执行安装
+        var installDb = AppDbContext.CreateClient(connectionString);
 
         // 5. 初始化数据库表
         try
         {
-            DatabaseInitializer.Initialize(_db.Db);
+            DatabaseInitializer.Initialize(installDb);
         }
         catch (Exception ex)
         {
@@ -151,8 +151,12 @@ public class SetupService
                 Locale = "zh-CN"
             };
 
-            adminUserId = await _db.Db.Insertable(adminUser)
+            adminUserId = await installDb.Insertable(adminUser)
                 .ExecuteReturnBigIdentityAsync();
+        }
+        catch (NpgsqlException ex) when (ex.SqlState == "23505")
+        {
+            return (null, $"用户名 \"{request.AdminUsername}\" 已存在，请更换用户名后重试");
         }
         catch (Exception ex)
         {
@@ -173,8 +177,12 @@ public class SetupService
                 Color = "#0049b0"
             };
 
-            workspaceId = await _db.Db.Insertable(workspace)
+            workspaceId = await installDb.Insertable(workspace)
                 .ExecuteReturnBigIdentityAsync();
+        }
+        catch (NpgsqlException ex) when (ex.SqlState == "23505")
+        {
+            return (null, $"空间标识 \"{request.SpaceKey}\" 已存在，请更换后重试");
         }
         catch (Exception ex)
         {
@@ -196,11 +204,11 @@ public class SetupService
                 Version = 1
             };
 
-            pageId = await _db.Db.Insertable(overviewPage)
+            pageId = await installDb.Insertable(overviewPage)
                 .ExecuteReturnBigIdentityAsync();
 
             // 更新空间首页ID
-            await _db.Db.Updateable<Workspace>()
+            await installDb.Updateable<Workspace>()
                 .SetColumns(w => w.HomePageId == pageId)
                 .Where(w => w.Id == workspaceId)
                 .ExecuteCommandAsync();

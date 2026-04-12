@@ -11,12 +11,10 @@ namespace ConfluenceLite.Api.Services;
 public class PageService
 {
     private readonly AppDbContext _db;
-    private readonly ISqlSugarClient _client;
 
     public PageService(AppDbContext db)
     {
         _db = db;
-        _client = db.Db;
     }
 
     /// <summary>
@@ -25,7 +23,7 @@ public class PageService
     public async Task<(PageDto? page, string? error)> CreatePageAsync(long creatorId, CreatePageRequest request)
     {
         // 验证工作空间是否存在
-        var workspace = await _client.Queryable<Workspace>().InSingleAsync(request.WorkspaceId);
+        var workspace = await _db.Workspaces.GetByIdAsync(request.WorkspaceId);
         if (workspace == null)
         {
             return (null, "工作空间不存在");
@@ -34,7 +32,7 @@ public class PageService
         // 如果指定了父页面，验证是否存在
         if (request.ParentId.HasValue)
         {
-            var parent = await _client.Queryable<Page>().InSingleAsync(request.ParentId.Value);
+            var parent = await _db.Pages.GetByIdAsync(request.ParentId.Value);
             if (parent == null || parent.WorkspaceId != request.WorkspaceId)
             {
                 return (null, "父页面不存在或不属于该工作空间");
@@ -54,7 +52,7 @@ public class PageService
             UpdatedAt = DateTime.UtcNow
         };
 
-        var pageId = await _client.Insertable(page).ExecuteReturnIdentityAsync();
+        var pageId = await _db.Db.Insertable(page).ExecuteReturnIdentityAsync();
         page.Id = pageId;
 
         return (await MapToDtoAsync(page), null);
@@ -65,7 +63,7 @@ public class PageService
     /// </summary>
     public async Task<PageDto?> GetPageByIdAsync(long id)
     {
-        var page = await _client.Queryable<Page>().InSingleAsync(id);
+        var page = await _db.Pages.GetByIdAsync(id);
         return page == null ? null : await MapToDtoAsync(page);
     }
 
@@ -74,11 +72,11 @@ public class PageService
     /// </summary>
     public async Task<PagedResponse<PageDto>> GetPagesByWorkspaceAsync(long workspaceId, PagedRequest request)
     {
-        var total = await _client.Queryable<Page>()
+        var total = await _db.Db.Queryable<Page>()
             .Where(p => p.WorkspaceId == workspaceId)
             .CountAsync();
 
-        var pages = await _client.Queryable<Page>()
+        var pages = await _db.Db.Queryable<Page>()
             .Where(p => p.WorkspaceId == workspaceId)
             .OrderBy(p => p.SortOrder)
             .OrderByDescending(p => p.UpdatedAt)
@@ -106,13 +104,11 @@ public class PageService
     /// </summary>
     public async Task<List<PageTreeNodeDto>> GetPageTreeAsync(long workspaceId)
     {
-        // 获取所有页面
-        var pages = await _client.Queryable<Page>()
+        var pages = await _db.Db.Queryable<Page>()
             .Where(p => p.WorkspaceId == workspaceId)
             .OrderBy(p => p.SortOrder)
             .ToListAsync();
 
-        // 构建页面树
         var pageDict = new Dictionary<long, PageTreeNodeDto>();
         var rootPages = new List<PageTreeNodeDto>();
 
@@ -136,7 +132,6 @@ public class PageService
             }
         }
 
-        // 第二轮处理，构建父子关系
         foreach (var page in pages)
         {
             if (page.ParentId.HasValue && pageDict.TryGetValue(page.ParentId.Value, out var parentNode))
@@ -159,7 +154,7 @@ public class PageService
     /// </summary>
     public async Task<List<PageDto>> GetChildPagesAsync(long parentId)
     {
-        var pages = await _client.Queryable<Page>()
+        var pages = await _db.Db.Queryable<Page>()
             .Where(p => p.ParentId == parentId)
             .OrderBy(p => p.SortOrder)
             .ToListAsync();
@@ -178,13 +173,12 @@ public class PageService
     /// </summary>
     public async Task<(PageDto? page, string? error)> UpdatePageAsync(long id, long userId, UpdatePageRequest request)
     {
-        var page = await _client.Queryable<Page>().InSingleAsync(id);
+        var page = await _db.Pages.GetByIdAsync(id);
         if (page == null)
         {
             return (null, "页面不存在");
         }
 
-        // 检查权限（创建者可以编辑）
         if (page.CreatorId != userId)
         {
             return (null, "无权限编辑此页面");
@@ -207,10 +201,9 @@ public class PageService
 
         if (request.ParentId.HasValue)
         {
-            // 验证父页面
             if (request.ParentId.Value != id)
             {
-                var parent = await _client.Queryable<Page>().InSingleAsync(request.ParentId.Value);
+                var parent = await _db.Pages.GetByIdAsync(request.ParentId.Value);
                 if (parent == null || parent.WorkspaceId != page.WorkspaceId)
                 {
                     return (null, "父页面不存在或不属于同一工作空间");
@@ -226,7 +219,7 @@ public class PageService
 
         page.UpdatedAt = DateTime.UtcNow;
 
-        await _client.Updateable(page).ExecuteCommandAsync();
+        await _db.Pages.UpdateAsync(page);
 
         return (await MapToDtoAsync(page), null);
     }
@@ -236,23 +229,21 @@ public class PageService
     /// </summary>
     public async Task<(bool success, string? error)> DeletePageAsync(long id, long userId)
     {
-        var page = await _client.Queryable<Page>().InSingleAsync(id);
+        var page = await _db.Pages.GetByIdAsync(id);
         if (page == null)
         {
             return (false, "页面不存在");
         }
 
-        // 检查权限
         if (page.CreatorId != userId)
         {
             return (false, "无权限删除此页面");
         }
 
-        // 递归删除所有子页面
         await DeletePageRecursiveAsync(id);
 
         // 删除页面的所有评论
-        await _client.Deleteable<PageComment>().Where(c => c.PageId == id).ExecuteCommandAsync();
+        await _db.Db.Deleteable<PageComment>().Where(c => c.PageId == id).ExecuteCommandAsync();
 
         return (true, null);
     }
@@ -262,25 +253,22 @@ public class PageService
     /// </summary>
     private async Task DeletePageRecursiveAsync(long pageId)
     {
-        // 获取所有子页面
-        var children = await _client.Queryable<Page>()
+        var children = await _db.Db.Queryable<Page>()
             .Where(p => p.ParentId == pageId)
             .ToListAsync();
 
         foreach (var child in children)
         {
-            // 递归删除子页面
             await DeletePageRecursiveAsync(child.Id);
         }
 
-        // 删除页面
-        await _client.Deleteable<Page>().In(pageId).ExecuteCommandAsync();
+        await _db.Db.Deleteable<Page>().In(pageId).ExecuteCommandAsync();
     }
 
     private async Task<PageDto> MapToDtoAsync(Page page)
     {
-        var workspace = await _client.Queryable<Workspace>().InSingleAsync(page.WorkspaceId);
-        var creator = await _client.Queryable<User>().InSingleAsync(page.CreatorId);
+        var workspace = await _db.Workspaces.GetByIdAsync(page.WorkspaceId);
+        var creator = await _db.Users.GetByIdAsync(page.CreatorId);
 
         return new PageDto
         {
@@ -298,7 +286,8 @@ public class PageService
             {
                 Id = workspace.Id,
                 Name = workspace.Name,
-                Key = workspace.Key
+                Key = workspace.Key,
+                Icon = workspace.Icon
             },
             Creator = creator == null ? null : new UserSummaryDto
             {

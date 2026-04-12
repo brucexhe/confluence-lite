@@ -2,6 +2,7 @@ using SqlSugar;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Models;
 using ConfluenceLite.Api.DTOs;
+using Npgsql;
 
 namespace ConfluenceLite.Api.Services;
 
@@ -11,12 +12,10 @@ namespace ConfluenceLite.Api.Services;
 public class WorkspaceService
 {
     private readonly AppDbContext _db;
-    private readonly ISqlSugarClient _client;
 
     public WorkspaceService(AppDbContext db)
     {
         _db = db;
-        _client = db.Db;
     }
 
     /// <summary>
@@ -25,7 +24,7 @@ public class WorkspaceService
     public async Task<(WorkspaceDto? workspace, string? error)> CreateWorkspaceAsync(long ownerId, CreateWorkspaceRequest request)
     {
         // 检查Key是否已存在
-        var exists = await _client.Queryable<Workspace>()
+        var exists = await _db.Db.Queryable<Workspace>()
             .Where(w => w.Key == request.Key)
             .AnyAsync();
 
@@ -45,7 +44,15 @@ public class WorkspaceService
             UpdatedAt = DateTime.UtcNow
         };
 
-        var workspaceId = await _client.Insertable(workspace).ExecuteReturnIdentityAsync();
+        int workspaceId;
+        try
+        {
+            workspaceId = await _db.Db.Insertable(workspace).ExecuteReturnIdentityAsync();
+        }
+        catch (NpgsqlException ex) when (ex.SqlState == "23505")
+        {
+            return (null, "工作空间标识已存在");
+        }
         workspace.Id = workspaceId;
 
         return (await MapToDtoAsync(workspace), null);
@@ -56,7 +63,7 @@ public class WorkspaceService
     /// </summary>
     public async Task<WorkspaceDto?> GetWorkspaceByIdAsync(long id)
     {
-        var workspace = await _client.Queryable<Workspace>().InSingleAsync(id);
+        var workspace = await _db.Workspaces.GetByIdAsync(id);
         return workspace == null ? null : await MapToDtoAsync(workspace);
     }
 
@@ -65,7 +72,7 @@ public class WorkspaceService
     /// </summary>
     public async Task<WorkspaceDto?> GetWorkspaceByKeyAsync(string key)
     {
-        var workspace = await _client.Queryable<Workspace>()
+        var workspace = await _db.Db.Queryable<Workspace>()
             .Where(w => w.Key == key)
             .FirstAsync();
 
@@ -77,9 +84,9 @@ public class WorkspaceService
     /// </summary>
     public async Task<PagedResponse<WorkspaceDto>> GetWorkspaceListAsync(PagedRequest request)
     {
-        var total = await _client.Queryable<Workspace>().CountAsync();
+        var total = await _db.Db.Queryable<Workspace>().CountAsync();
 
-        var workspaces = await _client.Queryable<Workspace>()
+        var workspaces = await _db.Db.Queryable<Workspace>()
             .OrderBy(w => w.Id)
             .Skip(request.Skip)
             .Take(request.PageSize)
@@ -105,7 +112,7 @@ public class WorkspaceService
     /// </summary>
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(long userId)
     {
-        var workspaces = await _client.Queryable<Workspace>()
+        var workspaces = await _db.Db.Queryable<Workspace>()
             .Where(w => w.OwnerId == userId)
             .OrderByDescending(w => w.UpdatedAt)
             .ToListAsync();
@@ -124,7 +131,7 @@ public class WorkspaceService
     /// </summary>
     public async Task<(WorkspaceDto? workspace, string? error)> UpdateWorkspaceAsync(long id, long userId, UpdateWorkspaceRequest request)
     {
-        var workspace = await _client.Queryable<Workspace>().InSingleAsync(id);
+        var workspace = await _db.Workspaces.GetByIdAsync(id);
         if (workspace == null)
         {
             return (null, "工作空间不存在");
@@ -153,7 +160,7 @@ public class WorkspaceService
 
         workspace.UpdatedAt = DateTime.UtcNow;
 
-        await _client.Updateable(workspace).ExecuteCommandAsync();
+        await _db.Workspaces.UpdateAsync(workspace);
 
         return (await MapToDtoAsync(workspace), null);
     }
@@ -163,7 +170,7 @@ public class WorkspaceService
     /// </summary>
     public async Task<(bool success, string? error)> DeleteWorkspaceAsync(long id, long userId)
     {
-        var workspace = await _client.Queryable<Workspace>().InSingleAsync(id);
+        var workspace = await _db.Workspaces.GetByIdAsync(id);
         if (workspace == null)
         {
             return (false, "工作空间不存在");
@@ -176,18 +183,18 @@ public class WorkspaceService
         }
 
         // 删除工作空间的所有页面
-        await _client.Deleteable<Page>().Where(p => p.WorkspaceId == id).ExecuteCommandAsync();
+        await _db.Db.Deleteable<Page>().Where(p => p.WorkspaceId == id).ExecuteCommandAsync();
 
         // 删除工作空间
-        await _client.Deleteable<Workspace>().In(id).ExecuteCommandAsync();
+        await _db.Workspaces.DeleteAsync(workspace);
 
         return (true, null);
     }
 
     private async Task<WorkspaceDto> MapToDtoAsync(Workspace workspace)
     {
-        var owner = await _client.Queryable<User>().InSingleAsync(workspace.OwnerId);
-        var pageCount = await _client.Queryable<Page>().Where(p => p.WorkspaceId == workspace.Id).CountAsync();
+        var owner = await _db.Users.GetByIdAsync(workspace.OwnerId);
+        var pageCount = await _db.Db.Queryable<Page>().Where(p => p.WorkspaceId == workspace.Id).CountAsync();
 
         return new WorkspaceDto
         {
@@ -195,6 +202,7 @@ public class WorkspaceService
             Name = workspace.Name,
             Description = workspace.Description,
             Key = workspace.Key,
+            Icon = workspace.Icon,
             OwnerId = workspace.OwnerId,
             Status = workspace.Status,
             CreatedAt = workspace.CreatedAt,

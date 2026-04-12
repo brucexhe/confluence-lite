@@ -89,7 +89,8 @@ public static class ApiRoutes
                 {
                     Id = w.Id,
                     Name = w.Name,
-                    Key = w.Key
+                    Key = w.Key,
+                    Icon = w.Icon
                 }).ToList()
             };
 

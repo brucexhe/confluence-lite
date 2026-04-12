@@ -56,6 +56,10 @@ public static class DatabaseInitializer
                 ""updatedat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc')
             )");
 
+        // 添加唯一约束（表已存在时通过 ALTER 添加）
+        CreateUniqueConstraintIfNotExists(db, "uq_users_username", "users", "username");
+        CreateUniqueConstraintIfNotExists(db, "uq_workspaces_key", "workspaces", "key");
+
         db.Ado.ExecuteCommand(@"
             CREATE TABLE IF NOT EXISTS ""pages"" (
                 ""id"" BIGSERIAL PRIMARY KEY,
@@ -425,6 +429,32 @@ public static class DatabaseInitializer
         catch (Exception ex)
         {
             Console.WriteLine($"[Database] Index {indexName} warning: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// 安全创建唯一约束（如果不存在）
+    /// </summary>
+    private static void CreateUniqueConstraintIfNotExists(ISqlSugarClient db, string constraintName, string table, string column)
+    {
+        try
+        {
+            var sql = @"
+                SELECT COUNT(*) FROM information_schema.table_constraints
+                WHERE table_schema = 'public' AND constraint_name = @name AND constraint_type = 'UNIQUE'";
+            var count = db.Ado.GetInt(sql, new List<SugarParameter>
+            {
+                new("@name", constraintName)
+            });
+            if (count == 0)
+            {
+                db.Ado.ExecuteCommand($@"ALTER TABLE ""{table}"" ADD CONSTRAINT ""{constraintName}"" UNIQUE (""{column}"")");
+                Console.WriteLine($"[Database] Added unique constraint {constraintName} on {table}.{column}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Database] Unique constraint {constraintName} warning: {ex.Message}");
         }
     }
 }

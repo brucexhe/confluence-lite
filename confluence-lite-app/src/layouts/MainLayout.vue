@@ -45,16 +45,27 @@
                                 >
                                     Recent Spaces
                                 </div>
-                                <a-menu-item key="1" style="padding: 8px 16px">
+                                <a-menu-item
+                                    v-for="space in spaces"
+                                    :key="space.id"
+                                    style="padding: 8px 16px"
+                                    @click="navigateToSpace(space.key)"
+                                >
                                     <div style="display: flex; align-items: center; gap: 12px">
                                         <div
-                                            style="
-                                                width: 32px;
-                                                height: 32px;
-                                                background: linear-gradient(135deg, #10b981, #059669);
-                                                border-radius: 3px;
-                                            "
-                                        ></div>
+                                            :style="{
+                                                width: '32px',
+                                                height: '32px',
+                                                background: spaceColor(space.id),
+                                                borderRadius: '3px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: '#fff',
+                                                fontWeight: 600,
+                                                fontSize: '14px'
+                                            }"
+                                        >{{ spaceKeyInitial(space) }}</div>
                                         <div>
                                             <div
                                                 style="
@@ -64,39 +75,17 @@
                                                     line-height: 1.2;
                                                 "
                                             >
-                                                Engineering Space
+                                                {{ space.name || space.key }}
                                             </div>
-                                            <div style="font-size: 12px; color: #6b778c">Knowledge Base</div>
+                                            <div style="font-size: 12px; color: #6b778c">{{ space.key }}</div>
                                         </div>
                                     </div>
                                 </a-menu-item>
-                                <a-menu-item key="2" style="padding: 8px 16px">
-                                    <div style="display: flex; align-items: center; gap: 12px">
-                                        <div
-                                            style="
-                                                width: 32px;
-                                                height: 32px;
-                                                background: linear-gradient(135deg, #3b82f6, #2563eb);
-                                                border-radius: 3px;
-                                            "
-                                        ></div>
-                                        <div>
-                                            <div
-                                                style="
-                                                    font-weight: 500;
-                                                    color: #172b4d;
-                                                    font-size: 14px;
-                                                    line-height: 1.2;
-                                                "
-                                            >
-                                                Marketing & Design
-                                            </div>
-                                            <div style="font-size: 12px; color: #6b778c">Team Space</div>
-                                        </div>
-                                    </div>
+                                <a-menu-item v-if="spaces.length === 0" disabled style="padding: 8px 16px">
+                                    <span style="color: #6b778c; font-size: 13px">暂无空间</span>
                                 </a-menu-item>
-                                <a-menu-divider />
-                                <a-menu-item key="3" style="padding: 4px 16px" @click="$router.push('/spaces')">
+                                <a-menu-divider v-if="spaces.length > 0" />
+                                <a-menu-item key="view-all" style="padding: 4px 16px" @click="$router.push('/spaces')">
                                     <span style="color: #0052cc; font-size: 14px; font-weight: 500">
                                         View all spaces
                                     </span>
@@ -135,10 +124,10 @@
             <!-- Sidebar Navigation -->
             <aside class="sidebar" :style="{ width: sidebarWidth + 'px', minWidth: sidebarWidth + 'px' }">
                 <div class="space-header">
-                    <div class="space-icon"></div>
+                    <div class="space-icon" :style="{ background: currentSpaceColor }">{{ currentSpaceInitial }}</div>
                     <div class="space-info">
-                        <h3>Engineering Space</h3>
-                        <p>Knowledge Base</p>
+                        <h3>{{ currentSpaceName }}</h3>
+                        <p>{{ currentSpaceKey }}</p>
                     </div>
                 </div>
 
@@ -181,6 +170,46 @@ import { useRoute, useRouter } from "vue-router";
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
+
+// 空间列表（从 localStorage 读取）
+const spaces = computed(() => {
+    return JSON.parse(localStorage.getItem('auth_spaces') || '[]')
+})
+
+// 当前空间（根据路由 :spaceKey 匹配）
+const currentSpace = computed(() => {
+    const key = route.params.spaceKey
+    if (!key) return spaces.value[0] || null
+    return spaces.value.find(s => s.key === key) || { key, name: key }
+})
+
+const currentSpaceName = computed(() => currentSpace.value?.name || currentSpace.value?.key || '')
+const currentSpaceKey = computed(() => currentSpace.value?.key || '')
+
+const spaceColors = [
+    'linear-gradient(135deg, #10b981, #059669)',
+    'linear-gradient(135deg, #3b82f6, #2563eb)',
+    'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+    'linear-gradient(135deg, #f59e0b, #d97706)',
+    'linear-gradient(135deg, #ef4444, #dc2626)',
+    'linear-gradient(135deg, #06b6d4, #0891b2)',
+]
+
+function spaceColor(id) {
+    return spaceColors[(id || 0) % spaceColors.length]
+}
+
+const currentSpaceColor = computed(() => spaceColor(currentSpace.value?.id))
+
+function spaceKeyInitial(space) {
+    return (space.key || '?').charAt(0).toUpperCase()
+}
+
+const currentSpaceInitial = computed(() => spaceKeyInitial(currentSpace.value || { key: '?' }))
+
+function navigateToSpace(key) {
+    router.push(`/${key}`)
+}
 
 const userInitials = computed(() => {
     if (authStore.user && authStore.user.name) {

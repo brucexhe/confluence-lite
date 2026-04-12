@@ -61,6 +61,7 @@ public class WorkspaceDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Key { get; set; } = string.Empty;
+    public string? Icon { get; set; }
     public long OwnerId { get; set; }
     public int Status { get; set; }
     public DateTime CreatedAt { get; set; }

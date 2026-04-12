@@ -21,11 +21,11 @@ public class AppDbContext
     public ISqlSugarClient Db => _db;
 
     /// <summary>
-    /// 重新配置数据库连接 (安装向导使用，无需重启)
+    /// 创建新的数据库客户端 (安装向导使用，连接到用户配置的数据库)
     /// </summary>
-    public void Reconfigure(string connectionString, bool enableSqlLog = true)
+    public static ISqlSugarClient CreateClient(string connectionString, bool enableSqlLog = true)
     {
-        _db = new SqlSugarClient(new ConnectionConfig
+        return new SqlSugarClient(new ConnectionConfig
         {
             ConnectionString = connectionString,
             DbType = SqlSugar.DbType.PostgreSQL,

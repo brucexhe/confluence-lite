@@ -12,7 +12,6 @@
           <span class="brand-name">Confluence Lite</span>
         </div>
         <h2 class="setup-title">系统安装向导</h2>
-        <p class="setup-subtitle">跟随引导完成首次配置</p>
       </div>
 
       <!-- Step 1: Database Config -->
@@ -181,7 +180,7 @@ const spaceConfig = ref({
 // 当管理员用户名变化时，自动填充空间名和key
 watch(() => adminConfig.value.username, (val) => {
   if (val) {
-    spaceConfig.value.name = val
+    spaceConfig.value.name = "知识库"
     spaceConfig.value.key = val.toUpperCase()
   }
 }, { immediate: true })

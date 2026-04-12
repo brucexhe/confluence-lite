@@ -29,8 +29,9 @@ Console.WriteLine($"[Setup] INSTALLED file check: {(isInstalled ? "Found" : "Not
 builder.Services.AddSingleton(appConfig.Jwt);
 
 // ========== 数据库配置 - Native AOT 兼容 ==========
+StaticConfig.EnableAot = true;
 var dbType = (DbType)appConfig.Database.DbType;
-var db = new SqlSugarClient(new ConnectionConfig
+var connectionConfig = new ConnectionConfig
 {
     ConnectionString = appConfig.Database.ConnectionString,
     DbType = dbType,
@@ -50,11 +51,19 @@ var db = new SqlSugarClient(new ConnectionConfig
             }
         }
     }
-});
+};
 
-// 单例注册数据库客户端
-builder.Services.AddSingleton<ISqlSugarClient>(db);
-builder.Services.AddSingleton<AppDbContext>();
+// AOT 模式下 SqlSugarClient 不能用单例，每次 new
+builder.Services.AddSingleton(connectionConfig);
+builder.Services.AddScoped<ISqlSugarClient>(sp =>
+{
+    var config = sp.GetRequiredService<ConnectionConfig>();
+    return new SqlSugarClient(config);
+});
+builder.Services.AddScoped<AppDbContext>();
+
+// 启动时用临时 client 初始化数据库表
+var db = new SqlSugarClient(connectionConfig);
 
 // 仅在已安装状态下初始化数据库
 if (isInstalled && appConfig.Database.AutoCreateTables)

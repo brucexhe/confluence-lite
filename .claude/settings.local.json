@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
-      "Bash(grep -E '\\\\.\\(sln|csproj|json|cs\\)$')"
+      "Bash(grep -E '\\\\.\\(sln|csproj|json|cs\\)$')",
+      "WebSearch"
     ]
   }
 }

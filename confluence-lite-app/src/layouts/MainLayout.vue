@@ -101,7 +101,7 @@
                 <div class="search-box">
                     <a-input-search placeholder="Search..." class="confluence-search" style="width: 200px" />
                 </div>
-                <button class="create-btn">Create</button>
+                <button class="create-btn" @click="createPage">Create</button>
                 <div class="user-profile" @click="handleLogout" title="Click to logout">
                     <a-avatar
                         style="
@@ -230,6 +230,15 @@ const userInitials = computed(() => {
 
 const handleLogout = () => {
     authStore.logout();
+};
+
+const createPage = () => {
+    const key = route.params.spaceKey
+    if (key) {
+        const currentId = route.params.id
+        const query = currentId ? { parentId: currentId } : {}
+        router.push({ path: `/${key}/page/new`, query })
+    }
 };
 
 // Sidebar Resize Logic

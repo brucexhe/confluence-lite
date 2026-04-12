@@ -70,9 +70,19 @@ const router = createRouter({
           component: WorkspaceHome
         },
         {
+          path: 'page/new',
+          name: 'page-create',
+          component: () => import('../views/Page/Edit.vue')
+        },
+        {
+          path: 'page/:id/edit',
+          name: 'page-edit',
+          component: () => import('../views/Page/Edit.vue')
+        },
+        {
           path: 'page/:id',
           name: 'page',
-          component: () => import('../views/Workspace/Page.vue')
+          component: () => import('../views/Page/View.vue')
         }
       ]
     },

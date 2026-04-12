@@ -79,8 +79,14 @@ watch(() => route.params.id, (id) => {
   }
 }, { immediate: true })
 
-const onSelect = (keys) => {
-  if (keys.length > 0 && props.spaceKey) {
+const onSelect = (keys, info) => {
+  // 点击已选中项时，保持选中状态不取消
+  if (keys.length === 0) {
+    selectedKeys.value = [String(info.node?.key)]
+    return
+  }
+  selectedKeys.value = keys
+  if (props.spaceKey) {
     router.push(`/${props.spaceKey}/page/${keys[0]}`)
   }
 }

@@ -55,6 +55,9 @@ public class PageService
         var pageId = await _db.Db.Insertable(page).ExecuteReturnIdentityAsync();
         page.Id = pageId;
 
+        // 保存初始版本
+        await SaveVersionAsync(pageId, page, creatorId);
+
         return (await MapToDtoAsync(page), null);
     }
 
@@ -218,6 +221,9 @@ public class PageService
         }
 
         page.UpdatedAt = DateTime.Now;
+
+        // 保存更新前版本
+        await SaveVersionAsync(id, page, userId);
 
         await _db.Pages.UpdateAsync(page);
 

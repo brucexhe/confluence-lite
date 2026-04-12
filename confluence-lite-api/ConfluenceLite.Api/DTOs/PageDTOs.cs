@@ -123,3 +123,34 @@ public class PageTreeNodeDto
     public int Status { get; set; }
     public List<PageTreeNodeDto>? Children { get; set; }
 }
+
+/// <summary>
+/// 页面版本DTO（完整，含内容）
+/// </summary>
+public class PageVersionDto
+{
+    public long Id { get; set; }
+    public long PageId { get; set; }
+    public int VersionNumber { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? Content { get; set; }
+    public string? ChangeComment { get; set; }
+    public long EditorId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public UserSummaryDto? Editor { get; set; }
+}
+
+/// <summary>
+/// 页面版本列表DTO（不含内容）
+/// </summary>
+public class PageVersionListDto
+{
+    public long Id { get; set; }
+    public long PageId { get; set; }
+    public int VersionNumber { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? ChangeComment { get; set; }
+    public long EditorId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public UserSummaryDto? Editor { get; set; }
+}

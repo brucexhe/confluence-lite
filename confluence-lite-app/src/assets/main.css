@@ -134,3 +134,14 @@ button {
     background-color: rgba(9, 30, 66, 0.08) !important;
     color: #172b4d !important;
 }
+.tox .tox-tbtn{
+  margin: 0!important;
+  height: 24px!important;
+}
+.tox-toolbar__group{
+  height: 35px!important;
+
+}
+ .tox-toolbar__group:not(:last-of-type) {
+    border-right: 1px solid #eee!important;
+}

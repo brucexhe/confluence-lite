@@ -396,7 +396,6 @@ const handleMove = () => console.log('Move Page clicked - TODO');
 /* Confluence-style Table */
 :deep(.page-content table) {
     border-collapse: collapse !important;
-    width: 100%;
     margin: 16px 0;
     border: 1px solid #dfe1e6 !important;
     font-size: 14px;

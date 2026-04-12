@@ -26,6 +26,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Modal } from 'ant-design-vue'
 import { FileText, Folder } from 'lucide-vue-next'
 import { pageApi } from '../api'
 
@@ -79,6 +80,10 @@ watch(() => route.params.id, (id) => {
   }
 }, { immediate: true })
 
+function isEditing() {
+  return route.path.endsWith('/edit') || route.path.includes('/page/new')
+}
+
 const onSelect = (keys, info) => {
   // 点击已选中项时，保持选中状态不取消
   if (keys.length === 0) {
@@ -87,7 +92,20 @@ const onSelect = (keys, info) => {
   }
   selectedKeys.value = keys
   if (props.spaceKey) {
-    router.push(`/${props.spaceKey}/page/${keys[0]}`)
+    const target = `/${props.spaceKey}/page/${keys[0]}`
+    const doNavigate = () => router.push(target)
+    if (isEditing()) {
+      Modal.confirm({
+        title: '未保存的更改',
+        content: '当前编辑未保存，确认离开？',
+        okText: '离开',
+        cancelText: '留下',
+        onOk: doNavigate,
+        onCancel: () => { selectedKeys.value = [String(route.params.id)] },
+      })
+    } else {
+      doNavigate()
+    }
   }
 }
 </script>

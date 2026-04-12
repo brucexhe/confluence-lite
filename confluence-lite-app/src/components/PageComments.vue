@@ -44,12 +44,12 @@
         <a-spin v-if="loading" style="display:block;padding:2rem 0;text-align:center;" />
         <div v-else class="comments-list">
             <div v-for="comment in sortedComments" :key="comment.id" class="comment-item">
-                <a-avatar class="comment-avatar" :style="{ backgroundColor: avatarColor(comment.user?.name || '') }">
-                    {{ (comment.user?.name || 'U').charAt(0).toUpperCase() }}
+                <a-avatar class="comment-avatar" :style="{ backgroundColor: avatarColor(userName(comment.user)) }">
+                    {{ userName(comment.user).charAt(0).toUpperCase() }}
                 </a-avatar>
                 <div class="comment-content-wrapper">
                     <div class="comment-meta">
-                        <span class="comment-author">{{ comment.user?.name || 'Unknown' }}</span>
+                        <span class="comment-author">{{ userName(comment.user) }}</span>
                         <a-dropdown>
                             <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
                             <template #overlay>
@@ -64,12 +64,12 @@
                     <!-- Replies -->
                     <div class="comment-replies" v-if="comment.replies && comment.replies.length > 0">
                         <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
-                            <a-avatar class="reply-avatar" :style="{ backgroundColor: avatarColor(reply.user?.name || ''), fontSize: '12px' }">
-                                {{ (reply.user?.name || 'U').charAt(0).toUpperCase() }}
+                            <a-avatar class="reply-avatar" :style="{ backgroundColor: avatarColor(userName(reply.user)), fontSize: '12px' }">
+                                {{ userName(reply.user).charAt(0).toUpperCase() }}
                             </a-avatar>
                             <div class="reply-content-wrapper">
                                 <div class="reply-meta">
-                                    <span class="reply-author">{{ reply.user?.name || 'Unknown' }}</span>
+                                    <span class="reply-author">{{ userName(reply.user) }}</span>
                                     <span class="reply-time">{{ formatTime(reply.createdAt) }}</span>
                                 </div>
                                 <div class="reply-body">{{ reply.content }}</div>
@@ -138,6 +138,9 @@ const comments = ref([]);
 
 // Avatar colors
 const avatarColors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
+function userName(user) {
+    return user?.displayName || user?.username || 'Unknown';
+}
 function avatarColor(name) {
     let hash = 0;
     for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -303,7 +306,7 @@ const addReply = async (commentId, event) => {
 .add-comment {
     display: flex;
     gap: 12px;
-    margin-bottom: 2rem;
+    margin-bottom: 0rem;
 }
 
 .user-avatar {
@@ -362,12 +365,21 @@ const addReply = async (commentId, event) => {
 .comments-list {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .comment-item {
     display: flex;
     gap: 12px;
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+    border-bottom: 1px solid #dfe1e6;
+
+}
+
+.comment-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
 }
 
 .comment-avatar {

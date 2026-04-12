@@ -340,7 +340,7 @@ public class SetupService
     {
         var info = new InstalledInfo
         {
-            InstalledAt = DateTime.UtcNow.ToString("O"),
+            InstalledAt = DateTime.Now.ToString("O"),
             Version = "1.0.0",
             AdminUser = adminUser
         };

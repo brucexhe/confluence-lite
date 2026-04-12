@@ -48,8 +48,8 @@ public class PageService
             CreatorId = creatorId,
             ParentId = request.ParentId,
             SortOrder = 0,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
 
         var pageId = await _db.Db.Insertable(page).ExecuteReturnIdentityAsync();
@@ -217,7 +217,7 @@ public class PageService
             page.SortOrder = request.SortOrder.Value;
         }
 
-        page.UpdatedAt = DateTime.UtcNow;
+        page.UpdatedAt = DateTime.Now;
 
         await _db.Pages.UpdateAsync(page);
 

@@ -57,13 +57,13 @@ public class Draft
     /// 创建时间
     /// </summary>
     [SugarColumn(IsNullable = false)]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 更新时间 (跟踪最后自动保存)
     /// </summary>
     [SugarColumn(IsNullable = false)]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 导航属性 - 关联页面

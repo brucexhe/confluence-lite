@@ -36,7 +36,7 @@ public class SearchHistory
     /// 搜索时间
     /// </summary>
     [SugarColumn(IsNullable = false)]
-    public DateTime SearchedAt { get; set; } = DateTime.UtcNow;
+    public DateTime SearchedAt { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 导航属性 - 用户

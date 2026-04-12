@@ -42,7 +42,7 @@ public class PageRestriction
     /// 创建时间
     /// </summary>
     [SugarColumn(IsNullable = false)]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 导航属性 - 页面

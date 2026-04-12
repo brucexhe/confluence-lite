@@ -43,8 +43,8 @@ public class CommentService
             UserId = userId,
             Content = request.Content,
             ParentId = request.ParentId,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
 
         var commentId = await _db.Db.Insertable(comment).ExecuteReturnIdentityAsync();
@@ -111,7 +111,7 @@ public class CommentService
         }
 
         comment.Content = request.Content;
-        comment.UpdatedAt = DateTime.UtcNow;
+        comment.UpdatedAt = DateTime.Now;
 
         await _db.PageComments.UpdateAsync(comment);
 

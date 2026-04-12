@@ -41,7 +41,7 @@ public class TokenService
             issuer: _options.Issuer,
             audience: _options.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_options.ExpirationMinutes),
+            expires: DateTime.Now.AddMinutes(_options.ExpirationMinutes),
             signingCredentials: credentials
         );
 

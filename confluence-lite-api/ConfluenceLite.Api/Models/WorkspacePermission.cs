@@ -95,13 +95,13 @@ public class WorkspacePermission
     /// 创建时间
     /// </summary>
     [SugarColumn(IsNullable = false)]
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 更新时间
     /// </summary>
     [SugarColumn(IsNullable = false)]
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 导航属性 - 工作空间

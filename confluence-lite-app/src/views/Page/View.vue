@@ -43,9 +43,9 @@
                     style="
                         background-color: #3b82f6;
                         margin-right: 12px;
-                        width: 24px;
-                        height: 24px;
-                        line-height: 24px;
+                        width: 20px;
+                        height: 20px;
+                        line-height: 20px;
                         font-size: 12px;
                     "
                 >

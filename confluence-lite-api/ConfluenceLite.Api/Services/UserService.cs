@@ -75,8 +75,8 @@ public class UserService
             PasswordHash = PasswordService.HashPassword(request.Password),
             DisplayName = request.DisplayName ?? request.Username,
             Status = 1,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
 
         int userId;
@@ -159,7 +159,7 @@ public class UserService
             user.Status = request.Status.Value;
         }
 
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
 
         await _db.Users.UpdateAsync(user);
 
@@ -183,7 +183,7 @@ public class UserService
         }
 
         user.PasswordHash = PasswordService.HashPassword(request.NewPassword);
-        user.UpdatedAt = DateTime.UtcNow;
+        user.UpdatedAt = DateTime.Now;
 
         await _db.Users.UpdateAsync(user);
 

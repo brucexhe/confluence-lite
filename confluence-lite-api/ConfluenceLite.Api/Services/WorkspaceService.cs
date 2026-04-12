@@ -40,8 +40,8 @@ public class WorkspaceService
             Key = request.Key,
             OwnerId = ownerId,
             Status = 1,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
 
         int workspaceId;
@@ -158,7 +158,7 @@ public class WorkspaceService
             workspace.Status = request.Status.Value;
         }
 
-        workspace.UpdatedAt = DateTime.UtcNow;
+        workspace.UpdatedAt = DateTime.Now;
 
         await _db.Workspaces.UpdateAsync(workspace);
 

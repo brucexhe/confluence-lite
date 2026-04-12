@@ -36,7 +36,7 @@ public class UserGroupMember
     /// 加入时间
     /// </summary>
     [SugarColumn(IsNullable = false)]
-    public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    public DateTime JoinedAt { get; set; } = DateTime.Now;
 
     /// <summary>
     /// 导航属性 - 用户组

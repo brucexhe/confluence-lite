@@ -1,0 +1,60 @@
+/* Confluence-style Table */
+table {
+    border-collapse: collapse !important;
+    width: 100%;
+    margin: 16px 0;
+    border: 1px solid #dfe1e6 !important;
+    font-size: 14px;
+}
+
+table th,
+table td {
+    border: 1px solid #dfe1e6 !important;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.5;
+}
+
+table th {
+    background-color: #f4f5f7;
+    color: #172b4d;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Sortable header (view mode) */
+table th[data-sortable] {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    position: relative;
+    padding-right: 24px;
+}
+
+table th[data-sortable]::after {
+    content: "";
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 5px solid #97a0af;
+    opacity: 0.5;
+}
+
+table th[data-sortable]:hover::after {
+    opacity: 1;
+}
+
+table th.sort-asc::after {
+    border-bottom: none;
+    border-top: 5px solid #0052cc;
+    opacity: 1;
+}
+
+table th.sort-desc::after {
+    border-bottom-color: #0052cc;
+    opacity: 1;
+}

@@ -153,6 +153,31 @@ const editorConfig = computed(() => ({
         "bold italic forecolor backcolor | alignleft aligncenter " +
         "alignright alignjustify | bullist numlist | " +
         "table image | removeformat",
+    table_header_type: "section",
+    table_use_colgroups: false,
+    setup(editor) {
+        editor.on('ExecCommand', (e) => {
+            if (e.command === 'mceInsertContent' || e.command === 'mceTableInsert') {
+                setTimeout(() => {
+                    editor.dom.select('table').forEach(table => {
+                        const firstRow = table.querySelector('tr');
+                        if (!firstRow) return;
+                        const hasTh = firstRow.querySelector('th');
+                        if (hasTh) return;
+                        // 首行 td 转 th，并用 thead 包裹
+                        const thead = document.createElement('thead');
+                        firstRow.querySelectorAll('td').forEach(td => {
+                            const th = document.createElement('th');
+                            th.innerHTML = td.innerHTML;
+                            td.replaceWith(th);
+                        });
+                        thead.appendChild(firstRow);
+                        table.insertBefore(thead, table.firstChild);
+                    });
+                }, 0);
+            }
+        });
+    },
     paste_data_images: true,
     image_title: true,
     automatic_uploads: true,
@@ -177,8 +202,12 @@ const editorConfig = computed(() => ({
         };
         input.click();
     },
-    content_style:
-        '\nbody { margin: 0 !important; max-width: 900px !important; padding:5px 2rem 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; }',
+    content_style: `
+body { margin: 0 !important; padding:5px 2rem 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; }
+table { border-collapse: collapse !important; width: 100%; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; }
+table th, table td { border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; }
+table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; }
+`,
 }));
 
 const onEditorInit = () => {

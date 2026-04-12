@@ -1,16 +1,19 @@
 <template>
   <div class="page-tree-container">
+    <a-spin v-if="loading" size="small" style="padding: 8px 16px; display: block;" />
+    <div v-else-if="treeData.length === 0" class="empty-hint">暂无页面</div>
     <a-tree
+      v-else
       class="confluence-tree"
       :tree-data="treeData"
-      :load-data="onLoadData"
       :show-icon="true"
       blockNode
       v-model:selectedKeys="selectedKeys"
+      v-model:expandedKeys="expandedKeys"
       @select="onSelect"
     >
       <template #icon="{ dataRef }">
-        <FileText v-if="dataRef.isLeaf" class="file-icon" />
+        <FileText v-if="!dataRef.children || dataRef.children.length === 0" class="file-icon" />
         <Folder v-else class="folder-icon" />
       </template>
       <template #title="{ dataRef }">
@@ -21,48 +24,64 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { FileText, Folder } from 'lucide-vue-next'
+import { pageApi } from '../api'
 
+const props = defineProps({
+  workspaceId: { type: Number, default: null },
+  spaceKey: { type: String, default: '' }
+})
+
+const route = useRoute()
 const router = useRouter()
-const selectedKeys = ref(['1'])
+const loading = ref(false)
+const treeData = ref([])
+const selectedKeys = ref([])
+const expandedKeys = ref([])
 
-// Mock initial root nodes (Lazy-loaded logic)
-const treeData = ref([
-  { title: 'Overview', key: '1', isLeaf: true },
-  { title: 'Architecture (Click arrow to load)', key: '2', isLeaf: false },
-  { title: 'Release Notes', key: '3', isLeaf: true },
-  // Adding extra nodes to demonstrate virtual scrolling capabilities
-  ...Array.from({ length: 50 }).map((_, i) => ({
-    title: `Virtual Scroll Page ${i + 4}`,
-    key: String(i + 4),
-    isLeaf: true
-  }))
-])
-
-// Lazy load children to support infinite hierarchies dynamically
-const onLoadData = treeNode => {
-  return new Promise(resolve => {
-    if (treeNode.dataRef.children) {
-      resolve()
-      return
-    }
-    // Simulate API request delay
-    setTimeout(() => {
-      treeNode.dataRef.children = [
-        { title: `${treeNode.dataRef.title} - Async Page 1`, key: `${treeNode.eventKey}-1`, isLeaf: true },
-        { title: `${treeNode.dataRef.title} - Sub Folder`, key: `${treeNode.eventKey}-2`, isLeaf: false }
-      ]
-      treeData.value = [...treeData.value]
-      resolve()
-    }, 600)
-  })
+// 将后端 PageTreeNodeDto 递归转为 ant-design Tree 格式
+function mapNode(node) {
+  const item = {
+    title: node.title,
+    key: String(node.id),
+    isLeaf: !node.children || node.children.length === 0,
+  }
+  if (node.children && node.children.length > 0) {
+    item.children = node.children.map(mapNode)
+  }
+  return item
 }
 
-const onSelect = (selectedKeysValue, info) => {
-  if (selectedKeysValue.length > 0) {
-    router.push(`/page/${selectedKeysValue[0]}`)
+async function loadTree() {
+  if (!props.workspaceId) return
+  loading.value = true
+  try {
+    const data = await pageApi.getTree(props.workspaceId)
+    treeData.value = (data || []).map(mapNode)
+    // 默认展开第一层
+    expandedKeys.value = treeData.value.map(n => n.key)
+  } catch {
+    treeData.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// workspaceId 变化时重新加载
+watch(() => props.workspaceId, loadTree, { immediate: true })
+
+// 同步路由中的 page id 到 selectedKeys
+watch(() => route.params.id, (id) => {
+  if (id) {
+    selectedKeys.value = [String(id)]
+  }
+}, { immediate: true })
+
+const onSelect = (keys) => {
+  if (keys.length > 0 && props.spaceKey) {
+    router.push(`/${props.spaceKey}/page/${keys[0]}`)
   }
 }
 </script>
@@ -71,6 +90,12 @@ const onSelect = (selectedKeysValue, info) => {
 .page-tree-container {
   padding: 0;
   margin-top: 0.5rem;
+}
+
+.empty-hint {
+  padding: 8px 16px;
+  color: var(--color-text-secondary, #6b778c);
+  font-size: 13px;
 }
 
 /* Confluence Tree Styling overrides */
@@ -95,19 +120,19 @@ const onSelect = (selectedKeysValue, info) => {
 }
 
 :deep(.confluence-tree .ant-tree-node-content-wrapper:hover) {
-  background-color: rgba(9, 30, 66, 0.06); /* Atlassian specific gray hover */
+  background-color: rgba(9, 30, 66, 0.06);
 }
 
 :deep(.confluence-tree .ant-tree-node-selected) {
-  background-color: #E6EFFC !important; /* Confluence active item background */
-  color: #0052CC !important; /* Confluence active blue text */
+  background-color: #E6EFFC !important;
+  color: #0052CC !important;
   font-weight: 500;
 }
 
 .file-icon {
   width: 14px;
   height: 14px;
-  color: #0052CC; /* Confluence blue icon */
+  color: #0052CC;
   margin-top: 5px;
 }
 

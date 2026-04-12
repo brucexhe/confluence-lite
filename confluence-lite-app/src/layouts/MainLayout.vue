@@ -124,7 +124,17 @@
             <!-- Sidebar Navigation -->
             <aside class="sidebar" :style="{ width: sidebarWidth + 'px', minWidth: sidebarWidth + 'px' }">
                 <div class="space-header">
-                    <div class="space-icon" :style="{ background: currentSpaceColor }">{{ currentSpaceInitial }}</div>
+                    <div class="space-icon" 
+                    :style="{ 
+                        background: currentSpaceColor, 
+                        color: '#fff', 
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#fff',
+                        fontWeight: 600,
+                        fontSize: '14px'
+                        }">{{ currentSpaceInitial }}</div>
                     <div class="space-info">
                         <h3>{{ currentSpaceName }}</h3>
                         <p>{{ currentSpaceKey }}</p>
@@ -144,7 +154,7 @@
                         <h4 class="section-title">Pages</h4>
                         <a-button type="text" size="small" style="color: var(--color-text-secondary)">+</a-button>
                     </div>
-                    <PageTree />
+                    <PageTree :workspace-id="currentSpace?.id" :space-key="currentSpaceKey" />
                 </div>
 
                 <!-- Drag Handle for resizing sidebar -->

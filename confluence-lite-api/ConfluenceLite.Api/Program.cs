@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.FileProviders;
 using SqlSugar;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Models;
@@ -90,6 +91,7 @@ builder.Services.AddScoped<WorkspaceService>();
 builder.Services.AddScoped<PageService>();
 builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<SetupService>();
+builder.Services.AddScoped<UploadService>();
 
 // ========== JSON 配置 - Native AOT 使用源生成器 ==========
 builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
@@ -120,6 +122,18 @@ builder.Services.AddAuthentication()
 var app = builder.Build();
 
 // ========== 中间件配置 ==========
+
+// 静态文件服务（用于附件下载）
+var uploadPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+if (!Directory.Exists(uploadPath))
+{
+    Directory.CreateDirectory(uploadPath);
+}
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadPath),
+    RequestPath = "/uploads"
+});
 
 // CORS
 app.UseCors("AllowSpecificOrigins");

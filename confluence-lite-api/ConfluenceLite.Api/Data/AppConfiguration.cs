@@ -19,6 +19,11 @@ public class AppConfiguration
     /// CORS配置
     /// </summary>
     public CorsOptions Cors { get; set; } = new();
+
+    /// <summary>
+    /// 附件存储配置
+    /// </summary>
+    public AttachmentOptions Attachment { get; set; } = new();
 }
 
 /// <summary>
@@ -97,4 +102,31 @@ public class CorsOptions
     /// 是否允许凭证
     /// </summary>
     public bool AllowCredentials { get; set; } = true;
+}
+
+/// <summary>
+/// 附件存储配置选项
+/// </summary>
+public class AttachmentOptions
+{
+    /// <summary>
+    /// 最大文件大小 (字节)
+    /// </summary>
+    public long MaxFileSizeBytes { get; set; } = 52428800; // 50MB
+
+    /// <summary>
+    /// 允许的文件扩展名
+    /// </summary>
+    public string[] AllowedExtensions { get; set; } = new[]
+    {
+        ".jpg", ".jpeg", ".png", ".gif", ".webp",
+        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+        ".txt", ".md", ".json", ".xml",
+        ".zip", ".rar", ".7z"
+    };
+
+    /// <summary>
+    /// 上传文件存储路径 (相对于 wwwroot)
+    /// </summary>
+    public string UploadPath { get; set; } = "uploads/attachments";
 }

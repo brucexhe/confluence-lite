@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.StaticFiles;
 using SqlSugar;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Models;
@@ -129,6 +130,14 @@ if (!Directory.Exists(uploadPath))
 {
     Directory.CreateDirectory(uploadPath);
 }
+
+// 确保上传附件目录存在
+var attachmentUploadPath = Path.Combine(uploadPath, appConfig.Attachment.UploadPath);
+if (!Directory.Exists(attachmentUploadPath))
+{
+    Directory.CreateDirectory(attachmentUploadPath);
+}
+
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(uploadPath),

@@ -119,10 +119,16 @@ public class AttachmentOptions
     /// </summary>
     public string[] AllowedExtensions { get; set; } = new[]
     {
-        ".jpg", ".jpeg", ".png", ".gif", ".webp",
-        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
-        ".txt", ".md", ".json", ".xml",
-        ".zip", ".rar", ".7z"
+        // 图片
+        ".jpg", ".jpeg", ".bmp", ".png", ".gif",
+        // 文档
+        ".docx", ".pptx", ".xlsx",
+        // 视频
+        ".mp4",
+        // 压缩
+        ".zip",
+        // 文本/代码
+        ".txt", ".md", ".json", ".xml"
     };
 
     /// <summary>

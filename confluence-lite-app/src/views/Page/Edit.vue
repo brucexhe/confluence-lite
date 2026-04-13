@@ -1,5 +1,11 @@
 <template>
     <div class="editor-container">
+        <!-- 上传进度提示 -->
+        <div v-if="uploadProgress.show" class="upload-progress">
+            <a-spin />
+            <span>上传中... {{ uploadProgress.percent }}%</span>
+        </div>
+
         <editor v-if="editorReady" v-model="pageContent" :init="editorConfig" api-key="no-api-key" @init="onEditorInit" />
         <div v-else class="editor-loading">Loading editor...</div>
 
@@ -35,8 +41,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { message } from "ant-design-vue";
 import Editor from "@tinymce/tinymce-vue";
-import { pageApi } from "../../api";
+import { pageApi, attachmentApi } from "../../api";
 
 // TinyMCE core
 import "tinymce/tinymce";
@@ -57,6 +64,7 @@ import "tinymce/plugins/anchor";
 import "tinymce/plugins/searchreplace";
 import "tinymce/plugins/visualblocks";
 import "tinymce/plugins/media";
+import "tinymce/plugins/paste";
 import "tinymce/skins/ui/oxide/skin.css";
 import "tinymce/themes/silver";
 import "tinymce/icons/default";
@@ -69,9 +77,19 @@ const pageId = computed(() => route.params.id);
 const isCreating = computed(() => !pageId.value);
 const parentId = computed(() => route.query.parentId || null);
 
+// 获取当前页面 ID（用于上传附件）
+const currentPageId = computed(() => {
+    if (isCreating.value) return null;
+    // 尝试从已有页面数据获取
+    return Number(pageId.value);
+});
+
 // 页面数据
 const pageTitle = ref("");
 const pageContent = ref("");
+
+// 上传进度
+const uploadProgress = ref({ show: false, percent: 0 });
 
 // 自动保存
 const autoSaveStatus = ref(''); // '', 'saving', 'saved'
@@ -173,14 +191,108 @@ const loadPageData = async () => {
     }
 };
 
+/**
+ * 上传文件到服务器
+ * @param {File} file - 要上传的文件
+ * @param {string} [comment] - 可选的文件说明
+ * @returns {Promise<{url: string, fileName: string}>}
+ */
+async function uploadFile(file, comment) {
+    // 如果是新页面，先保存页面以获取 ID
+    if (isCreating.value) {
+        const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
+        const space = spaces.find(s => s.key === route.params.spaceKey)
+        const data = await pageApi.create({
+            title: pageTitle.value || 'Untitled',
+            content: pageContent.value || '',
+            workspaceId: space?.id,
+            parentId: parentId.value,
+            status: 0, // 草稿状态
+        });
+        // 更新路由到编辑模式
+        router.replace({ path: `/${route.params.spaceKey}/page/${data.id}/edit` });
+        return uploadFile(file, comment); // 递归调用，此时已有 pageId
+    }
+
+    uploadProgress.value = { show: true, percent: 0 };
+
+    try {
+        const result = await attachmentApi.upload(currentPageId.value, file, comment);
+        uploadProgress.value = { show: false, percent: 0 };
+
+        // 构建访问 URL
+        const fileUrl = `/uploads/${result.storagePath}`;
+        return { url: fileUrl, fileName: result.fileName };
+    } catch (error) {
+        uploadProgress.value = { show: false, percent: 0 };
+        message.error(`上传失败: ${error.message || '未知错误'}`);
+        throw error;
+    }
+}
+
+/**
+ * 处理拖拽上传
+ */
+function handleDropUpload(e) {
+    // 阻止默认行为
+    e.preventDefault();
+    e.stopPropagation();
+
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    handleFileInsert(file);
+}
+
+/**
+ * 处理文件插入
+ */
+async function handleFileInsert(file) {
+    // 检查文件类型
+    const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+    const isImage = imageTypes.includes(file.type);
+
+    if (!isImage && !file.name.match(/\.(md|txt|json|xml)$/i)) {
+        message.warning('暂不支持此文件类型');
+        return;
+    }
+
+    try {
+        const { url } = await uploadFile(file, '');
+
+        const editor = window.tinymce?.activeEditor;
+        if (!editor) return;
+
+        if (isImage) {
+            // 插入图片
+            editor.insertContent(`<img src="${url}" alt="${file.name}" style="max-width: 100%;">`);
+        } else {
+            // 插入文件链接
+            editor.insertContent(`<p><a href="${url}" target="_blank">📎 ${file.name}</a></p>`);
+        }
+    } catch (error) {
+        console.error('文件插入失败:', error);
+    }
+}
+
 onMounted(async () => {
     await loadPageData();
     loadPageTree();
     startAutoSave();
+
+    // 添加拖拽上传支持
+    document.addEventListener('drop', handleDropUpload, true);
+    document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, true);
 });
 
 onUnmounted(() => {
     stopAutoSave();
+    document.removeEventListener('drop', handleDropUpload, true);
+    document.removeEventListener('dragover', null, true);
 });
 
 const editorConfig = computed(() => ({
@@ -190,7 +302,7 @@ const editorConfig = computed(() => ({
     plugins: [
         "autoresize", "advlist", "autolink", "lists", "link", "image",
         "charmap", "preview", "anchor", "searchreplace", "visualblocks",
-        "code", "fullscreen",  "media", "table",
+        "code", "fullscreen", "media", "table", "paste",
     ],
     toolbar:
         "undo redo | formatselect | " +
@@ -223,30 +335,52 @@ const editorConfig = computed(() => ({
                 }, 0);
             }
         });
+
+        // 支持拖拽图片到编辑器
+        editor.on('drop', (e) => {
+            const files = e.dataTransfer?.files;
+            if (files && files.length > 0) {
+                e.preventDefault();
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    handleFileInsert(file);
+                }
+            }
+        });
     },
     paste_data_images: true,
     image_title: true,
-    automatic_uploads: true,
+    automatic_uploads: false, // 禁用自动上传，使用自定义上传
     file_picker_types: "image",
     file_picker_callback: (cb, value, meta) => {
+        // 创建文件选择器
         const input = document.createElement("input");
         input.setAttribute("type", "file");
-        input.setAttribute("accept", "image/*");
-        input.onchange = function () {
+        input.setAttribute("accept", "image/*,.md,.txt,.json,.xml");
+        input.onchange = async function () {
             const file = this.files[0];
-            const reader = new FileReader();
-            reader.onload = function () {
-                const id = "blobid" + new Date().getTime();
-                const blobCache = window.tinymce?.activeEditor?.editorUpload?.blobCache;
-                if (!blobCache) return;
-                const base64 = reader.result.split(",")[1];
-                const blobInfo = blobCache.create(id, file, base64);
-                blobCache.add(blobInfo);
-                cb(blobInfo.blobUri(), { title: file.name });
-            };
-            reader.readAsDataURL(file);
+            if (!file) return;
+
+            try {
+                const { url } = await uploadFile(file, '');
+                cb(url, { title: file.name });
+            } catch (error) {
+                console.error('文件上传失败:', error);
+            }
         };
         input.click();
+    },
+    // 粘贴图片时上传
+    images_upload_handler: async (blobInfo, progress) => {
+        // 将 blob 转换为 File
+        const file = new File([blobInfo.blob()], blobInfo.filename(), { type: blobInfo.blob().type });
+
+        try {
+            const { url } = await uploadFile(file, '');
+            return url;
+        } catch (error) {
+            throw error;
+        }
     },
     content_style: `
 body { margin: 0 !important; padding:5px 40px 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; }
@@ -268,7 +402,7 @@ const onEditorInit = () => {
 
 const savePage = async () => {
     if (!pageTitle.value.trim()) {
-        alert('请输入页面标题');
+        message.warning('请输入页面标题');
         return;
     }
     try {
@@ -294,6 +428,7 @@ const savePage = async () => {
         }
     } catch (e) {
         console.error("保存页面失败:", e);
+        message.error('保存失败，请重试');
     }
 };
 
@@ -338,7 +473,7 @@ const cancelEdit = () => {
     max-width: 900px;
 }
 
-#teleport-title-dest { 
+#teleport-title-dest {
     padding: 15px 40px 0;
 }
 
@@ -379,6 +514,23 @@ const cancelEdit = () => {
 .auto-save-hint {
     font-size: 12px;
     color: #6b778c;
+}
+
+/* 上传进度提示 */
+.upload-progress {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    font-size: 14px;
 }
 
 /* Base TinyMCE customisation for Classic mode natively sticky */

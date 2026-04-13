@@ -199,3 +199,34 @@ export const commentApi = {
     return request(`/api/page/comments/${id}`, { method: 'DELETE' })
   }
 }
+
+// ========== 附件 ==========
+
+export const attachmentApi = {
+  /** 上传附件 */
+  upload(pageId, file, comment) {
+    const formData = new FormData()
+    formData.append('file', file)
+    if (comment) formData.append('comment', comment)
+    return request(`/api/attachment/upload?pageId=${pageId}`, {
+      method: 'POST',
+      body: formData,
+      isFormData: true
+    })
+  },
+
+  /** 获取页面附件列表 */
+  getListByPage(pageId) {
+    return request(`/api/attachment/page/${pageId}`)
+  },
+
+  /** 获取附件详情 */
+  getById(id) {
+    return request(`/api/attachment/${id}`)
+  },
+
+  /** 删除附件 */
+  remove(id) {
+    return request(`/api/attachment/${id}`, { method: 'DELETE' })
+  }
+}

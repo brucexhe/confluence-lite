@@ -16,9 +16,10 @@ class ApiError extends Error {
  * @param {string} url - 请求路径 (如 '/api/user/login')
  * @param {object} options - 请求配置
  * @param {string} [options.method='GET'] - 请求方法
- * @param {object} [options.body] - 请求体 (自动 JSON 序列化)
+ * @param {object} [options.body] - 请求体 (自动 JSON 序列化，如果是 FormData 则直接使用)
  * @param {object} [options.headers] - 自定义请求头
  * @param {boolean} [options.auth=true] - 是否自动附加 Authorization header
+ * @param {boolean} [options.isFormData=false] - 是否为 FormData 上传
  * @returns {Promise<any>} 返回 data 字段的内容
  */
 async function request(url, options = {}) {
@@ -26,12 +27,15 @@ async function request(url, options = {}) {
     method = 'GET',
     body,
     headers: customHeaders = {},
-    auth = true
+    auth = true,
+    isFormData = false
   } = options
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...customHeaders
+  const headers = { ...customHeaders }
+
+  // FormData 不需要设置 Content-Type，浏览器会自动设置并添加 boundary
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json'
   }
 
   if (auth) {
@@ -43,7 +47,7 @@ async function request(url, options = {}) {
 
   const config = { method, headers }
   if (body !== undefined) {
-    config.body = JSON.stringify(body)
+    config.body = isFormData ? body : JSON.stringify(body)
   }
 
   const res = await fetch(url, config)

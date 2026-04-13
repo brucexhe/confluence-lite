@@ -3,8 +3,8 @@
         <!-- Top Navigation -->
         <header class="top-navbar">
             <div class="nav-left">
-                <div class="logo"></div>
-                <span class="nav-title">Confluence Lite</span>
+                <div class="logo" @click="navigateTo('/')" style="cursor: pointer"></div>
+                <a class="nav-title" href="/" style="cursor: pointer;color: #fff">Confluence Lite</a>
                 <nav class="nav-links">
                     <a-dropdown :trigger="['click']" placement="bottomLeft">
                         <a class="nav-link active dropdown-link" @click.prevent>
@@ -157,7 +157,7 @@
                         fontSize: '14px'
                         }">{{ currentSpaceInitial }}</div>
                     <div class="space-info">
-                        <h3>{{ currentSpaceName }}</h3>
+                        <h3 @click="navigateToSpace(currentSpaceKey)" style="cursor: pointer">{{ currentSpaceName }}</h3>
                         <p>{{ currentSpaceKey }}</p>
                     </div>
                 </div>
@@ -345,6 +345,14 @@ onUnmounted(() => {
     font-size: 14px;
 }
 
+.nav-title:hover {
+    text-decoration: underline;
+}
+
+.logo:hover {
+    opacity: 0.8;
+}
+
 .nav-links {
     display: flex;
     gap: 0.2rem;
@@ -493,6 +501,10 @@ onUnmounted(() => {
     font-weight: 600;
     color: var(--color-text-primary);
     margin-bottom: 0;
+}
+
+.space-info h3:hover {
+    text-decoration: underline;
 }
 
 .space-info p {

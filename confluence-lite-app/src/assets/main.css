@@ -145,3 +145,6 @@ button {
  .tox-toolbar__group:not(:last-of-type) {
     border-right: 1px solid #eee!important;
 }
+.ant-tree .ant-tree-switcher{
+  width: auto!important;
+}

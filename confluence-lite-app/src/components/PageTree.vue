@@ -93,9 +93,11 @@ const onSelect = (keys, info) => {
     if (info.node?.hasChildren) {
         const index = expandedKeys.value.indexOf(clickedKey)
         if (index > -1) {
-            expandedKeys.value.splice(index, 1)
+            // 收起：创建不包含该 key 的新数组
+            expandedKeys.value = expandedKeys.value.filter(k => k !== clickedKey)
         } else {
-            expandedKeys.value.push(clickedKey)
+            // 展开：创建包含该 key 的新数组
+            expandedKeys.value = [...expandedKeys.value, clickedKey]
         }
     }
 

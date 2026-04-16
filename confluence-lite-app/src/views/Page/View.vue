@@ -420,6 +420,7 @@ const attachmentCount = ref(0);
     margin-bottom: 12px;
     line-height: 1.714;
     color: #172b4d;
+    word-break: break-word;
 }
 :deep(.page-content pre) {
     background-color: #f4f5f7;

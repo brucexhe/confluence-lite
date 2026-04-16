@@ -71,6 +71,13 @@
             @restored="loadPageData"
         />
 
+        <!-- Attachments Drawer -->
+        <PageAttachments
+            v-model:open="attachmentsVisible"
+            :pageId="pageId"
+            @changed="loadAttachmentCount"
+        />
+
         <!-- View Source Modal -->
         <a-modal
             v-model:open="sourceVisible"
@@ -90,6 +97,7 @@ import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
+import PageAttachments from "../../components/PageAttachments.vue";
 import { pageApi, attachmentApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { usePageTreeStore } from "../../store/pageTree";
@@ -327,13 +335,15 @@ const handleDelete = async () => {
 const handleShare = () => console.log('Share clicked - TODO');
 const handleViewHistory = () => { historyVisible.value = true };
 const handleViewSource = () => { sourceVisible.value = true };
-const handleViewAttachments = () => console.log('View Attachments clicked - TODO');
+const handleViewAttachments = () => { attachmentsVisible.value = true };
 const handleExportPdf = () => console.log('Export PDF clicked - TODO');
 const handleWatch = () => console.log('Watch Page clicked - TODO');
 const handleMove = () => console.log('Move Page clicked - TODO');
 
 // 版本历史
 const historyVisible = ref(false);
+// 附件
+const attachmentsVisible = ref(false);
 // View Source
 const sourceVisible = ref(false);
 // 附件数量

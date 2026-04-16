@@ -12,5 +12,6 @@ public static class ApiRoutes
         app.MapWorkspaceRoutes();
         app.MapPageRoutes();
         app.MapAttachmentRoutes();
+        app.MapActivityRoutes();
     }
 }

@@ -230,7 +230,8 @@ router.beforeEach(async (to, from, next) => {
     const isAuthenticated = localStorage.getItem('auth_token')
 
     // Not logged in → login page (except public routes)
-    if (to.meta.requiresAuth && !isAuthenticated) {
+    // 检查 meta 是否存在以及 requiresAuth 属性
+    if (to.meta && to.meta.requiresAuth && !isAuthenticated) {
         next({name: 'login'})
         return
     }

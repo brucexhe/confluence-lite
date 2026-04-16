@@ -231,6 +231,21 @@ export const attachmentApi = {
   }
 }
 
+// ========== 活动记录 ==========
+
+export const activityApi = {
+  /** 获取最近活动 */
+  getRecent(params = {}) {
+    const queryParams = new URLSearchParams()
+    if (params.workspaceId) queryParams.append('workspaceId', params.workspaceId)
+    if (params.type) queryParams.append('type', params.type)
+    queryParams.append('count', params.count || 20)
+    queryParams.append('offset', params.offset || 0)
+
+    return request(`/api/activity/recent?${queryParams.toString()}`)
+  }
+}
+
 // ========== 系统设置 ==========
 
 export const systemSettingApi = {

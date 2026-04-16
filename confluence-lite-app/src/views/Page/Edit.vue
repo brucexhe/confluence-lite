@@ -253,6 +253,7 @@ async function handleFileInsert(file) {
             editor.insertContent(`<p><a class="file" href="${url}" target="_blank">${file.name}</a></p>`);
         }
     } catch (error) {
+        message.warning('文件插入失败');
         console.error('文件插入失败:', error);
     }
 }

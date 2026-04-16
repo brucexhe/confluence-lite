@@ -52,6 +52,15 @@ async function request(url, options = {}) {
 
   const res = await fetch(url, config)
 
+  // 处理 401 未授权 - 清除认证信息并跳转到登录页
+  if (res.status === 401) {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('auth_spaces')
+    // 使用 window.location 而不是 router 跳转，避免循环依赖
+    window.location.href = '/login'
+    throw new ApiError('未授权，请重新登录', 401)
+  }
+
   // 尝试解析 JSON
   let json
   try {

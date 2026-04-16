@@ -5,7 +5,8 @@
       "Bash(grep -E '\\\\.\\(sln|csproj|json|cs\\)$')",
       "WebSearch",
       "Bash(ls -la \"d:\\\\\\\\Projects\\\\\\\\confluence-lite\\\\\\\\confluence-lite-app\\\\\\\\public\\\\\\\\tinymce\\\\\\\\\")",
-      "Bash(ls -la \"d:/Projects/confluence-lite/confluence-lite-app/public/\"*.js)"
+      "Bash(ls -la \"d:/Projects/confluence-lite/confluence-lite-app/public/\"*.js)",
+      "Bash(npm run *)"
     ]
   }
 }

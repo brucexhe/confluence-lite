@@ -9,7 +9,7 @@
     <!-- 内容区域 -->
     <div class="content-section">
       <div class="activity-section">
-        <a-card :bordered="false" class="activity-card">
+        <a-card class="activity-card" :bordered="false">
           <template #title>
             <span class="card-title">最近活动</span>
           </template>
@@ -28,10 +28,10 @@
                 <a-list-item class="activity-item">
                   <template #avatar>
                     <a-avatar
-                      :size="28"
+                      :size="24"
                       :style="{
                         backgroundColor: getUserColor(item.user?.id),
-                        fontSize: '13px'
+                        fontSize: '12px'
                       }"
                     >
                       {{ getUserInitial(item.user) }}
@@ -39,21 +39,21 @@
                   </template>
                   <template #default>
                     <div class="activity-content">
-                      <div class="activity-header">
-                        <span class="activity-user">{{ item.user?.displayName || item.user?.username || 'Unknown' }}</span>
-                        <span class="activity-action">{{ item.description }}</span>
-                      </div>
-                      <div v-if="item.pageTitle" class="activity-page">
+                      <div class="activity-page">
                         <router-link
                           v-if="item.workspaceKey && item.pageId"
                           :to="`/${item.workspaceKey}/page/${item.pageId}`"
                           class="page-link"
                         >
+                          <FileText :size="15" color="#0066ff" :stroke-width="1.5" class="page-icon" />
                           {{ item.pageTitle }}
                         </router-link>
-                        <span v-else class="page-title">{{ item.pageTitle }}</span>
                       </div>
-                      <div class="activity-time">{{ formatTime(item.createdAt) }}</div>
+                      <div class="activity-meta">
+                        <span class="activity-user">{{ item.user?.displayName || item.user?.username || 'Unknown' }}</span>
+                        <span class="activity-separator">•</span>
+                        <span class="activity-time">{{ formatTime(item.createdAt) }}</span>
+                      </div>
                     </div>
                   </template>
                 </a-list-item>
@@ -62,7 +62,6 @@
             <a-empty
               v-else-if="!loading"
               description="暂无活动"
-              :image="null"
               class="empty-state"
             >
               <template #description>
@@ -96,6 +95,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { FileText } from 'lucide-vue-next'
 import { activityApi, workspaceApi } from '@/api'
 
 const route = useRoute()
@@ -166,7 +166,14 @@ async function loadActivities() {
       workspaceId: null, // 获取所有工作空间的活动
       count: 20
     })
-    activities.value = data || []
+
+    // 确保返回的是数组
+    if (Array.isArray(data)) {
+      activities.value = data
+    } else {
+      console.warn('活动 API 返回格式不正确:', data)
+      activities.value = []
+    }
   } catch (error) {
     console.error('加载活动失败:', error)
     activities.value = []
@@ -192,9 +199,8 @@ onMounted(() => {
 
 <style scoped>
 .workspace-home {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 16px 24px 0;
+  max-width: 1000px; 
+  padding: 20px 40px 0;
 }
 
 /* 欢迎头部 */
@@ -233,23 +239,25 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+ 
+
 /* 卡片样式 */
 .activity-card,
 .quick-card {
   border-radius: 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: none !important;
 }
 
 .activity-card :deep(.ant-card-head),
 .quick-card :deep(.ant-card-head) {
-  border-bottom: 1px solid #dfe1e6;
   padding: 12px 16px;
   min-height: auto;
+  border-bottom: 1px solid #dfe1e6;
 }
 
 .activity-card :deep(.ant-card-body),
 .quick-card :deep(.ant-card-body) {
-  padding: 12px 16px;
+  padding: 12px 6px;
 }
 
 .card-title {
@@ -264,8 +272,8 @@ onMounted(() => {
 }
 
 .activity-list :deep(.ant-list-item) {
-  border-bottom: 1px solid #ebecf0;
-  padding: 10px 0;
+  border-bottom: none;
+  padding: 4px 0;
 }
 
 .activity-list :deep(.ant-list-item:last-child) {
@@ -280,44 +288,52 @@ onMounted(() => {
 .activity-content {
   flex: 1;
   min-width: 0;
-}
-
-.activity-header {
-  font-size: 13px;
-  line-height: 1.5;
-  margin-bottom: 2px;
-}
-
-.activity-user {
-  font-weight: 500;
-  color: #172b4d;
-}
-
-.activity-action {
-  color: #42526e;
-  margin-left: 4px;
+  padding-left: 8px;
 }
 
 .activity-page {
-  font-size: 13px;
-  margin-bottom: 2px;
+  font-size: 14px; 
+  line-height: 1.4;
 }
 
 .page-link {
   color: #0052cc;
   text-decoration: none;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-icon {
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 
 .page-link:hover {
   text-decoration: underline;
+  color: #0052cc;
 }
 
-.page-title {
+.activity-meta {
+  font-size: 12px;
+  color: #6b778c;
+  display: flex;
+  align-items: center;
+  padding-left: 20px;;
+}
+
+.activity-user {
   color: #42526e;
+  font-weight: 400;
+}
+
+.activity-separator {
+  margin: 0 4px;
+  color: #dfe1e6;
 }
 
 .activity-time {
-  font-size: 12px;
   color: #6b778c;
 }
 

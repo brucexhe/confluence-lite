@@ -23,9 +23,12 @@ public class WorkspaceService
     /// </summary>
     public async Task<(WorkspaceDto? workspace, string? error)> CreateWorkspaceAsync(long ownerId, CreateWorkspaceRequest request)
     {
-        // 检查Key是否已存在
+        // 将 Key 统一转换为大写
+        var upperKey = request.Key.ToUpper();
+
+        // 检查Key是否已存在（使用大写比较）
         var exists = await _db.Db.Queryable<Workspace>()
-            .Where(w => w.Key == request.Key)
+            .Where(w => w.Key == upperKey)
             .AnyAsync();
 
         if (exists)
@@ -37,7 +40,7 @@ public class WorkspaceService
         {
             Name = request.Name,
             Description = request.Description,
-            Key = request.Key,
+            Key = upperKey, // 存储为大写
             OwnerId = ownerId,
             Status = 1,
             CreatedAt = DateTime.Now,
@@ -72,8 +75,10 @@ public class WorkspaceService
     /// </summary>
     public async Task<WorkspaceDto?> GetWorkspaceByKeyAsync(string key)
     {
+        // 将输入的 key 转为大写进行查询
+        var upperKey = key.ToUpper();
         var workspace = await _db.Db.Queryable<Workspace>()
-            .Where(w => w.Key == key)
+            .Where(w => w.Key == upperKey)
             .FirstAsync();
 
         return workspace == null ? null : await MapToDtoAsync(workspace);

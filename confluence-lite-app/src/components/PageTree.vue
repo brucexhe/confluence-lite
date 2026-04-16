@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import {ref, watch} from 'vue'
+import {ref, watch, nextTick} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {Modal} from 'ant-design-vue'
 import {FileText, Folder, ChevronRight} from 'lucide-vue-next'
@@ -74,6 +74,56 @@ async function loadTree() {
 
 // workspaceId 变化时重新加载
 watch(() => props.workspaceId, loadTree, {immediate: true})
+
+// treeData 加载完成后，自动展开当前页面的父级和子级
+watch(() => treeData, (newTree) => {
+    if (newTree && newTree.length > 0 && route.params.id) {
+        nextTick(() => {
+            const id = String(route.params.id)
+            selectedKeys.value = [id]
+
+            // 展开所有上级节点
+            const parentKeys = getParentKeys(id, newTree, [])
+
+            // 展开第一级子节点
+            const childKeys = getChildKeys(id, newTree)
+
+            // 合并所有需要展开的 key
+            expandedKeys.value = [...new Set([...parentKeys, ...childKeys])]
+        })
+    }
+}, { deep: true })
+
+// 获取节点的所有上级 key
+function getParentKeys(nodeId, nodes, parents = []) {
+    for (const node of nodes) {
+        if (node.key === String(nodeId)) {
+            return [...parents, node.key]
+        }
+        if (node.children && node.children.length > 0) {
+            const result = getParentKeys(nodeId, node.children, [...parents, node.key])
+            if (result) return result
+        }
+    }
+    return null
+}
+
+// 获取节点的子级 key
+function getChildKeys(nodeId, nodes) {
+    for (const node of nodes) {
+        if (node.key === String(nodeId)) {
+            if (node.children && node.children.length > 0) {
+                return node.children.map(child => child.key)
+            }
+            return []
+        }
+        if (node.children && node.children.length > 0) {
+            const result = getChildKeys(nodeId, node.children)
+            if (result) return result
+        }
+    }
+    return []
+}
 
 // 同步路由中的 page id 到 selectedKeys
 watch(() => route.params.id, (id) => {

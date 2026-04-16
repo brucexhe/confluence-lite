@@ -22,7 +22,12 @@ export const useAuthStore = defineStore('auth', () => {
         localStorage.setItem('auth_token', token.value)
         localStorage.setItem('auth_user', JSON.stringify(user.value))
         if (data.workspaces) {
-          localStorage.setItem('auth_spaces', JSON.stringify(data.workspaces))
+          // 将所有空间 key 转换为大写
+          const normalizedWorkspaces = data.workspaces.map(ws => ({
+            ...ws,
+            key: ws.key?.toUpperCase() || ''
+          }))
+          localStorage.setItem('auth_spaces', JSON.stringify(normalizedWorkspaces))
         }
         router.push('/')
         return true
@@ -52,7 +57,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('auth_token', token.value)
     localStorage.setItem('auth_user', JSON.stringify(user.value))
     localStorage.setItem('auth_spaces', JSON.stringify([
-      { id: setupData.workspaceId, name: '', key: spaceKey }
+      { id: setupData.workspaceId, name: '', key: spaceKey?.toUpperCase() || '' }
     ]))
   }
 

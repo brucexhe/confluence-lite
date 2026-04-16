@@ -226,6 +226,16 @@ router.beforeEach(async (to, from, next) => {
         return
     }
 
+    // 处理空间 KEY 大小写 - 如果是空间路由且 key 是小写，重定向到大写
+    if (to.params.spaceKey && to.params.spaceKey !== to.params.spaceKey.toUpperCase()) {
+        next({
+            path: to.path.replace(to.params.spaceKey, to.params.spaceKey.toUpperCase()),
+            query: to.query,
+            hash: to.hash
+        })
+        return
+    }
+
     // Auth check
     const isAuthenticated = localStorage.getItem('auth_token')
 
@@ -240,13 +250,13 @@ router.beforeEach(async (to, from, next) => {
     if ((to.name === 'login' || to.name === 'home') && isAuthenticated) {
         const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
         if (spaces.length > 0) {
-            next({path: `/${spaces[0].key}`})
+            next({path: `/${spaces[0].key.toUpperCase()}`})
         } else {
             // No spaces → try fetch from API
             try {
                 const data = await workspaceApi.getMy()
                 if (data && data.length > 0) {
-                    next({path: `/${data[0].key}`})
+                    next({path: `/${data[0].key.toUpperCase()}`})
                 } else {
                     next({name: 'login'})
                 }

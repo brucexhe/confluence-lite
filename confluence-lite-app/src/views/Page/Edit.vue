@@ -231,7 +231,10 @@ async function handleFileInsert(file) {
     const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
     const isImage = imageTypes.includes(file.type);
 
-    if (!isImage && !file.name.match(/\.(md|txt|json|xml)$/i)) {
+    // 支持的文件类型
+    const supportedExtensions = /\.(md|txt|json|xml|zip|pptx|pdf|docx|xlsx|mp4|mp3)$/i;
+
+    if (!isImage && !file.name.match(supportedExtensions)) {
         message.warning('暂不支持此文件类型');
         return;
     }
@@ -244,10 +247,10 @@ async function handleFileInsert(file) {
 
         if (isImage) {
             // 插入图片
-            editor.insertContent(`<img src="${url}" alt="${file.name}" style="max-width: 100%;">`);
+            editor.insertContent(`<img class="image" src="${url}" alt="${file.name}" style="max-width: 100%;">`);
         } else {
             // 插入文件链接
-            editor.insertContent(`<p><a href="${url}" target="_blank">📎 ${file.name}</a></p>`);
+            editor.insertContent(`<p><a class="file" href="${url}" target="_blank">${file.name}</a></p>`);
         }
     } catch (error) {
         console.error('文件插入失败:', error);
@@ -319,14 +322,19 @@ const editorConfig = computed(() => ({
             }
         });
 
-        // 支持拖拽图片到编辑器
+        // 支持拖拽文件到编辑器
         editor.on('drop', (e) => {
             const files = e.dataTransfer?.files;
             if (files && files.length > 0) {
                 e.preventDefault();
                 const file = files[0];
-                if (file.type.startsWith('image/')) {
+                // 支持的文件类型
+                const imageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+                const supportedExtensions = /\.(md|txt|json|xml|zip|pptx|pdf|docx|xlsx|mp4|mp3)$/i;
+                if (imageTypes.includes(file.type) || file.name.match(supportedExtensions)) {
                     handleFileInsert(file);
+                } else {
+                    message.warning('暂不支持此文件类型');
                 }
             }
         });
@@ -339,7 +347,7 @@ const editorConfig = computed(() => ({
         // 创建文件选择器
         const input = document.createElement("input");
         input.setAttribute("type", "file");
-        input.setAttribute("accept", "image/*,.md,.txt,.json,.xml");
+        input.setAttribute("accept", "image/*,.md,.txt,.json,.xml,.zip,.pptx,.pdf,.docx,.xlsx,.mp4,.mp3");
         input.onchange = async function () {
             const file = this.files[0];
             if (!file) return;

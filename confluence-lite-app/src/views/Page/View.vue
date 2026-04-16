@@ -93,6 +93,19 @@ import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import { pageApi, attachmentApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { usePageTreeStore } from "../../store/pageTree";
+import Prism from "prismjs";
+import "prismjs/themes/prism.css";
+import "prismjs/plugins/line-numbers/prism-line-numbers.css";
+import "prismjs/plugins/line-numbers/prism-line-numbers.js";
+import "prismjs/components/prism-csharp";
+import "prismjs/components/prism-go"; 
+import "prismjs/components/prism-java";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-typescript";
+import "prismjs/components/prism-sql";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-yaml";
+import "prismjs/components/prism-json"; 
 
 const route = useRoute();
 const router = useRouter();
@@ -161,6 +174,7 @@ const loadPageData = async () => {
             pageCreatorName.value = data.creator?.displayName || data.creator?.username || "Unknown";
             pageCreatorInitial.value = pageCreatorName.value.charAt(0).toUpperCase();
             pageUpdatedTime.value = formatTime(data.updatedAt);
+            nextTick(() => highlightCode());
         }
     } catch (e) {
         console.error("加载页面失败:", e);
@@ -191,6 +205,32 @@ function formatTime(dateStr) {
     const days = Math.floor(hours / 24);
     if (days < 30) return `${days} 天前`;
     return date.toLocaleDateString('zh-CN');
+}
+
+// 为代码块添加行号 class 并执行语法高亮
+function highlightCode() {
+    nextTick(() => {
+        const el = contentRef.value;
+        if (!el) return;
+        el.querySelectorAll('pre[class*="language-"]').forEach(pre => {
+            pre.classList.add('line-numbers');
+            if (!pre.querySelector('.code-copy-btn')) {
+                const btn = document.createElement('button');
+                btn.className = 'code-copy-btn';
+                btn.textContent = 'Copy';
+                btn.onclick = () => {
+                    const code = pre.querySelector('code');
+                    navigator.clipboard.writeText(code?.textContent || pre.textContent || '').then(() => {
+                        btn.textContent = 'Copied!';
+                        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+                    });
+                };
+                pre.style.position = 'relative';
+                pre.appendChild(btn);
+            }
+        });
+        Prism.highlightAll();
+    });
 }
 
 // 表格排序
@@ -251,6 +291,7 @@ function initTableSort() {
 
 watch(pageContent, () => {
     initTableSort();
+    highlightCode();
 });
 
 onMounted(() => {
@@ -436,6 +477,51 @@ const attachmentCount = ref(0);
     font-size: 14px;
     color: #172b4d;
     border: 1px solid #dfe1e6;
+    overflow-x: auto;
+}
+:deep(.page-content pre code) {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+    color: inherit;
+}
+:deep(.page-content pre[class*="language-"]) { 
+    padding-left: 3.8em;
+}
+:deep(.page-content pre[class*="language-"] .line-numbers-rows) {
+    border-right: 1px solid #dfe1e6;
+}
+:deep(.page-content pre .code-copy-btn) {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid #dfe1e6;
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #42526e;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1;
+}
+:deep(.page-content pre:hover .code-copy-btn) {
+    opacity: 1;
+}
+:deep(.page-content :not(pre) > code) {
+    background: #f4f5f7;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family:
+        SFMono-Regular,
+        Consolas,
+        Liberation Mono,
+        Menlo,
+        monospace;
+    font-size: 13px;
+    color: #c7254e;
 }
 
 /* Confluence-style Table */

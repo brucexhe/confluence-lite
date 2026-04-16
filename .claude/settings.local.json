@@ -6,7 +6,9 @@
       "WebSearch",
       "Bash(ls -la \"d:\\\\\\\\Projects\\\\\\\\confluence-lite\\\\\\\\confluence-lite-app\\\\\\\\public\\\\\\\\tinymce\\\\\\\\\")",
       "Bash(ls -la \"d:/Projects/confluence-lite/confluence-lite-app/public/\"*.js)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(ls -d /Users/artefact/project/confluence-lite/confluence-lite-app/public/tinymce/plugins/*/)",
+      "Bash(pnpm install:*)"
     ]
   }
 }

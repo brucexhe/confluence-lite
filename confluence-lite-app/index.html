@@ -5,9 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Confluence Lite</title>
+    
+    <!-- 预加载 TinyMCE 样式 -->
+    <link rel="preload" href="/tinymce/skins/ui/oxide/skin.min.css" as="style">
+    <link rel="preload" href="/tinymce/themes/silver/theme.min.js" as="script">
   </head>
   <body>
     <div id="app"></div>
+    <!-- 从 public/tinymce 加载 TinyMCE 核心 -->
+    <script src="/tinymce/tinymce.min.js"></script>
+    <script src="/tinymce/themes/silver/theme.min.js"></script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

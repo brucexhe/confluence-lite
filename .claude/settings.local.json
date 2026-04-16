@@ -3,7 +3,9 @@
     "allow": [
       "Bash(dotnet build:*)",
       "Bash(grep -E '\\\\.\\(sln|csproj|json|cs\\)$')",
-      "WebSearch"
+      "WebSearch",
+      "Bash(ls -la \"d:\\\\\\\\Projects\\\\\\\\confluence-lite\\\\\\\\confluence-lite-app\\\\\\\\public\\\\\\\\tinymce\\\\\\\\\")",
+      "Bash(ls -la \"d:/Projects/confluence-lite/confluence-lite-app/public/\"*.js)"
     ]
   }
 }

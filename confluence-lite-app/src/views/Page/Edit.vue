@@ -45,31 +45,8 @@ import { message } from "ant-design-vue";
 import Editor from "@tinymce/tinymce-vue";
 import { pageApi, attachmentApi } from "../../api";
 
-// TinyMCE core
-import "tinymce/tinymce";
-import "tinymce/skins/content/default/content.css?raw";
-// TinyMCE plugins
-import "tinymce/plugins/image";
-import "tinymce/plugins/table";
-import "tinymce/plugins/lists";
-import "tinymce/plugins/code";
-import "tinymce/plugins/fullscreen";
-import "tinymce/plugins/autoresize";
-import "tinymce/plugins/advlist";
-import "tinymce/plugins/autolink";
-import "tinymce/plugins/link";
-import "tinymce/plugins/charmap";
-import "tinymce/plugins/preview";
-import "tinymce/plugins/anchor";
-import "tinymce/plugins/searchreplace";
-import "tinymce/plugins/visualblocks";
-import "tinymce/plugins/media";
-import "tinymce/plugins/paste";
-import "tinymce/skins/ui/oxide/skin.css";
-import "tinymce/themes/silver";
-import "tinymce/icons/default";
-import "tinymce/models/dom";
-import "tinymce/icons/default/icons";
+// TinyMCE 已在 index.html 中从 /tinymce/ 全局加载
+// 这里不需要任何 import 语句
 
 const route = useRoute();
 const router = useRouter();
@@ -296,13 +273,15 @@ onUnmounted(() => {
 });
 
 const editorConfig = computed(() => ({
+    base_url: '/tinymce/',
     min_height: 500,
     menubar: false,
     statusbar: false,
     plugins: [
         "autoresize", "advlist", "autolink", "lists", "link", "image",
         "charmap", "preview", "anchor", "searchreplace", "visualblocks",
-        "code", "fullscreen", "media", "table", "paste",
+        "code", "fullscreen", "media", "table",
+        // paste is built-in, no need to declare
     ],
     toolbar:
         "undo redo | formatselect | " +

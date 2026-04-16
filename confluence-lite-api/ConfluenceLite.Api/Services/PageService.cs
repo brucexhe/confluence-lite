@@ -110,6 +110,7 @@ public class PageService
         var pages = await _db.Db.Queryable<Page>()
             .Where(p => p.WorkspaceId == workspaceId)
             .OrderBy(p => p.SortOrder)
+            .OrderBy(p => p.Id)
             .ToListAsync();
 
         var pageDict = new Dictionary<long, PageTreeNodeDto>();
@@ -160,6 +161,7 @@ public class PageService
         var pages = await _db.Db.Queryable<Page>()
             .Where(p => p.ParentId == parentId)
             .OrderBy(p => p.SortOrder)
+            .OrderBy(p => p.Id)
             .ToListAsync();
 
         var dtos = new List<PageDto>();
@@ -261,6 +263,7 @@ public class PageService
     {
         var children = await _db.Db.Queryable<Page>()
             .Where(p => p.ParentId == pageId)
+            .OrderBy(p => p.Id)
             .ToListAsync();
 
         foreach (var child in children)

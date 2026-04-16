@@ -92,10 +92,12 @@ import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import { pageApi, attachmentApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
+import { usePageTreeStore } from "../../store/pageTree";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const pageTreeStore = usePageTreeStore();
 const pageId = computed(() => route.params.id);
 const contentRef = ref(null);
 
@@ -119,7 +121,19 @@ const spaceName = computed(() => {
 });
 
 // 面包屑：从页面树中提取父级链
-const pageTreeMap = ref(new Map())
+const pageTreeMap = computed(() => {
+    const map = new Map()
+    const treeData = pageTreeStore.currentTreeData
+    function walk(nodes, parentId = null) {
+        for (const node of nodes) {
+            map.set(node.id, { ...node, parentId })
+            if (node.children?.length) walk(node.children, node.id)
+        }
+    }
+    walk(treeData || [])
+    return map
+})
+
 const parentCrumbs = computed(() => {
     const id = Number(pageId.value)
     const crumbs = []
@@ -136,25 +150,6 @@ const parentCrumbs = computed(() => {
     }
     return crumbs
 })
-
-async function loadPageTree() {
-    const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
-    const key = route.params.spaceKey
-    const space = spaces.find(s => s.key === key)
-    if (!space?.id) return
-    try {
-        const tree = await pageApi.getTree(space.id)
-        const map = new Map()
-        function walk(nodes) {
-            for (const node of nodes) {
-                map.set(node.id, node)
-                if (node.children?.length) walk(node.children)
-            }
-        }
-        walk(tree || [])
-        pageTreeMap.value = map
-    } catch { /* ignore */ }
-}
 
 // 加载页面数据
 const loadPageData = async () => {
@@ -260,13 +255,11 @@ watch(pageContent, () => {
 
 onMounted(() => {
     loadPageData();
-    loadPageTree();
     loadAttachmentCount();
 });
 
 watch(pageId, () => {
     loadPageData();
-    loadPageTree();
     loadAttachmentCount();
 });
 
@@ -278,6 +271,12 @@ const handleDelete = async () => {
     if (!confirm('确定要删除此页面吗？')) return;
     try {
         await pageApi.remove(pageId.value);
+        // Invalidate cache so the tree reflects the deletion
+        const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
+        const space = spaces.find(s => s.key === route.params.spaceKey)
+        if (space?.id) {
+            pageTreeStore.invalidateWorkspace(space.id)
+        }
         router.push(`/${route.params.spaceKey}`);
     } catch (e) {
         console.error("删除页面失败:", e);

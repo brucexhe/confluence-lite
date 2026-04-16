@@ -74,6 +74,16 @@ button {
   outline: none;
 }
 
+.flex{
+  display: flex;
+  align-items: center;
+}
+.flex-col{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* Glassmorphism helpers */
 .glass-panel {
   background: rgba(255, 255, 255, 0.7);

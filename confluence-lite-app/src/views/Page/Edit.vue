@@ -44,12 +44,14 @@ import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import Editor from "@tinymce/tinymce-vue";
 import { pageApi, attachmentApi } from "../../api";
+import { usePageTreeStore } from "../../store/pageTree";
 
 // TinyMCE 已在 index.html 中从 /tinymce/ 全局加载
 // 这里不需要任何 import 语句
 
 const route = useRoute();
 const router = useRouter();
+const pageTreeStore = usePageTreeStore();
 const pageId = computed(() => route.params.id);
 const isCreating = computed(() => !pageId.value);
 const parentId = computed(() => route.query.parentId || null);
@@ -86,6 +88,12 @@ function startAutoSave() {
                 title: pageTitle.value,
                 content: pageContent.value,
             });
+            // Invalidate cache so the tree shows updated title
+            const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
+            const space = spaces.find(s => s.key === route.params.spaceKey)
+            if (space?.id) {
+                pageTreeStore.invalidateWorkspace(space.id)
+            }
             lastSavedTitle = pageTitle.value;
             lastSavedContent = pageContent.value;
             autoSaveStatus.value = 'saved';
@@ -110,7 +118,19 @@ const spaceName = computed(() => {
     return space?.name || key || ''
 });
 
-const pageTreeMap = ref(new Map())
+const pageTreeMap = computed(() => {
+    const map = new Map()
+    const treeData = pageTreeStore.currentTreeData
+    function walk(nodes, parentId = null) {
+        for (const node of nodes) {
+            map.set(node.id, { ...node, parentId })
+            if (node.children?.length) walk(node.children, node.id)
+        }
+    }
+    walk(treeData || [])
+    return map
+})
+
 const parentCrumbs = computed(() => {
     // 编辑已有页面：从当前页面往上找
     // 创建子页面：从父页面往上找
@@ -130,25 +150,6 @@ const parentCrumbs = computed(() => {
     }
     return crumbs
 })
-
-async function loadPageTree() {
-    const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
-    const key = route.params.spaceKey
-    const space = spaces.find(s => s.key === key)
-    if (!space?.id) return
-    try {
-        const tree = await pageApi.getTree(space.id)
-        const map = new Map()
-        function walk(nodes) {
-            for (const node of nodes) {
-                map.set(node.id, node)
-                if (node.children?.length) walk(node.children)
-            }
-        }
-        walk(tree || [])
-        pageTreeMap.value = map
-    } catch { /* ignore */ }
-}
 
 const editorReady = ref(true);
 
@@ -255,7 +256,6 @@ async function handleFileInsert(file) {
 
 onMounted(async () => {
     await loadPageData();
-    loadPageTree();
     startAutoSave();
 
     // 添加拖拽上传支持

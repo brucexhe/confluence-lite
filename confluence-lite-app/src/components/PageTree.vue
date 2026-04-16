@@ -15,23 +15,23 @@
             <template #switcherIcon="{ expanded }">
                 <ChevronRight :class="['tree-switcher-icon', { expanded }]"/>
             </template>
-            <template #icon="{ dataRef }">
-                <FileText v-if="!dataRef.children || dataRef.children.length === 0" class="file-icon"/>
-                <Folder v-else class="folder-icon"/>
-            </template>
             <template #title="{ dataRef }">
-                <span class="node-title" :title="dataRef.title">{{ dataRef.title }}</span>
+                <div class="flex">
+                    <Dot  v-if="!dataRef.children || dataRef.children.length === 0" class="leaf-icon"/>
+                    <span class="node-title" :title="dataRef.title">{{ dataRef.title }}</span>
+                </div>
             </template>
         </a-tree>
     </div>
 </template>
 
 <script setup>
-import {ref, watch, nextTick} from 'vue'
+import {ref, watch, nextTick, computed} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {Modal} from 'ant-design-vue'
-import {FileText, Folder, ChevronRight} from 'lucide-vue-next'
+import {Dot, Folder, ChevronRight} from 'lucide-vue-next'
 import {pageApi} from '../api'
+import { usePageTreeStore } from '../store/pageTree'
 
 const props = defineProps({
     workspaceId: {type: Number, default: null},
@@ -44,6 +44,9 @@ const loading = ref(false)
 const treeData = ref([])
 const selectedKeys = ref([])
 const expandedKeys = ref([])
+
+// 使用 store
+const pageTreeStore = usePageTreeStore()
 
 // 将后端 PageTreeNodeDto 递归转为 ant-design Tree 格式
 function mapNode(node) {
@@ -59,14 +62,14 @@ function mapNode(node) {
     return item
 }
 
+// 从 store 加载树数据
 async function loadTree() {
     if (!props.workspaceId) return
+
     loading.value = true
     try {
-        const data = await pageApi.getTree(props.workspaceId)
+        const data = await pageTreeStore.getTree(props.workspaceId)
         treeData.value = (data || []).map(mapNode)
-    } catch {
-        treeData.value = []
     } finally {
         loading.value = false
     }
@@ -76,23 +79,20 @@ async function loadTree() {
 watch(() => props.workspaceId, loadTree, {immediate: true})
 
 // treeData 加载完成后，自动展开当前页面的父级和子级
-watch(() => treeData, (newTree) => {
+watch(() => treeData.value, (newTree) => {
     if (newTree && newTree.length > 0 && route.params.id) {
         nextTick(() => {
             const id = String(route.params.id)
             selectedKeys.value = [id]
 
             // 展开所有上级节点
-            const parentKeys = getParentKeys(id, newTree, [])
-
-            // 展开第一级子节点
-            const childKeys = getChildKeys(id, newTree)
+            const parentKeys = getParentKeys(id, newTree, []) 
 
             // 合并所有需要展开的 key
-            expandedKeys.value = [...new Set([...parentKeys, ...childKeys])]
+            expandedKeys.value = [...new Set([...parentKeys])]
         })
     }
-}, { deep: true })
+})
 
 // 获取节点的所有上级 key
 function getParentKeys(nodeId, nodes, parents = []) {
@@ -209,6 +209,7 @@ const onSelect = (keys, info) => {
     overflow: hidden;
     display: block;
     flex: 1;
+    margin-left: 2px;
 }
 
 :deep(.confluence-tree .ant-tree-node-content-wrapper:hover) {
@@ -248,18 +249,20 @@ const onSelect = (keys, info) => {
     display: none;
 }
 
-.file-icon {
-    width: 14px;
-    height: 14px;
-    color: #0052CC;
-    margin-top: 5px;
+.leaf-icon {
+    width: 21px;
+    height: 21px;
+    color: #42526E;
+    flex-shrink: 0;
+    transform: scale(1.2);
+    margin-left: -6px;
 }
 
 .folder-icon {
     width: 14px;
     height: 14px;
     color: #6B778C;
-    margin-top: 5px;
+    flex-shrink: 0;
 }
 
 .node-title {

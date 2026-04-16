@@ -20,15 +20,12 @@
                         placeholder="筛选角色"
                         style="width: 120px"
                         allow-clear
+                        :options="roleOptions"
                         @change="handleSearch"
-                    >
-                        <a-select-option value="admin">管理员</a-select-option>
-                        <a-select-option value="editor">编辑者</a-select-option>
-                        <a-select-option value="user">普通用户</a-select-option>
-                    </a-select>
+                    />
                 </a-space>
                 <a-button type="primary" @click="showCreateModal">
-                    <template #icon><PlusOutlined /></template>
+                    <Plus :size="14" style="vertical-align: middle" />
                     添加用户
                 </a-button>
             </div>
@@ -55,6 +52,9 @@
                         <a-tag :color="record.status === 'active' ? 'green' : 'red'">
                             {{ record.status === 'active' ? '正常' : '禁用' }}
                         </a-tag>
+                    </template>
+                    <template v-else-if="column.key === 'createdAt'">
+                        <span>{{ formatDateTime(record.createdAt) }}</span>
                     </template>
                     <template v-else-if="column.key === 'action'">
                         <a-space>
@@ -105,11 +105,11 @@
                     <a-input-password v-model:value="formState.password" />
                 </a-form-item>
                 <a-form-item label="角色" name="roles" :rules="[{ required: true, message: '请选择角色' }]">
-                    <a-select v-model:value="formState.roles" mode="multiple">
-                        <a-select-option value="admin">管理员</a-select-option>
-                        <a-select-option value="editor">编辑者</a-select-option>
-                        <a-select-option value="user">普通用户</a-select-option>
-                    </a-select>
+                    <a-select
+                        v-model:value="formState.roles"
+                        mode="multiple"
+                        :options="roleOptions"
+                    />
                 </a-form-item>
                 <a-form-item label="状态" name="status">
                     <a-radio-group v-model:value="formState.status">
@@ -139,8 +139,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { PlusOutlined } from '@ant-design/icons-vue'
+import { Plus } from 'lucide-vue-next'
 import { userApi } from '@/api'
+import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -162,6 +163,12 @@ const formState = reactive({
     status: 'active'
 })
 
+const roleOptions = [
+    { label: '管理员', value: 'admin' },
+    { label: '编辑者', value: 'editor' },
+    { label: '普通用户', value: 'user' }
+]
+
 const pagination = reactive({
     current: 1,
     pageSize: 20,
@@ -175,7 +182,7 @@ const columns = [
     { title: '邮箱', dataIndex: 'email', key: 'email' },
     { title: '角色', key: 'roles' },
     { title: '状态', key: 'status' },
-    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: '创建时间', key: 'createdAt' },
     { title: '操作', key: 'action', width: 180 }
 ]
 
@@ -306,8 +313,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.settings-page {
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+}
+
+.page-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #172b4d;
+    margin: 0 0 4px 0;
+}
+
+.page-description {
+    font-size: 13px;
+    color: #6b778c;
+    margin: 0;
+}
+
 .page-content {
-    padding: 16px 24px 24px;
+    padding: 20px 24px 24px;
 }
 
 .toolbar {
@@ -315,5 +347,7 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 </style>

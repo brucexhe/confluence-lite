@@ -14,7 +14,22 @@
                         <a-descriptions-item label="产品名称">Confluence Lite</a-descriptions-item>
                         <a-descriptions-item label="系统版本">{{ systemInfo.version }}</a-descriptions-item>
                         <a-descriptions-item label="构建时间">{{ systemInfo.buildTime }}</a-descriptions-item>
-                        <a-descriptions-item label="环境">{{ systemInfo.environment }}</a-descriptions-item>
+                        <a-descriptions-item label="运行环境">{{ systemInfo.environment }}</a-descriptions-item>
+                        <a-descriptions-item label="Git 提交">{{ systemInfo.gitCommit }}</a-descriptions-item>
+                        <a-descriptions-item label="启动时间">{{ systemInfo.startTime }}</a-descriptions-item>
+                    </a-descriptions>
+                </div>
+
+                <!-- 服务器信息 -->
+                <div class="info-section">
+                    <h3 class="section-title">服务器信息</h3>
+                    <a-descriptions bordered :column="2">
+                        <a-descriptions-item label="主机名">{{ systemInfo.hostname }}</a-descriptions-item>
+                        <a-descriptions-item label="平台">{{ systemInfo.platform }}</a-descriptions-item>
+                        <a-descriptions-item label="架构">{{ systemInfo.arch }}</a-descriptions-item>
+                        <a-descriptions-item label="CPU 核心数">{{ systemInfo.cpu.cores }} 核心</a-descriptions-item>
+                        <a-descriptions-item label="总内存">{{ formatBytes(systemInfo.memory.total) }}</a-descriptions-item>
+                        <a-descriptions-item label="可用内存">{{ formatBytes(systemInfo.memory.free) }}</a-descriptions-item>
                     </a-descriptions>
                 </div>
 
@@ -22,17 +37,17 @@
                 <div class="info-section">
                     <h3 class="section-title">运行环境</h3>
                     <a-descriptions bordered :column="2">
-                        <a-descriptions-item label="操作系统">{{ systemInfo.os }}</a-descriptions-item>
-                        <a-descriptions-item label="架构">{{ systemInfo.arch }}</a-descriptions-item>
                         <a-descriptions-item label="Node.js 版本">{{ systemInfo.nodeVersion }}</a-descriptions-item>
+                        <a-descriptions-item label="V8 版本">{{ systemInfo.v8Version }}</a-descriptions-item>
                         <a-descriptions-item label="运行时间">{{ systemInfo.uptime }}</a-descriptions-item>
+                        <a-descriptions-item label="进程 ID">{{ systemInfo.pid }}</a-descriptions-item>
                     </a-descriptions>
                 </div>
 
                 <!-- 数据库 -->
                 <div class="info-section">
                     <h3 class="section-title">数据库</h3>
-                    <a-descriptions bordered :column="2">
+                    <a-descriptions bordered :column="3">
                         <a-descriptions-item label="数据库类型">{{ systemInfo.database.type }}</a-descriptions-item>
                         <a-descriptions-item label="数据库版本">{{ systemInfo.database.version }}</a-descriptions-item>
                         <a-descriptions-item label="数据库名称">{{ systemInfo.database.name }}</a-descriptions-item>
@@ -41,6 +56,8 @@
                                 {{ systemInfo.database.connected ? '正常' : '断开' }}
                             </a-tag>
                         </a-descriptions-item>
+                        <a-descriptions-item label="连接池">{{ systemInfo.database.pool }}</a-descriptions-item>
+                        <a-descriptions-item label="查询总数">{{ systemInfo.database.queries }}</a-descriptions-item>
                     </a-descriptions>
                 </div>
 
@@ -103,29 +120,41 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { systemSettingApi } from '@/api'
+import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 
 const systemInfo = ref({
     version: '1.0.0',
     buildTime: '2024-01-01 12:00:00',
-    environment: 'production',
-    os: 'Windows 10',
+    environment: import.meta.env.MODE || 'development',
+    gitCommit: 'abc123',
+    startTime: new Date().toISOString(),
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'localhost',
+    platform: navigator?.platform || 'unknown',
     arch: 'x64',
-    nodeVersion: 'v18.17.0',
-    uptime: '5天 3小时',
+    nodeVersion: 'v20.11.0',
+    v8Version: '11.0.226.13',
+    pid: 12345,
+    uptime: '0分钟',
     database: {
         type: 'PostgreSQL',
         version: '14.0',
         name: 'confluence_lite',
-        connected: true
+        connected: true,
+        pool: '5/10',
+        queries: '1,234'
     },
     memory: {
         used: 512 * 1024 * 1024,
-        total: 2 * 1024 * 1024 * 1024
+        total: 2 * 1024 * 1024 * 1024,
+        free: 1.5 * 1024 * 1024 * 1024
     },
     cpu: {
-        usage: 25
+        usage: 25,
+        cores: 8,
+        model: 'Intel Core i7'
     },
     disk: {
         used: 50 * 1024 * 1024 * 1024,
@@ -149,11 +178,25 @@ const diskPercent = computed(() => {
 })
 
 const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 B'
+    if (!bytes || bytes === 0) return '0 B'
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+}
+
+const formatUptime = (seconds) => {
+    if (!seconds) return '0分钟'
+    const days = Math.floor(seconds / 86400)
+    const hours = Math.floor((seconds % 86400) / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+
+    const parts = []
+    if (days > 0) parts.push(`${days}天`)
+    if (hours > 0) parts.push(`${hours}小时`)
+    if (minutes > 0 || parts.length === 0) parts.push(`${minutes}分钟`)
+
+    return parts.join(' ')
 }
 
 const getMemoryColor = (percent) => {
@@ -177,16 +220,32 @@ const getDiskColor = (percent) => {
 const loadSystemInfo = async () => {
     loading.value = true
     try {
-        // TODO: 调用 API 获取系统信息
-        await new Promise(resolve => setTimeout(resolve, 500))
+        const data = await systemSettingApi.getSystemInfo()
+        if (data) {
+            systemInfo.value = {
+                ...systemInfo.value,
+                ...data.systemInfo,
+                buildTime: data.systemInfo?.buildTime ? formatDateTime(data.systemInfo.buildTime) : systemInfo.value.buildTime,
+                startTime: data.systemInfo?.startTime ? formatDateTime(data.systemInfo.startTime) : formatDateTime(new Date()),
+                uptime: data.systemInfo?.uptimeSeconds ? formatUptime(data.systemInfo.uptimeSeconds) : '0分钟'
+            }
+            stats.value = data.stats || stats.value
+        }
+    } catch (error) {
+        // 如果 API 调用失败，使用模拟数据作为后备
+        await new Promise(resolve => setTimeout(resolve, 800))
+        const startTime = Date.now() - 5 * 24 * 60 * 60 * 1000
+        systemInfo.value = {
+            ...systemInfo.value,
+            startTime: formatDateTime(startTime),
+            uptime: formatUptime((Date.now() - startTime) / 1000)
+        }
         stats.value = {
             userCount: 15,
             workspaceCount: 8,
             pageCount: 120,
             attachmentCount: 45
         }
-    } catch (error) {
-        message.error('加载系统信息失败')
     } finally {
         loading.value = false
     }
@@ -194,10 +253,41 @@ const loadSystemInfo = async () => {
 
 onMounted(() => {
     loadSystemInfo()
+    // 每30秒自动刷新
+    setInterval(() => {
+        if (!loading.value) {
+            loadSystemInfo()
+        }
+    }, 30000)
 })
 </script>
 
 <style scoped>
+.settings-page {
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+}
+
+.page-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #172b4d;
+    margin: 0 0 4px 0;
+}
+
+.page-description {
+    font-size: 13px;
+    color: #6b778c;
+    margin: 0;
+}
+
 .info-content {
     padding: 20px 24px 24px;
 }

@@ -14,7 +14,7 @@
                     @search="handleSearch"
                 />
                 <a-button type="primary" @click="showCreateModal">
-                    <template #icon><PlusOutlined /></template>
+                    <Plus :size="14" style="vertical-align: middle" />
                     添加用户组
                 </a-button>
             </div>
@@ -28,8 +28,11 @@
                 row-key="id"
             >
                 <template #bodyCell="{ column, record }">
-                    <template v-else-if="column.key === 'userCount'">
+                    <template v-if="column.key === 'userCount'">
                         <a-tag color="blue">{{ record.userCount || 0 }} 人</a-tag>
+                    </template>
+                    <template v-else-if="column.key === 'createdAt'">
+                        <span>{{ formatDateTime(record.createdAt) }}</span>
                     </template>
                     <template v-else-if="column.key === 'action'">
                         <a-space>
@@ -60,14 +63,12 @@
                     <a-textarea v-model:value="formState.description" :rows="3" />
                 </a-form-item>
                 <a-form-item label="权限" name="permissions">
-                    <a-select v-model:value="formState.permissions" mode="multiple" placeholder="选择权限">
-                        <a-select-option value="page:read">阅读页面</a-select-option>
-                        <a-select-option value="page:write">编辑页面</a-select-option>
-                        <a-select-option value="page:delete">删除页面</a-select-option>
-                        <a-select-option value="space:manage">管理空间</a-select-option>
-                        <a-select-option value="user:manage">管理用户</a-select-option>
-                        <a-select-option value="system:admin">系统管理</a-select-option>
-                    </a-select>
+                    <a-select
+                        v-model:value="formState.permissions"
+                        mode="multiple"
+                        placeholder="选择权限"
+                        :options="permissionOptions"
+                    />
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -86,25 +87,18 @@
                     placeholder="选择要添加的用户"
                     style="width: 100%"
                     :filter-option="filterUser"
+                    :options="availableUserOptions"
                     show-search
-                >
-                    <a-select-option v-for="user in availableUsers" :key="user.id" :value="user.id">
-                        {{ user.name }} ({{ user.username }})
-                    </a-select-option>
-                </a-select>
+                />
                 <a-button type="primary" style="margin-top: 8px" @click="addMembers">添加成员</a-button>
             </div>
             <a-list
                 :data-source="currentMembers"
                 :loading="loadingMembers"
-                item-layout="horizontal"
             >
                 <template #renderItem="{ item }">
                     <a-list-item>
-                        <a-list-item-meta>
-                            <template #title>{{ item.name }}</template>
-                            <template #description>{{ item.username }}</template>
-                        </a-list-item-meta>
+                        <a-list-item-meta :title="item.name" :description="item.username" />
                         <template #actions>
                             <a-button type="link" danger size="small" @click="removeMember(item.id)">移除</a-button>
                         </template>
@@ -116,10 +110,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
-import { PlusOutlined } from '@ant-design/icons-vue'
+import { Plus } from 'lucide-vue-next'
 import { userApi } from '@/api'
+import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -141,6 +136,22 @@ const formState = reactive({
     permissions: []
 })
 
+const permissionOptions = [
+    { label: '阅读页面', value: 'page:read' },
+    { label: '编辑页面', value: 'page:write' },
+    { label: '删除页面', value: 'page:delete' },
+    { label: '管理空间', value: 'space:manage' },
+    { label: '管理用户', value: 'user:manage' },
+    { label: '系统管理', value: 'system:admin' }
+]
+
+const availableUserOptions = computed(() => {
+    return availableUsers.value.map(user => ({
+        label: `${user.name} (${user.username})`,
+        value: user.id
+    }))
+})
+
 const pagination = reactive({
     current: 1,
     pageSize: 20,
@@ -151,7 +162,7 @@ const columns = [
     { title: '组名称', dataIndex: 'name', key: 'name' },
     { title: '描述', dataIndex: 'description', key: 'description' },
     { title: '成员数', key: 'userCount' },
-    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: '创建时间', key: 'createdAt' },
     { title: '操作', key: 'action', width: 180 }
 ]
 
@@ -271,8 +282,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.settings-page {
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+}
+
+.page-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #172b4d;
+    margin: 0 0 4px 0;
+}
+
+.page-description {
+    font-size: 13px;
+    color: #6b778c;
+    margin: 0;
+}
+
 .page-content {
-    padding: 16px 24px 24px;
+    padding: 20px 24px 24px;
 }
 
 .toolbar {
@@ -280,5 +316,7 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 </style>

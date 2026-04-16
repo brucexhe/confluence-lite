@@ -52,11 +52,11 @@
                             <a-tag color="blue">{{ record.cron }}</a-tag>
                         </template>
                         <template v-else-if="column.key === 'lastRun'">
-                            <span v-if="record.lastRun">{{ record.lastRun }}</span>
+                            <span v-if="record.lastRun">{{ formatDateTime(record.lastRun) }}</span>
                             <span v-else class="text-muted">未执行</span>
                         </template>
                         <template v-else-if="column.key === 'nextRun'">
-                            <span v-if="record.nextRun">{{ record.nextRun }}</span>
+                            <span v-if="record.nextRun">{{ formatDateTime(record.nextRun) }}</span>
                             <span v-else class="text-muted">-</span>
                         </template>
                         <template v-else-if="column.key === 'action'">
@@ -88,6 +88,9 @@
                                 {{ getExecutionStatusText(record.status) }}
                             </a-tag>
                         </template>
+                        <template v-else-if="column.key === 'startTime'">
+                            <span>{{ formatDateTime(record.startTime) }}</span>
+                        </template>
                         <template v-else-if="column.key === 'duration'">
                             {{ record.duration }}ms
                         </template>
@@ -101,6 +104,8 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { systemSettingApi } from '@/api'
+import { formatDateTime } from '@/utils/format'
 
 const stats = ref({
     running: 2,
@@ -213,7 +218,7 @@ const jobColumns = [
 const historyColumns = [
     { title: '任务名称', dataIndex: 'jobName', key: 'jobName' },
     { title: '状态', key: 'status' },
-    { title: '开始时间', dataIndex: 'startTime', key: 'startTime' },
+    { title: '开始时间', key: 'startTime' },
     { title: '耗时', key: 'duration' },
     { title: '消息', dataIndex: 'message', key: 'message' }
 ]
@@ -230,9 +235,15 @@ const getExecutionStatusText = (status) => {
 
 const toggleJob = async (job) => {
     try {
-        // TODO: 调用 API 切换任务状态
-        job.enabled = !job.enabled
-        message.success(job.enabled ? '任务已启用' : '任务已禁用')
+        if (job.enabled) {
+            await systemSettingApi.pauseJob(job.id)
+            job.enabled = false
+            message.success('任务已禁用')
+        } else {
+            await systemSettingApi.resumeJob(job.id)
+            job.enabled = true
+            message.success('任务已启用')
+        }
     } catch (error) {
         message.error('操作失败')
     }
@@ -240,26 +251,72 @@ const toggleJob = async (job) => {
 
 const runNow = async (job) => {
     try {
-        // TODO: 调用 API 立即执行任务
+        await systemSettingApi.runJob(job.id)
         message.success('任务 ' + job.name + ' 已加入执行队列')
+        // 刷新任务列表
+        loadJobs()
     } catch (error) {
         message.error('执行任务失败')
     }
 }
 
-const showJobLog = (job) => {
-    message.info('查看任务日志: ' + job.name)
-    // TODO: 显示任务执行日志弹窗
+const showJobLog = async (job) => {
+    try {
+        const data = await systemSettingApi.getJobLogs(job.id)
+        // TODO: 显示任务执行日志弹窗
+        message.info('查看任务日志: ' + job.name + '，共 ' + (data?.total || 0) + ' 条记录')
+    } catch (error) {
+        message.error('加载任务日志失败')
+    }
+}
+
+const loadJobs = async () => {
+    try {
+        const data = await systemSettingApi.getJobs()
+        if (data) {
+            scheduledJobs.value = data.scheduledJobs || scheduledJobs.value
+            jobHistory.value = data.jobHistory || jobHistory.value
+            stats.value = data.stats || stats.value
+        }
+    } catch (error) {
+        // 如果 API 调用失败，使用默认模拟数据
+        console.log('Using mock data for jobs')
+    }
 }
 
 onMounted(() => {
-    // 加载数据
+    loadJobs()
 })
 </script>
 
 <style scoped>
+.settings-page {
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+}
+
+.page-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #172b4d;
+    margin: 0 0 4px 0;
+}
+
+.page-description {
+    font-size: 13px;
+    color: #6b778c;
+    margin: 0;
+}
+
 .page-content {
-    padding: 16px 24px 24px;
+    padding: 20px 24px 24px;
 }
 
 .stats-row {

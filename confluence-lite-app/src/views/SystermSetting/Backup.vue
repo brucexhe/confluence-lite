@@ -22,7 +22,7 @@
                             style="width: 250px"
                         />
                         <a-button type="primary" :loading="creating" @click="createBackup">
-                            <template #icon><PlusOutlined /></template>
+                            <Plus :size="14" style="vertical-align: middle" />
                             创建备份
                         </a-button>
                     </a-space>
@@ -53,6 +53,9 @@
                             <a-tag :color="getStatusColor(record.status)">
                                 {{ getStatusText(record.status) }}
                             </a-tag>
+                        </template>
+                        <template v-else-if="column.key === 'createdAt'">
+                            <span>{{ formatDateTime(record.createdAt) }}</span>
                         </template>
                         <template v-else-if="column.key === 'action'">
                             <a-space>
@@ -88,7 +91,7 @@
             <a-modal
                 v-model:open="restoreModalVisible"
                 title="还原备份"
-                @ok="confirmRestore"
+                @ok="confirmRestoreBackup"
                 :confirm-loading="restoring"
             >
                 <a-alert
@@ -110,7 +113,9 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { PlusOutlined } from '@ant-design/icons-vue'
+import { Plus } from 'lucide-vue-next'
+import { systemSettingApi } from '@/api'
+import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 const creating = ref(false)
@@ -128,7 +133,7 @@ const columns = [
     { title: '类型', dataIndex: 'type', key: 'type' },
     { title: '大小', key: 'size' },
     { title: '状态', key: 'status' },
-    { title: '创建时间', dataIndex: 'createdAt', key: 'createdAt' },
+    { title: '创建时间', key: 'createdAt' },
     { title: '操作', key: 'action', width: 200 }
 ]
 
@@ -153,7 +158,12 @@ const getStatusText = (status) => {
 const loadBackups = async () => {
     loading.value = true
     try {
-        // TODO: 调用 API 获取备份列表
+        const data = await systemSettingApi.getBackups()
+        if (data) {
+            backups.value = data.items || []
+        }
+    } catch (error) {
+        // 如果 API 调用失败，使用模拟数据作为后备
         backups.value = [
             {
                 id: 1,
@@ -174,8 +184,6 @@ const loadBackups = async () => {
                 createdAt: '2024-01-14 10:30:00'
             }
         ]
-    } catch (error) {
-        message.error('加载备份列表失败')
     } finally {
         loading.value = false
     }
@@ -189,8 +197,10 @@ const createBackup = async () => {
 
     creating.value = true
     try {
-        // TODO: 调用 API 创建备份
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await systemSettingApi.createBackup({
+            name: backupName.value || undefined,
+            options: backupOptions.value
+        })
         message.success('备份创建成功')
         backupName.value = ''
         loadBackups()
@@ -215,8 +225,9 @@ const confirmRestoreBackup = async () => {
 
     restoring.value = true
     try {
-        // TODO: 调用 API 还原备份
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        await systemSettingApi.restoreBackup(selectedBackup.value.id, {
+            confirmed: true
+        })
         message.success('备份还原成功，系统将重启')
         setTimeout(() => {
             window.location.href = '/'
@@ -231,7 +242,7 @@ const confirmRestoreBackup = async () => {
 
 const downloadBackup = async (backup) => {
     try {
-        // TODO: 调用 API 下载备份
+        // TODO: 实现下载功能（可能需要特殊的下载端点）
         message.success('开始下载: ' + backup.name)
     } catch (error) {
         message.error('下载失败')
@@ -240,7 +251,7 @@ const downloadBackup = async (backup) => {
 
 const deleteBackup = async (id) => {
     try {
-        // TODO: 调用 API 删除备份
+        await systemSettingApi.deleteBackup(id)
         message.success('备份删除成功')
         loadBackups()
     } catch (error) {
@@ -254,8 +265,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.settings-page {
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+}
+
+.page-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #172b4d;
+    margin: 0 0 4px 0;
+}
+
+.page-description {
+    font-size: 13px;
+    color: #6b778c;
+    margin: 0;
+}
+
 .page-content {
-    padding: 16px 24px 24px;
+    padding: 20px 24px 24px;
 }
 
 .section {

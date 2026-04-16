@@ -277,5 +277,110 @@ export const systemSettingApi = {
   /** 测试邮件配置 */
   testMail(config) {
     return request('/api/system/mail-config/test', { method: 'POST', body: config })
+  },
+
+  /** 获取身份验证配置 */
+  getAuthConfig() {
+    return request('/api/system/auth-config')
+  },
+
+  /** 更新身份验证配置 */
+  updateAuthConfig(data) {
+    return request('/api/system/auth-config', { method: 'PUT', body: data })
+  },
+
+  /** 测试身份验证配置 */
+  testAuthConfig(config) {
+    return request('/api/system/auth-config/test', { method: 'POST', body: config })
+  },
+
+  /** 获取系统信息 */
+  getSystemInfo() {
+    return request('/api/system/info')
+  },
+
+  /** 获取日志列表 */
+  getLogs(params) {
+    return request('/api/system/logs', { params })
+  },
+
+  /** 导出日志 */
+  exportLogs(params) {
+    return request('/api/system/logs/export', { params })
+  },
+
+  /** 获取缓存统计 */
+  getCacheStats() {
+    return request('/api/system/cache/stats')
+  },
+
+  /** 清空所有缓存 */
+  clearAllCache() {
+    return request('/api/system/cache/clear-all', { method: 'POST' })
+  },
+
+  /** 清空指定类型缓存 */
+  clearCache(type) {
+    return request(`/api/system/cache/${type}/clear`, { method: 'POST' })
+  },
+
+  /** 获取缓存键列表 */
+  getCacheKeys(type) {
+    return request(`/api/system/cache/${type}/keys`)
+  },
+
+  /** 删除缓存键 */
+  deleteCacheKey(type, key) {
+    return request(`/api/system/cache/${type}/keys/${key}`, { method: 'DELETE' })
+  },
+
+  /** 创建备份 */
+  createBackup(data) {
+    return request('/api/system/backup', { method: 'POST', body: data })
+  },
+
+  /** 获取备份列表 */
+  getBackups() {
+    return request('/api/system/backup/list')
+  },
+
+  /** 删除备份 */
+  deleteBackup(id) {
+    return request(`/api/system/backup/${id}`, { method: 'DELETE' })
+  },
+
+  /** 恢复备份 */
+  restoreBackup(id, data) {
+    return request(`/api/system/backup/${id}/restore`, { method: 'POST', body: data })
+  },
+
+  /** 获取定时任务列表 */
+  getJobs() {
+    return request('/api/system/jobs')
+  },
+
+  /** 获取任务详情 */
+  getJob(id) {
+    return request(`/api/system/jobs/${id}`)
+  },
+
+  /** 执行任务 */
+  runJob(id) {
+    return request(`/api/system/jobs/${id}/run`, { method: 'POST' })
+  },
+
+  /** 暂停任务 */
+  pauseJob(id) {
+    return request(`/api/system/jobs/${id}/pause`, { method: 'POST' })
+  },
+
+  /** 恢复任务 */
+  resumeJob(id) {
+    return request(`/api/system/jobs/${id}/resume`, { method: 'POST' })
+  },
+
+  /** 获取任务执行日志 */
+  getJobLogs(id, page = 1, pageSize = 20) {
+    return request(`/api/system/jobs/${id}/logs?page=${page}&pageSize=${pageSize}`)
   }
 }

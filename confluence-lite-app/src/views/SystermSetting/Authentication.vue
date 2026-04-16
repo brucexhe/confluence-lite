@@ -106,11 +106,8 @@
                             <a-select
                                 v-model:value="formState.oidcDefaultRole"
                                 style="max-width: 200px"
-                            >
-                                <a-select-option value="user">普通用户</a-select-option>
-                                <a-select-option value="editor">编辑者</a-select-option>
-                                <a-select-option value="admin">管理员</a-select-option>
-                            </a-select>
+                                :options="roleOptions"
+                            />
                             <div class="form-hint">自动创建用户的默认角色</div>
                         </a-form-item>
                     </template>
@@ -191,7 +188,7 @@
                 </div>
 
                 <!-- 提交按钮 -->
-                <a-form-item :wrapper-col="{ offset: 0 }">
+                <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 140px">
                     <a-space>
                         <a-button type="primary" html-type="submit" :loading="saving">
                             保存设置
@@ -237,6 +234,12 @@ const formState = reactive({
     ldapBaseDn: '',
     ldapUserFilter: '(uid={username})'
 })
+
+const roleOptions = [
+    { label: '普通用户', value: 'user' },
+    { label: '编辑者', value: 'editor' },
+    { label: '管理员', value: 'admin' }
+]
 
 const loadConfig = async () => {
     loading.value = true
@@ -289,6 +292,31 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.settings-page {
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+}
+
+.page-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #172b4d;
+    margin: 0 0 4px 0;
+}
+
+.page-description {
+    font-size: 13px;
+    color: #6b778c;
+    margin: 0;
+}
+
 .settings-form {
     padding: 20px 24px 24px;
 }
@@ -308,6 +336,27 @@ onMounted(() => {
     font-weight: 600;
     color: #172b4d;
     margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+}
+
+.section-title::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    background-color: #0052cc;
+    margin-right: 8px;
+    border-radius: 2px;
+}
+
+.settings-form :deep(.ant-form-item) {
+    margin-bottom: 16px;
+}
+
+.settings-form :deep(.ant-form-item-label > label) {
+    font-weight: 500;
+    color: #42526e;
+    font-size: 14px;
 }
 
 .form-hint {

@@ -168,7 +168,7 @@
                 </div>
 
                 <!-- 提交按钮 -->
-                <a-form-item :wrapper-col="{ offset: 0 }">
+                <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 120px">
                     <a-space>
                         <a-button type="primary" html-type="submit" :loading="saving">
                             保存设置

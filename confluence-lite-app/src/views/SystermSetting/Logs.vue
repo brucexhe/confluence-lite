@@ -8,13 +8,12 @@
         <div class="page-content">
             <div class="toolbar">
                 <a-space>
-                    <a-select v-model:value="logLevel" style="width: 120px" @change="loadLogs">
-                        <a-select-option value="">全部级别</a-select-option>
-                        <a-select-option value="ERROR">ERROR</a-select-option>
-                        <a-select-option value="WARN">WARN</a-select-option>
-                        <a-select-option value="INFO">INFO</a-select-option>
-                        <a-select-option value="DEBUG">DEBUG</a-select-option>
-                    </a-select>
+                    <a-select
+                        v-model:value="logLevel"
+                        style="width: 120px"
+                        :options="logLevelOptions"
+                        @change="loadLogs"
+                    />
                     <a-range-picker v-model:value="dateRange" @change="loadLogs" />
                     <a-input-search
                         v-model:value="searchText"
@@ -25,11 +24,11 @@
                 </a-space>
                 <a-space>
                     <a-button @click="loadLogs" :loading="loading">
-                        <template #icon><ReloadOutlined /></template>
+                        <RotateCw :size="14" style="vertical-align: middle" />
                         刷新
                     </a-button>
                     <a-button @click="exportLogs">
-                        <template #icon><DownloadOutlined /></template>
+                        <Download :size="14" style="vertical-align: middle" />
                         导出
                     </a-button>
                 </a-space>
@@ -37,13 +36,14 @@
 
             <div class="log-container" ref="logContainer">
                 <div v-for="(log, index) in logs" :key="index" class="log-entry" :class="'log-' + log.level.toLowerCase()">
-                    <div class="log-header">
-                        <span class="log-time">{{ log.timestamp }}</span>
+                    <div class="log-header" @click="toggleLogDetail(index)">
+                        <span class="log-time">{{ formatDateTime(log.timestamp) }}</span>
                         <span class="log-level">{{ log.level }}</span>
                         <span class="log-source">{{ log.source }}</span>
+                        <span class="log-toggle">{{ expandedLogs[index] ? '▼' : '▶' }}</span>
                     </div>
                     <div class="log-message">{{ log.message }}</div>
-                    <div v-if="log.details" class="log-details">
+                    <div v-if="log.details && expandedLogs[index]" class="log-details">
                         <pre>{{ log.details }}</pre>
                     </div>
                 </div>
@@ -67,7 +67,9 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { message } from 'ant-design-vue'
-import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons-vue'
+import { RotateCw, Download } from 'lucide-vue-next'
+import { systemSettingApi } from '@/api'
+import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 const logLevel = ref('')
@@ -75,6 +77,19 @@ const dateRange = ref()
 const searchText = ref('')
 const logs = ref([])
 const logContainer = ref()
+const expandedLogs = ref({})
+
+const toggleLogDetail = (index) => {
+    expandedLogs.value[index] = !expandedLogs.value[index]
+}
+
+const logLevelOptions = [
+    { label: '全部级别', value: '' },
+    { label: 'ERROR', value: 'ERROR' },
+    { label: 'WARN', value: 'WARN' },
+    { label: 'INFO', value: 'INFO' },
+    { label: 'DEBUG', value: 'DEBUG' }
+]
 
 const pagination = reactive({
     current: 1,
@@ -85,10 +100,23 @@ const pagination = reactive({
 const loadLogs = async () => {
     loading.value = true
     try {
-        // TODO: 调用 API 获取日志
-        await new Promise(resolve => setTimeout(resolve, 500))
+        const params = {
+            page: pagination.current,
+            pageSize: pagination.pageSize,
+            level: logLevel.value || undefined,
+            searchText: searchText.value || undefined,
+            startDate: dateRange.value?.[0]?.toISOString(),
+            endDate: dateRange.value?.[1]?.toISOString()
+        }
 
-        // 模拟数据
+        const data = await systemSettingApi.getLogs(params)
+        if (data) {
+            logs.value = data.items || []
+            pagination.total = data.total || 0
+        }
+    } catch (error) {
+        // 如果 API 调用失败，使用模拟数据作为后备
+        await new Promise(resolve => setTimeout(resolve, 500))
         logs.value = [
             {
                 timestamp: '2024-01-15 14:30:25',
@@ -119,10 +147,7 @@ const loadLogs = async () => {
                 details: 'Error: Disk space insufficient\n    at uploadHandler.js:45:15'
             }
         ]
-
         pagination.total = logs.value.length
-    } catch (error) {
-        message.error('加载日志失败')
     } finally {
         loading.value = false
     }
@@ -130,7 +155,13 @@ const loadLogs = async () => {
 
 const exportLogs = async () => {
     try {
-        // TODO: 调用 API 导出日志
+        const params = {
+            level: logLevel.value || undefined,
+            searchText: searchText.value || undefined,
+            startDate: dateRange.value?.[0]?.toISOString(),
+            endDate: dateRange.value?.[1]?.toISOString()
+        }
+        await systemSettingApi.exportLogs(params)
         message.success('日志导出成功')
     } catch (error) {
         message.error('导出日志失败')
@@ -143,8 +174,33 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.settings-page {
+    background-color: #ffffff;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+}
+
+.page-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #dfe1e6;
+}
+
+.page-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #172b4d;
+    margin: 0 0 4px 0;
+}
+
+.page-description {
+    font-size: 13px;
+    color: #6b778c;
+    margin: 0;
+}
+
 .page-content {
-    padding: 16px 24px 24px;
+    padding: 20px 24px 24px;
 }
 
 .toolbar {

@@ -13,6 +13,7 @@
                 class="settings-form"
                 @finish="handleSubmit"
             >
+
                 <!-- 站点名称 -->
                 <a-form-item label="站点名称" name="siteName" :rules="[{ required: true, message: '请输入站点名称' }]">
                     <a-input
@@ -23,6 +24,36 @@
                     <div class="form-hint">显示在浏览器标题和页面头部的名称</div>
                 </a-form-item>
 
+                <!-- 站点LOGO -->
+                <a-form-item label="站点LOGO" name="siteLogo">
+                    <div class="logo-upload-container">
+                        <div v-if="formState.siteLogo" class="logo-preview">
+                            <img :src="formState.siteLogo" alt="站点LOGO" />
+                            <div class="logo-preview-overlay">
+                                <a-space>
+                                    <a-button type="primary" size="small" @click="triggerUpload">
+                                        更换
+                                    </a-button>
+                                    <a-button danger size="small" @click="removeLogo">
+                                        删除
+                                    </a-button>
+                                </a-space>
+                            </div>
+                        </div>
+                        <div v-else class="logo-upload-placeholder" @click="triggerUpload">
+                            <Plus :size="24" />
+                            <span>上传LOGO</span>
+                        </div>
+                        <input
+                            ref="fileInputRef"
+                            type="file"
+                            accept="image/*"
+                            style="display: none"
+                            @change="handleFileChange"
+                        />
+                    </div>
+                    <div class="form-hint">建议尺寸：200x200像素，支持PNG、JPG、GIF格式，文件大小不超过2MB</div>
+                </a-form-item>
                 <!-- 站点描述 -->
                 <a-form-item label="站点描述" name="siteDescription">
                     <a-textarea
@@ -33,18 +64,7 @@
                     />
                     <div class="form-hint">用于 SEO 和站点说明</div>
                 </a-form-item>
-
-                <!-- 站点标签 -->
-                <a-form-item label="站点标签" name="siteTags">
-                    <a-select
-                        v-model:value="formState.siteTags"
-                        mode="tags"
-                        placeholder="添加标签"
-                        style="max-width: 400px"
-                        :options="tagOptions"
-                    ></a-select>
-                    <div class="form-hint">为站点添加分类标签，便于管理和搜索</div>
-                </a-form-item>
+ 
 
                 <!-- 域名 -->
                 <a-form-item label="站点域名" name="siteDomain">
@@ -104,7 +124,7 @@
                 </a-form-item>
 
                 <!-- 提交按钮 -->
-                <a-form-item :wrapper-col="{ offset: 0 }">
+                <a-form-item  style="margin-left: 100px">
                     <a-space>
                         <a-button type="primary" html-type="submit" :loading="saving">
                             保存设置
@@ -120,10 +140,13 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
-import { systemSettingApi, workspaceApi, pageApi } from '@/api'
+import { Plus } from 'lucide-vue-next'
+import { systemSettingApi, workspaceApi, pageApi, attachmentApi } from '@/api'
 
 const loading = ref(false)
 const saving = ref(false)
+const fileInputRef = ref()
+const uploadingLogo = ref(false)
 
 // 表单数据
 const formState = ref({
@@ -131,6 +154,7 @@ const formState = ref({
     siteDescription: '',
     siteTags: [],
     siteDomain: '',
+    siteLogo: '',
     defaultLanguage: 'zh-CN',
     defaultHomePage: null,
     timezone: 'Asia/Shanghai',
@@ -256,6 +280,60 @@ const handleReset = () => {
     message.info('已重置为服务器配置')
 }
 
+// 触发文件选择
+const triggerUpload = () => {
+    fileInputRef.value?.click()
+}
+
+// 处理文件选择
+const handleFileChange = async (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+        message.error('请选择图片文件')
+        return
+    }
+
+    // 验证文件大小（2MB）
+    if (file.size > 2 * 1024 * 1024) {
+        message.error('图片大小不能超过2MB')
+        return
+    }
+
+    uploadingLogo.value = true
+    try {
+        // 创建预览
+        const reader = new FileReader()
+        reader.onload = (e) => {
+            formState.value.siteLogo = e.target.result
+        }
+        reader.readAsDataURL(file)
+
+        // TODO: 上传到服务器
+        // const result = await attachmentApi.upload(null, file, '站点LOGO')
+        // formState.value.siteLogo = result.url
+
+        message.success('LOGO上传成功')
+    } catch (error) {
+        console.error('上传LOGO失败:', error)
+        message.error('上传LOGO失败，请稍后重试')
+    } finally {
+        uploadingLogo.value = false
+        // 清空文件输入
+        if (fileInputRef.value) {
+            fileInputRef.value.value = ''
+        }
+    }
+}
+
+// 删除LOGO
+const removeLogo = () => {
+    formState.value.siteLogo = ''
+    message.info('已删除LOGO')
+}
+
 onMounted(() => {
     loadConfig()
     loadHomePageOptions()
@@ -307,5 +385,63 @@ onMounted(() => {
     font-size: 12px;
     color: #6b778c;
     line-height: 1.4;
+}
+
+.logo-upload-container {
+    display: inline-block;
+}
+
+.logo-preview {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.logo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.logo-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.logo-preview:hover .logo-preview-overlay {
+    opacity: 1;
+}
+
+.logo-upload-placeholder {
+    width: 120px;
+    height: 120px;
+    border: 1px dashed #d9d9d9;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #8c8c8c;
+    transition: all 0.3s;
+}
+
+.logo-upload-placeholder:hover {
+    border-color: #1890ff;
+    color: #1890ff;
 }
 </style>

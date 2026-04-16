@@ -277,6 +277,10 @@ const editorConfig = computed(() => ({
     min_height: 500,
     menubar: false,
     statusbar: false,
+    // 禁用 URL 转换，保持绝对路径
+    relative_urls: false,
+    remove_script_host: false,
+    convert_urls: false,
     plugins: [
         "autoresize", "advlist", "autolink", "lists", "link", "image",
         "charmap", "preview", "anchor", "searchreplace", "visualblocks",

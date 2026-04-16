@@ -24,9 +24,9 @@
                     <template #overlay>
                         <a-menu>
                             <a-menu-item @click="handleViewHistory">View History</a-menu-item>
-                            <a-menu-item @click="">Attachmens(0)</a-menu-item>
-                            <a-menu-item @click="handleMove">View Source</a-menu-item>
-                            <a-menu-item @click="handleMove">Export PDF</a-menu-item>
+                            <a-menu-item @click="handleViewAttachments">Attachmens({{ attachmentCount }})</a-menu-item>
+                            <a-menu-item @click="handleViewSource">View Source</a-menu-item>
+                            <a-menu-item @click="handleExportPdf">Export PDF</a-menu-item>
                             <a-menu-item @click="handleMove">Move to</a-menu-item>
                             <a-menu-divider />
                             <a-menu-item @click="handleDelete" danger>Delete</a-menu-item>
@@ -70,6 +70,18 @@
             :pageId="pageId"
             @restored="loadPageData"
         />
+
+        <!-- View Source Modal -->
+        <a-modal
+            v-model:open="sourceVisible"
+            title="View Source"
+            :width="800"
+            :footer="null"
+        >
+            <div class="source-viewer">
+                <pre><code>{{ pageContent }}</code></pre>
+            </div>
+        </a-modal>
     </div>
 </template>
 
@@ -78,7 +90,7 @@ import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
-import { pageApi } from "../../api";
+import { pageApi, attachmentApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 
 const route = useRoute();
@@ -160,6 +172,17 @@ const loadPageData = async () => {
     }
 };
 
+// 加载附件数量
+const loadAttachmentCount = async () => {
+    try {
+        const attachments = await attachmentApi.getListByPage(pageId.value);
+        attachmentCount.value = attachments?.length || 0;
+    } catch (e) {
+        console.error("加载附件数量失败:", e);
+        attachmentCount.value = 0;
+    }
+};
+
 function formatTime(dateStr) {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -238,11 +261,13 @@ watch(pageContent, () => {
 onMounted(() => {
     loadPageData();
     loadPageTree();
+    loadAttachmentCount();
 });
 
 watch(pageId, () => {
     loadPageData();
     loadPageTree();
+    loadAttachmentCount();
 });
 
 const enterEditMode = () => {
@@ -261,11 +286,18 @@ const handleDelete = async () => {
 
 const handleShare = () => console.log('Share clicked - TODO');
 const handleViewHistory = () => { historyVisible.value = true };
+const handleViewSource = () => { sourceVisible.value = true };
+const handleViewAttachments = () => console.log('View Attachments clicked - TODO');
+const handleExportPdf = () => console.log('Export PDF clicked - TODO');
 const handleWatch = () => console.log('Watch Page clicked - TODO');
 const handleMove = () => console.log('Move Page clicked - TODO');
 
 // 版本历史
 const historyVisible = ref(false);
+// View Source
+const sourceVisible = ref(false);
+// 附件数量
+const attachmentCount = ref(0);
 </script>
 
 <style scoped>
@@ -474,5 +506,30 @@ const historyVisible = ref(false);
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Source Viewer */
+.source-viewer {
+    max-height: 500px;
+    overflow: auto;
+    background-color: #f4f5f7;
+    border-radius: 4px;
+    padding: 16px;
+}
+
+.source-viewer pre {
+    margin: 0;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #172b4d;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.source-viewer code {
+    background: none;
+    padding: 0;
+    border: none;
 }
 </style>

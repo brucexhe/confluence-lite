@@ -137,13 +137,15 @@ public class UploadService
         }
 
         // 生成唯一文件名
-        var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+        //var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         var originalFileName = Path.GetFileName(file.FileName);
-        var uniqueFileName = $"{fileHash}_{timestamp}_{originalFileName}";
-        var storagePath = Path.Combine(yearMonthPath, uniqueFileName).Replace("\\", "/");
+        var uniqueFileName = $"{fileHash}_{originalFileName}";
+        // storagePath 需要包含 attachments 前缀，以便前端 /uploads/ 能正确访问
+        var storagePath = Path.Combine("attachments", yearMonthPath, uniqueFileName).Replace("\\", "/");
 
-        // 保存文件
-        var fullPath = Path.Combine(_uploadRootPath, storagePath);
+        // 保存文件（storagePath 包含 attachments/，需要去掉前缀才能与 _uploadRootPath 拼接）
+        var relativePath = storagePath["attachments/".Length..];
+        var fullPath = Path.Combine(_uploadRootPath, relativePath);
         await using (var fileStream2 = new FileStream(fullPath, FileMode.Create))
         {
             await file.CopyToAsync(fileStream2);
@@ -233,7 +235,11 @@ public class UploadService
         await _db.Attachments.UpdateAsync(attachment);
 
         // 可选：同时删除物理文件
-        var fullPath = Path.Combine(_uploadRootPath, attachment.StoragePath);
+        // storagePath 包含 "attachments/" 前缀，但 _uploadRootPath 已经包含了，需要去掉
+        var relativePath = attachment.StoragePath.StartsWith("attachments/")
+            ? attachment.StoragePath["attachments/".Length..]
+            : attachment.StoragePath;
+        var fullPath = Path.Combine(_uploadRootPath, relativePath);
         if (File.Exists(fullPath))
         {
             try
@@ -261,7 +267,12 @@ public class UploadService
             return null;
         }
 
-        var fullPath = Path.Combine(_uploadRootPath, attachment.StoragePath);
+        // storagePath 包含 "attachments/" 前缀，但 _uploadRootPath 已经包含了
+        // 所以需要去掉 "attachments/" 前缀才能正确拼接物理路径
+        var relativePath = attachment.StoragePath.StartsWith("attachments/")
+            ? attachment.StoragePath["attachments/".Length..]
+            : attachment.StoragePath;
+        var fullPath = Path.Combine(_uploadRootPath, relativePath);
         return File.Exists(fullPath) ? fullPath : null;
     }
 

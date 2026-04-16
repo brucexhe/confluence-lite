@@ -9,19 +9,23 @@
         <a-spin v-if="loading" style="display:block;padding:2rem;text-align:center;" />
         <template v-else-if="viewingVersion">
             <div class="version-detail-header">
-                <a-button type="link" size="small" @click="viewingVersion = null">← 返回列表</a-button>
-                <span style="font-weight:500;">v{{ viewingVersion.versionNumber }} {{ viewingVersion.title }}</span>
+               
+                <span style="font-weight:500;" class="version-number">v{{ viewingVersion.versionNumber }} </span>
+                <span class="bold">{{ viewingVersion.title }}</span>
             </div>
-            <div style="padding: 0 16px 16px; font-size: 12px; color: #6b778c;">
+            <div  class="page-meta">
                 {{ editorName(viewingVersion) }}
                 · {{ formatTime(viewingVersion.createdAt) }}
             </div>
-            <div class="version-actions" v-if="!isCurrentVersion(viewingVersion)">
+           
+            <div class="version-content" v-html="viewingVersion.content"></div>
+
+             <div class="version-actions" v-if="!isCurrentVersion(viewingVersion)">
+                <a-button type="link" size="small" @click="viewingVersion = null">← 返回列表</a-button>
                 <a-button type="primary" @click="restoreVersion" :loading="restoring">
                     恢复此版本
                 </a-button>
             </div>
-            <div class="version-content" v-html="viewingVersion.content"></div>
         </template>
         <template v-else>
             <div v-if="versions.length === 0" style="padding:2rem;text-align:center;color:#6b778c;">暂无历史版本</div>
@@ -174,6 +178,9 @@ watch(() => props.open, (val) => {
     flex-shrink: 0;
 }
 
+.page-meta{
+    padding: 0 55px 10px; font-size: 12px; color: #6b778c;border-bottom: 1px solid #f0f0f0;
+}
 .version-item-info {
     display: flex;
     flex-direction: column;
@@ -196,12 +203,14 @@ watch(() => props.open, (val) => {
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
 }
 
 .version-actions {
     padding: 12px 16px;
     border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .version-content {

@@ -1,6 +1,7 @@
 import {createRouter, createWebHistory} from 'vue-router'
 import {h} from 'vue'
 import MainLayout from '../layouts/MainLayout.vue'
+import SettingsLayout from '../layouts/SettingsLayout.vue'
 import Login from '../views/Login.vue'
 import Setup from '../views/Setup.vue'
 import WorkspaceHome from '../views/Workspace/Index.vue'
@@ -94,6 +95,33 @@ const router = createRouter({
                     path: 'page/:id',
                     name: 'page',
                     component: () => import('../views/Page/View.vue')
+                }
+            ]
+        },
+        {
+            path: '/settings',
+            component: SettingsLayout,
+            meta: {requiresAuth: true},
+            children: [
+                {
+                    path: '',
+                    name: 'settings',
+                    component: () => import('../views/SystermSetting/Index.vue')
+                },
+                {
+                    path: 'security',
+                    name: 'settings-security',
+                    component: () => import('../views/SystermSetting/Security.vue')
+                },
+                {
+                    path: 'display',
+                    name: 'settings-display',
+                    component: () => import('../views/SystermSetting/Display.vue')
+                },
+                {
+                    path: 'mail',
+                    name: 'settings-mail',
+                    component: () => import('../views/SystermSetting/Mail.vue')
                 }
             ]
         },

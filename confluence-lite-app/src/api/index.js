@@ -230,3 +230,52 @@ export const attachmentApi = {
     return request(`/api/attachment/${id}`, { method: 'DELETE' })
   }
 }
+
+// ========== 系统设置 ==========
+
+export const systemSettingApi = {
+  /** 获取站点配置 */
+  getSiteConfig() {
+    return request('/api/system/site-config')
+  },
+
+  /** 更新站点配置 */
+  updateSiteConfig(data) {
+    return request('/api/system/site-config', { method: 'PUT', body: data })
+  },
+
+  /** 获取安全设置 */
+  getSecurityConfig() {
+    return request('/api/system/security-config')
+  },
+
+  /** 更新安全设置 */
+  updateSecurityConfig(data) {
+    return request('/api/system/security-config', { method: 'PUT', body: data })
+  },
+
+  /** 获取显示设置 */
+  getDisplayConfig() {
+    return request('/api/system/display-config')
+  },
+
+  /** 更新显示设置 */
+  updateDisplayConfig(data) {
+    return request('/api/system/display-config', { method: 'PUT', body: data })
+  },
+
+  /** 获取邮件设置 */
+  getMailConfig() {
+    return request('/api/system/mail-config')
+  },
+
+  /** 更新邮件设置 */
+  updateMailConfig(data) {
+    return request('/api/system/mail-config', { method: 'PUT', body: data })
+  },
+
+  /** 测试邮件配置 */
+  testMail(config) {
+    return request('/api/system/mail-config/test', { method: 'POST', body: config })
+  }
+}

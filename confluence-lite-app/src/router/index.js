@@ -122,6 +122,56 @@ const router = createRouter({
                     path: 'mail',
                     name: 'settings-mail',
                     component: () => import('../views/SystermSetting/Mail.vue')
+                },
+                {
+                    path: 'authentication',
+                    name: 'settings-authentication',
+                    component: () => import('../views/SystermSetting/Authentication.vue')
+                },
+                {
+                    path: 'users',
+                    name: 'settings-users',
+                    component: () => import('../views/SystermSetting/Users.vue')
+                },
+                {
+                    path: 'groups',
+                    name: 'settings-groups',
+                    component: () => import('../views/SystermSetting/Groups.vue')
+                },
+                {
+                    path: 'workspaces',
+                    name: 'settings-workspaces',
+                    component: () => import('../views/SystermSetting/Workspaces.vue')
+                },
+                {
+                    path: 'pages',
+                    name: 'settings-pages',
+                    component: () => import('../views/SystermSetting/Pages.vue')
+                },
+                {
+                    path: 'system-info',
+                    name: 'settings-system-info',
+                    component: () => import('../views/SystermSetting/SystemInfo.vue')
+                },
+                {
+                    path: 'logs',
+                    name: 'settings-logs',
+                    component: () => import('../views/SystermSetting/Logs.vue')
+                },
+                {
+                    path: 'backup',
+                    name: 'settings-backup',
+                    component: () => import('../views/SystermSetting/Backup.vue')
+                },
+                {
+                    path: 'jobs',
+                    name: 'settings-jobs',
+                    component: () => import('../views/SystermSetting/Jobs.vue')
+                },
+                {
+                    path: 'cache',
+                    name: 'settings-cache',
+                    component: () => import('../views/SystermSetting/Cache.vue')
                 }
             ]
         },

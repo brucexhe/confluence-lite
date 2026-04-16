@@ -149,18 +149,63 @@
                     <p class="breadcrumb">配置和管理您的系统</p>
                 </div>
                 <nav class="sidebar-nav">
-                    <router-link to="/settings" class="nav-item" :class="{ active: route.path === '/settings' }">
-                        常规设置
-                    </router-link>
-                    <router-link to="/settings/security" class="nav-item" :class="{ active: route.path === '/settings/security' }">
-                        安全设置
-                    </router-link>
-                    <router-link to="/settings/display" class="nav-item" :class="{ active: route.path === '/settings/display' }">
-                        显示设置
-                    </router-link>
-                    <router-link to="/settings/mail" class="nav-item" :class="{ active: route.path === '/settings/mail' }">
-                        邮件设置
-                    </router-link>
+                    <div class="nav-group">
+                        <div class="nav-group-title">基本设置</div>
+                        <router-link to="/settings" class="nav-item" :class="{ active: route.path === '/settings' }">
+                            常规设置
+                        </router-link>
+                        <router-link to="/settings/security" class="nav-item" :class="{ active: route.path === '/settings/security' }">
+                            安全设置
+                        </router-link>
+                        <router-link to="/settings/display" class="nav-item" :class="{ active: route.path === '/settings/display' }">
+                            显示设置
+                        </router-link>
+                        <router-link to="/settings/mail" class="nav-item" :class="{ active: route.path === '/settings/mail' }">
+                            邮件设置
+                        </router-link>
+                        <router-link to="/settings/authentication" class="nav-item" :class="{ active: route.path === '/settings/authentication' }">
+                            身份验证
+                        </router-link>
+                    </div>
+
+                    <div class="nav-group">
+                        <div class="nav-group-title">用户与权限</div>
+                        <router-link to="/settings/users" class="nav-item" :class="{ active: route.path === '/settings/users' }">
+                            用户管理
+                        </router-link>
+                        <router-link to="/settings/groups" class="nav-item" :class="{ active: route.path === '/settings/groups' }">
+                            用户组管理
+                        </router-link>
+                    </div>
+
+                    <div class="nav-group">
+                        <div class="nav-group-title">内容管理</div>
+                        <router-link to="/settings/workspaces" class="nav-item" :class="{ active: route.path === '/settings/workspaces' }">
+                            空间管理
+                        </router-link>
+                        <router-link to="/settings/pages" class="nav-item" :class="{ active: route.path === '/settings/pages' }">
+                            页面管理
+                        </router-link>
+                    </div>
+
+                    <div class="nav-group">
+                        <div class="nav-group-title">系统管理</div>
+                        <router-link to="/settings/system-info" class="nav-item" :class="{ active: route.path === '/settings/system-info' }">
+                            系统信息
+                        </router-link>
+                        <router-link to="/settings/logs" class="nav-item" :class="{ active: route.path === '/settings/logs' }">
+                            日志
+                        </router-link>
+                        <router-link to="/settings/backup" class="nav-item" :class="{ active: route.path === '/settings/backup' }">
+                            备份与还原
+                        </router-link>
+                        <router-link to="/settings/jobs" class="nav-item" :class="{ active: route.path === '/settings/jobs' }">
+                            作业管理
+                        </router-link>
+                        <router-link to="/settings/cache" class="nav-item" :class="{ active: route.path === '/settings/cache' }">
+                            缓存管理
+                        </router-link>
+                    </div>
                 </nav>
             </aside>
 
@@ -385,6 +430,23 @@ const createPage = () => {
 
 .sidebar-nav {
     padding: 8px 0;
+}
+
+.nav-group {
+    margin-bottom: 16px;
+}
+
+.nav-group:last-child {
+    margin-bottom: 0;
+}
+
+.nav-group-title {
+    padding: 4px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #6b778c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .nav-item {

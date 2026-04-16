@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Models;
 using ConfluenceLite.Api.DTOs;
@@ -16,10 +15,10 @@ public class UploadService
     private readonly AttachmentOptions _options;
     private readonly string _uploadRootPath;
 
-    public UploadService(AppDbContext db, IOptions<AppConfiguration> appConfig)
+    public UploadService(AppDbContext db, AppConfiguration appConfig)
     {
         _db = db;
-        _options = appConfig.Value.Attachment;
+        _options = appConfig.Attachment;
 
         // 获取项目根目录
         var contentRoot = Directory.GetCurrentDirectory();
@@ -117,14 +116,15 @@ public class UploadService
         await using var fileStream = file.OpenReadStream();
         var fileHash = await CalculateFileHashAsync(fileStream);
 
-        // 检查是否已存在相同哈希的文件（去重）
+        // 检查是否已存在相同哈希的文件（去重）- 如果存在则直接返回现有附件
         var existingAttachment = await _db.Db.Queryable<Attachment>()
             .Where(a => a.FileHash == fileHash && a.PageId == pageId && !a.IsDeleted)
             .FirstAsync();
 
         if (existingAttachment != null)
         {
-            return (null, "该文件已存在");
+            // 文件已存在，返回现有附件（复用）
+            return (await MapToDtoAsync(existingAttachment), null);
         }
 
         // 生成年月目录

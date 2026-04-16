@@ -27,8 +27,9 @@ var installedPath = Path.Combine(builder.Environment.ContentRootPath, "INSTALLED
 var isInstalled = File.Exists(installedPath);
 Console.WriteLine($"[Setup] INSTALLED file check: {(isInstalled ? "Found" : "Not found")} at {installedPath}");
 
-// ========== 注册 JwtOptions 到 DI 容器 ==========
+// ========== 注册配置到 DI 容器 ==========
 builder.Services.AddSingleton(appConfig.Jwt);
+builder.Services.AddSingleton(appConfig);
 
 // ========== 数据库配置 - Native AOT 兼容 ==========
 StaticConfig.EnableAot = true;

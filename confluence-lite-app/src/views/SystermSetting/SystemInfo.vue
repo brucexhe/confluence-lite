@@ -118,12 +118,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { systemSettingApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
+// 定时器引用，用于清理
+let infoRefreshTimer = null
 
 const systemInfo = ref({
     version: '1.0.0',
@@ -254,11 +256,19 @@ const loadSystemInfo = async () => {
 onMounted(() => {
     loadSystemInfo()
     // 每30秒自动刷新
-    setInterval(() => {
+    infoRefreshTimer = setInterval(() => {
         if (!loading.value) {
             loadSystemInfo()
         }
     }, 30000)
+})
+
+// 组件卸载时清理定时器
+onUnmounted(() => {
+    if (infoRefreshTimer) {
+        clearInterval(infoRefreshTimer)
+        infoRefreshTimer = null
+    }
 })
 </script>
 

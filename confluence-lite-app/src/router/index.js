@@ -259,4 +259,12 @@ router.beforeEach(async (to, from, next) => {
     next()
 })
 
+// 路由切换时滚动到顶部
+router.afterEach((to, from) => {
+    // 只有在实际切换页面时才滚动（不是同一路由的参数变化）
+    if (to.path !== from.path) {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+})
+
 export default router

@@ -51,7 +51,10 @@ a {
 a:hover {
   color: var(--color-primary-hover);
 }
-
+.bold{
+  font-weight: bold;
+  
+}
 /* Ant Breadcrumb overrides */
 .ant-breadcrumb a {
   background: none !important;

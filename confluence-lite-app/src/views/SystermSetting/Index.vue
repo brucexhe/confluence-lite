@@ -59,7 +59,7 @@
                     <a-textarea
                         v-model:value="formState.siteDescription"
                         placeholder="简要描述您的站点用途"
-                        :rows="3"
+                        :rows="2"
                         style="max-width: 400px"
                     />
                     <div class="form-hint">用于 SEO 和站点说明</div>

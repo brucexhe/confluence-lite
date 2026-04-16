@@ -210,7 +210,7 @@
             </aside>
 
             <!-- Main Content Area -->
-            <main class="settings-content">
+            <main class="settings-content" ref="contentRef">
                 <router-view />
             </main>
         </div>
@@ -218,13 +218,23 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, watch, nextTick, ref } from 'vue';
 import { useAuthStore } from '../store/auth';
 import { useRouter, useRoute } from 'vue-router';
 
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
+const contentRef = ref(null);
+
+// 监听路由变化，滚动内容区域到顶部
+watch(() => route.path, (newPath, oldPath) => {
+    if (newPath !== oldPath && contentRef.value) {
+        nextTick(() => {
+            contentRef.value.scrollTop = 0;
+        });
+    }
+});
 
 // 空间列表（从 localStorage 读取）
 const spaces = computed(() => {

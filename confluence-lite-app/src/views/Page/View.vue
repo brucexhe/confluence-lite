@@ -38,7 +38,7 @@
 
         <!-- Viewing Mode -->
         <div class="page-view">
-            <h1 class="page-title">{{ pageTitle }}</h1>
+            <h1 class="page-title bold">{{ pageTitle }}</h1>
 
             <div class="page-meta">
                 <a-avatar
@@ -306,7 +306,7 @@ const attachmentCount = ref(0);
     justify-content: space-between;
     align-items: center;
     padding: 10px 40px 0;
-    margin-bottom: 1rem;
+    margin-bottom: 5px;
 }
 
 .page-header :deep(.ant-breadcrumb) {
@@ -357,7 +357,7 @@ const attachmentCount = ref(0);
 
 .page-title {
     font-size: 28px;
-    font-weight: 500;
+    font-weight: 600;
     color: #172b4d;
     margin-top: 0;
     margin-bottom: 8px;
@@ -369,7 +369,7 @@ const attachmentCount = ref(0);
     display: flex;
     align-items: center;
     color: #6b778c;
-    font-size: 14px;
+    font-size: 12px;
     margin-bottom: 24px;
 }
 

@@ -10,7 +10,7 @@ COPY ./release/ConfluenceLite.Api .
 
 # 4. 拷贝你的 HTML 静态文件 (Native AOT 不会自动打包静态资源，必须手动拷)
 COPY ./release/wwwroot .
-COPY ./appsettings.json .
+COPY ./release/appsettings.json .
 
 # 5. 赋予执行权限
 RUN chmod +x ./ConfluenceLite.Api

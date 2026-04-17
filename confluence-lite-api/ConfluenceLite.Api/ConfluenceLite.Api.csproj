@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <TrimmerRootDescriptor Include="rd.xml" />
+	 <RdXmlFile Include="rd.xml" />
   </ItemGroup>
 
   <ItemGroup>

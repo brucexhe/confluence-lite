@@ -3,3 +3,5 @@
 /confluence-lite-api/ConfluenceLite.Api/INSTALLED
 /confluence-lite-api/ConfluenceLite.Api/wwwroot
 /confluence-lite-app/public/uploads
+/release
+/.vs

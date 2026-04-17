@@ -7,6 +7,7 @@ public static class ApiRoutes
 {
     public static void RegisterRoutes(WebApplication app)
     {
+        app.MapSystemRoutes();
         app.MapSetupRoutes();
         app.MapUserRoutes();
         app.MapWorkspaceRoutes();

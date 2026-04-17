@@ -126,37 +126,37 @@ var app = builder.Build();
 // ========== 中间件配置 ==========
 
 // 静态文件服务（用于附件下载）
-var uploadPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
-if (!Directory.Exists(uploadPath))
+var wwwroot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+if (!Directory.Exists(wwwroot))
 {
-    Directory.CreateDirectory(uploadPath);
+    Directory.CreateDirectory(wwwroot);
 }
 
 // 确保上传附件目录存在
-var attachmentUploadPath = Path.Combine(uploadPath, appConfig.Attachment.UploadPath);
+var attachmentUploadPath = Path.Combine(wwwroot, appConfig.Attachment.UploadPath);
 if (!Directory.Exists(attachmentUploadPath))
 {
     Directory.CreateDirectory(attachmentUploadPath);
 }
 
-// 默认文件（index.html）- 必须在 UseStaticFiles 之前
-app.UseDefaultFiles(new DefaultFilesOptions
-{
-    FileProvider = new PhysicalFileProvider(uploadPath),
-    RequestPath = ""
-});
+// // 默认文件（index.html）- 必须在 UseStaticFiles 之前
+// app.UseDefaultFiles(new DefaultFilesOptions
+// {
+//     FileProvider = new PhysicalFileProvider(wwwroot),
+//     RequestPath = ""
+// });
 
-// 静态文件服务（用于前端资源和附件下载）
+// // 静态文件服务（用于前端资源和附件下载）
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(uploadPath),
+    FileProvider = new PhysicalFileProvider(wwwroot),
     RequestPath = ""
 });
 
 // 附件单独映射到 /uploads 路径
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(uploadPath),
+    FileProvider = new PhysicalFileProvider(wwwroot),
     RequestPath = "/uploads"
 });
 
@@ -169,16 +169,23 @@ app.UseMiddleware<JwtAuthMiddleware>();
 // ========== 注册 Minimal API 路由 ==========
 ApiRoutes.RegisterRoutes(app);
 
-// ========== 健康检查 ==========
-app.MapGet("/health", () =>
+// ========== SPA 前端路由支持 ==========
+// 对于所有未被 API 路由匹配的请求，返回 index.html
+// 这使得 Vue Router 可以处理前端路由（如 /、/about、/dashboard 等）
+app.MapFallback(async context =>
 {
-    return Results.Json(new HealthResponse(), AppJsonContext.Default.HealthResponse);
-});
+    var indexPath = Path.Combine(wwwroot, "index.html");
 
-// ========== API 根路径（已由 UseDefaultFiles 自动处理 index.html）==========
-// app.MapGet("/", () =>
-// {
-//     return Results.Json(new ApiInfoResponse(), AppJsonContext.Default.ApiInfoResponse);
-// });
+    if (File.Exists(indexPath))
+    {
+        context.Response.ContentType = "text/html; charset=utf-8";
+        await context.Response.SendFileAsync(indexPath);
+    }
+    else
+    {
+        context.Response.StatusCode = 404;
+        await context.Response.WriteAsync("index.html not found. Please ensure wwwroot/index.html exists.");
+    }
+});
 
 app.Run();

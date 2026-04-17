@@ -9,7 +9,10 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <!-- 仅 AOT 发布时需要 -->
-    <!-- <StripSymbols>true</StripSymbols> -->
+    <!-- <StripSymbols>true</StripSymbols> --> 
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>false</PublishTrimmed>  
   </PropertyGroup>
 
   <!-- rd.xml 仅 AOT 需要 -->

@@ -305,8 +305,8 @@ public class SetupService
                     else
                     {
                         // 保留其他 App 配置
-                        property.Value.WriteTo(writer);
-                        break; // App 下除了 Database 的其他属性在同一个层级
+                        writer.WritePropertyName(appProp.Name);
+                        appProp.Value.WriteTo(writer);
                     }
                 }
 

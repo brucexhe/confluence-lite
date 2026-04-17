@@ -32,7 +32,7 @@ builder.Services.AddSingleton(appConfig.Jwt);
 builder.Services.AddSingleton(appConfig);
 
 // ========== 数据库配置 - Native AOT 兼容 ==========
-StaticConfig.EnableAot = true;
+StaticConfig.EnableAot = false;
 var dbType = (DbType)appConfig.Database.DbType;
 var connectionConfig = new ConnectionConfig
 {

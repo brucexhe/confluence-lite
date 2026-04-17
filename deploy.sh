@@ -1,6 +1,6 @@
 
 #build api
-dotnet publish -r linux-x64 -c Release --self-contained -o ./release
+dotnet publish -r linux-x64 -c Release --self-contained true -p:PublishSingleFile=true -o ./release
 
 rm -rf ./release/ConfluenceLite.Api.dbg
 rm -rf ./release/appsettings.Development.json

@@ -139,6 +139,21 @@ if (!Directory.Exists(attachmentUploadPath))
     Directory.CreateDirectory(attachmentUploadPath);
 }
 
+// 默认文件（index.html）- 必须在 UseStaticFiles 之前
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadPath),
+    RequestPath = ""
+});
+
+// 静态文件服务（用于前端资源和附件下载）
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadPath),
+    RequestPath = ""
+});
+
+// 附件单独映射到 /uploads 路径
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(uploadPath),
@@ -160,10 +175,10 @@ app.MapGet("/health", () =>
     return Results.Json(new HealthResponse(), AppJsonContext.Default.HealthResponse);
 });
 
-// ========== API 根路径 ==========
-app.MapGet("/", () =>
-{
-    return Results.Json(new ApiInfoResponse(), AppJsonContext.Default.ApiInfoResponse);
-});
+// ========== API 根路径（已由 UseDefaultFiles 自动处理 index.html）==========
+// app.MapGet("/", () =>
+// {
+//     return Results.Json(new ApiInfoResponse(), AppJsonContext.Default.ApiInfoResponse);
+// });
 
 app.Run();

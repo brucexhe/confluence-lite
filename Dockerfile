@@ -15,7 +15,7 @@ COPY ./appsettings.json .
 # 5. 赋予执行权限
 RUN chmod +x ./ConfluenceLite.Api
 
-# 6. 暴露 8080 端口
+# 6. 暴露 5000 端口
 EXPOSE 5000
 
 # 7. 启动！由于是原生二进制，不需要 'dotnet' 命令，直接运行文件名

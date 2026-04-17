@@ -288,14 +288,14 @@ const editorConfig = computed(() => ({
     plugins: [
         "autoresize", "advlist", "autolink", "lists", "link", "image",
         "charmap", "preview", "anchor", "searchreplace", "visualblocks",
-        "code", "fullscreen", "media", "table",
+        "code", "fullscreen", "media", "table", "codesample",
         // paste is built-in, no need to declare
     ],
     toolbar:
         "undo redo | formatselect | " +
         "bold italic forecolor backcolor | alignleft aligncenter " +
         "alignright alignjustify | bullist numlist | " +
-        "table image | removeformat",
+        "table image codesample | removeformat",
     table_header_type: "section",
     table_use_colgroups: false,
     table_default_styles: {},
@@ -379,6 +379,8 @@ body { margin: 0 !important; padding:5px 40px 0 !important; font-family: -apple-
 table { border-collapse: collapse !important; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; }
 table th, table td {min-width:30px; border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; }
 table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; }
+pre[class*="language-"] { background: #f5f2f0; border-radius: 3px; padding: 16px; margin: 16px 0; border: 1px solid #dfe1e6; overflow-x: auto; }
+code { font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; }
 `,
 }));
 

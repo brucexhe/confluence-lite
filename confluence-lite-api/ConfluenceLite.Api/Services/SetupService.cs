@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
@@ -13,6 +12,8 @@ namespace ConfluenceLite.Api.Services;
 /// </summary>
 public class SetupService
 {
+    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
+
     private readonly AppDbContext _db;
     private readonly TokenService _tokenService;
     private readonly IConfiguration _configuration;
@@ -253,76 +254,43 @@ public class SetupService
     }
 
     /// <summary>
-    /// 保存数据库配置到 appsettings.json
+    /// 保存数据库配置到 appsettings.runtime.json
     /// </summary>
     private async Task SaveConfigAsync(DatabaseConfigRequest config)
     {
-        // 找到 appsettings.json 文件
-        var configFileName = _env.IsDevelopment() ? "appsettings.Development.json" : "appsettings.json";
-        var configPath = Path.Combine(_env.ContentRootPath, configFileName);
+        var dataDir = GetDataDirectory();
+        var runtimeConfigPath = Path.Combine(dataDir, "appsettings.runtime.json");
 
-        string jsonContent;
-        if (File.Exists(configPath))
+        // 构建运行时配置内容
+        var runtimeConfig = new Dictionary<string, object>
         {
-            jsonContent = await File.ReadAllTextAsync(configPath);
-        }
-        else
-        {
-            // fallback 到 appsettings.json
-            configPath = Path.Combine(_env.ContentRootPath, "appsettings.json");
-            jsonContent = await File.ReadAllTextAsync(configPath);
-        }
-
-        var jsonOptions = new JsonDocumentOptions { AllowTrailingCommas = true };
-
-        using var doc = JsonDocument.Parse(jsonContent, jsonOptions);
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
-
-        writer.WriteStartObject();
-
-        foreach (JsonProperty property in doc.RootElement.EnumerateObject())
-        {
-            if (property.Name == "App")
+            ["App"] = new Dictionary<string, object>
             {
-                writer.WritePropertyName("App");
-                writer.WriteStartObject();
-
-                foreach (JsonProperty appProp in property.Value.EnumerateObject())
+                ["Database"] = new Dictionary<string, object>
                 {
-                    if (appProp.Name == "Database")
-                    {
-                        writer.WritePropertyName("Database");
-                        writer.WriteStartObject();
-                        writer.WriteString("ConnectionString", BuildConnectionString(config));
-                        writer.WriteNumber("DbType", 4);
-                        writer.WriteBoolean("AutoCreateTables", true);
-                        writer.WriteBoolean("EnableSqlLog", appProp.Value.TryGetProperty("EnableSqlLog", out var sqlLogProp)
-                            ? sqlLogProp.GetBoolean()
-                            : true);
-                        writer.WriteEndObject();
-                    }
-                    else
-                    {
-                        // 保留其他 App 配置
-                        writer.WritePropertyName(appProp.Name);
-                        appProp.Value.WriteTo(writer);
-                    }
+                    ["ConnectionString"] = BuildConnectionString(config),
+                    ["DbType"] = 4,
+                    ["AutoCreateTables"] = true,
+                    ["EnableSqlLog"] = true
                 }
+            }
+        };
 
-                writer.WriteEndObject();
-            }
-            else
-            {
-                property.WriteTo(writer);
-            }
+        var json = JsonSerializer.Serialize(runtimeConfig, _jsonOptions);
+        await File.WriteAllTextAsync(runtimeConfigPath, json);
+    }
+
+    /// <summary>
+    /// 获取数据目录路径
+    /// </summary>
+    private string GetDataDirectory()
+    {
+        var dataDir = Path.Combine(_env.ContentRootPath, "data");
+        if (!Directory.Exists(dataDir))
+        {
+            Directory.CreateDirectory(dataDir);
         }
-
-        writer.WriteEndObject();
-        await writer.FlushAsync();
-
-        var newJson = Encoding.UTF8.GetString(stream.ToArray());
-        await File.WriteAllTextAsync(configPath, newJson);
+        return dataDir;
     }
 
     /// <summary>
@@ -330,7 +298,7 @@ public class SetupService
     /// </summary>
     private string GetInstalledFilePath()
     {
-        return Path.Combine(_env.ContentRootPath, "INSTALLED");
+        return Path.Combine(GetDataDirectory(), "INSTALLED");
     }
 
     /// <summary>

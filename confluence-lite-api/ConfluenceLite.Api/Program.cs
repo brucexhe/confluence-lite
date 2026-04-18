@@ -15,6 +15,24 @@ using ConfluenceLite.Api.Routes;
 var builder = WebApplication.CreateBuilder(args);
 
 // ========== 配置加载 ==========
+
+// 获取数据目录路径
+var dataDir = Path.Combine(builder.Environment.ContentRootPath, "data");
+
+// 确保数据目录存在
+if (!Directory.Exists(dataDir))
+{
+    Directory.CreateDirectory(dataDir);
+}
+
+// 加载运行时配置（如果存在）
+var runtimeConfigPath = Path.Combine(dataDir, "appsettings.runtime.json");
+if (File.Exists(runtimeConfigPath))
+{
+    builder.Configuration.AddJsonFile(runtimeConfigPath, optional: false, reloadOnChange: true);
+    Console.WriteLine($"[Config] Loaded runtime config from: {runtimeConfigPath}");
+}
+
 builder.Services.Configure<AppConfiguration>(
     builder.Configuration.GetSection("App")
 );
@@ -23,7 +41,7 @@ var appConfig = new AppConfiguration();
 builder.Configuration.GetSection("App").Bind(appConfig);
 
 // ========== 检查安装状态 ==========
-var installedPath = Path.Combine(builder.Environment.ContentRootPath, "INSTALLED");
+var installedPath = Path.Combine(dataDir, "INSTALLED");
 var isInstalled = File.Exists(installedPath);
 Console.WriteLine($"[Setup] INSTALLED file check: {(isInstalled ? "Found" : "Not found")} at {installedPath}");
 

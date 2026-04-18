@@ -12,8 +12,6 @@ namespace ConfluenceLite.Api.Services;
 /// </summary>
 public class SetupService
 {
-    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
-
     private readonly AppDbContext _db;
     private readonly TokenService _tokenService;
     private readonly IConfiguration _configuration;
@@ -261,22 +259,28 @@ public class SetupService
         var dataDir = GetDataDirectory();
         var runtimeConfigPath = Path.Combine(dataDir, "appsettings.runtime.json");
 
-        // 构建运行时配置内容
-        var runtimeConfig = new Dictionary<string, object>
-        {
-            ["App"] = new Dictionary<string, object>
-            {
-                ["Database"] = new Dictionary<string, object>
-                {
-                    ["ConnectionString"] = BuildConnectionString(config),
-                    ["DbType"] = 4,
-                    ["AutoCreateTables"] = true,
-                    ["EnableSqlLog"] = true
-                }
-            }
-        };
+        // 从默认配置读取 DbType（保持与原始配置一致）
+        var dbType = _configuration.GetValue<int>("App:Database:DbType", 4);
 
-        var json = JsonSerializer.Serialize(runtimeConfig, _jsonOptions);
+        // 转义连接字符串中的特殊字符
+        var escapedConnectionString = BuildConnectionString(config)
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"");
+
+        // 直接构建 JSON（AOT 兼容）
+        var json = $$"""
+            {
+              "App": {
+                "Database": {
+                  "ConnectionString": "{{escapedConnectionString}}",
+                  "DbType": {{dbType}},
+                  "AutoCreateTables": true,
+                  "EnableSqlLog": true
+                }
+              }
+            }
+            """;
+
         await File.WriteAllTextAsync(runtimeConfigPath, json);
     }
 

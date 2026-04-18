@@ -174,10 +174,10 @@ const router = createRouter({
                     component: () => import('../views/SystermSetting/Cache.vue')
                 }
             ]
-        },
+        }, 
         {
             path: '/:pathMatch(.*)*',
-            redirect: '/'
+            redirect: '/404'
         }
     ]
 })

@@ -93,7 +93,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, nextTick, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
@@ -115,6 +115,8 @@ import "prismjs/components/prism-bash";
 import "prismjs/components/prism-yaml";
 import "prismjs/components/prism-json"; 
 
+// 从 MainLayout 注入 setNotFound 方法
+const setNotFound = inject("setNotFound");
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
@@ -186,6 +188,8 @@ const loadPageData = async () => {
         }
     } catch (e) {
         console.error("加载页面失败:", e);
+
+        setNotFound(true);
     }
 };
 

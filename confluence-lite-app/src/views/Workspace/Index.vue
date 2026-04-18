@@ -1,5 +1,13 @@
 <template>
-  <div class="workspace-home">
+  <div v-if="notFound" class="not-found-container">
+    <div class="not-found-content">
+      <div class="error-icon">404</div>
+      <h2>工作空间不存在</h2>
+      <p>您访问的工作空间 "{{ route.params.spaceKey }}" 不存在</p>
+      <button class="back-btn" @click="goBack">返回首页</button>
+    </div>
+  </div>
+  <div v-else class="workspace-home">
     <!-- 欢迎头部 -->
     <div class="welcome-header">
       <h1 class="workspace-title">{{ workspaceName }}</h1>
@@ -14,7 +22,9 @@
             <span class="card-title">最近活动</span>
           </template>
           <template #extra>
-            <a-button type="link" size="small" @click="loadActivities">刷新</a-button>
+            <a-button type="link" size="small" @click="loadActivities"
+              >刷新</a-button
+            >
           </template>
 
           <a-spin :spinning="loading">
@@ -31,7 +41,7 @@
                       :size="24"
                       :style="{
                         backgroundColor: getUserColor(item.user?.id),
-                        fontSize: '12px'
+                        fontSize: '12px',
                       }"
                     >
                       {{ getUserInitial(item.user) }}
@@ -45,14 +55,25 @@
                           :to="`/${item.workspaceKey}/page/${item.pageId}`"
                           class="page-link"
                         >
-                          <FileText :size="15" color="#0066ff" :stroke-width="1.5" class="page-icon" />
+                          <FileText
+                            :size="15"
+                            color="#0066ff"
+                            :stroke-width="1.5"
+                            class="page-icon"
+                          />
                           {{ item.pageTitle }}
                         </router-link>
                       </div>
                       <div class="activity-meta">
-                        <span class="activity-user">{{ item.user?.displayName || item.user?.username || 'Unknown' }}</span>
+                        <span class="activity-user">{{
+                          item.user?.displayName ||
+                          item.user?.username ||
+                          "Unknown"
+                        }}</span>
                         <span class="activity-separator">•</span>
-                        <span class="activity-time">{{ formatTime(item.createdAt) }}</span>
+                        <span class="activity-time">{{
+                          formatTime(item.createdAt)
+                        }}</span>
                       </div>
                     </div>
                   </template>
@@ -65,7 +86,9 @@
               class="empty-state"
             >
               <template #description>
-                <span style="color: #6b778c; font-size: 13px;">暂无活动记录</span>
+                <span style="color: #6b778c; font-size: 13px"
+                  >暂无活动记录</span
+                >
               </template>
             </a-empty>
           </a-spin>
@@ -80,10 +103,10 @@
           </template>
           <div class="action-buttons">
             <a-button block @click="createPage">
-              <span style="font-size: 14px;">+ 创建页面</span>
+              <span style="font-size: 14px">+ 创建页面</span>
             </a-button>
             <a-button block @click="goToSettings">
-              <span style="font-size: 14px;">⚙ 空间设置</span>
+              <span style="font-size: 14px">⚙ 空间设置</span>
             </a-button>
           </div>
         </a-card>
@@ -93,113 +116,189 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { FileText } from 'lucide-vue-next'
-import { activityApi, workspaceApi } from '@/api'
+import { ref, computed, onMounted, inject, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { FileText } from "lucide-vue-next";
+import { activityApi, workspaceApi } from "@/api";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
-const loading = ref(false)
-const activities = ref([])
+const loading = ref(false);
+const activities = ref([]);
 
-const workspaceName = ref('')
-const workspaceDescription = ref('')
+// 从 MainLayout 注入 setNotFound 方法
+const setNotFound = inject("setNotFound");
+
+// 路由变化时重置 notFound 状态
+watch(
+  () => route.path,
+  () => {}
+);
+
+const workspaceName = ref("");
+const workspaceDescription = ref("");
 
 // 用户颜色池
 const userColors = [
-  '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4',
-  '#6366f1', '#14b8a6', '#f97316', '#84cc16'
-]
+  "#3b82f6",
+  "#8b5cf6",
+  "#ec4899",
+  "#f59e0b",
+  "#10b981",
+  "#06b6d4",
+  "#6366f1",
+  "#14b8a6",
+  "#f97316",
+  "#84cc16",
+];
 
 function getUserColor(userId) {
-  if (!userId) return '#6b778c'
-  return userColors[userId % userColors.length]
+  if (!userId) return "#6b778c";
+  return userColors[userId % userColors.length];
 }
 
 function getUserInitial(user) {
-  if (!user) return '?'
-  const name = user.displayName || user.username
-  return name?.charAt(0)?.toUpperCase() || '?'
+  if (!user) return "?";
+  const name = user.displayName || user.username;
+  return name?.charAt(0)?.toUpperCase() || "?";
 }
 
 function formatTime(dateStr) {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diff = now - date
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
 
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes} 分钟前`
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "刚刚";
+  if (minutes < 60) return `${minutes} 分钟前`;
 
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} 小时前`
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} 小时前`;
 
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days} 天前`
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} 天前`;
 
-  return date.toLocaleDateString('zh-CN')
+  return date.toLocaleDateString("zh-CN");
 }
 
 async function loadWorkspaceInfo() {
   try {
-    const key = route.params.spaceKey
-    if (!key) return
+    const key = route.params.spaceKey;
+    if (!key) return;
 
-    const data = await workspaceApi.getByKey(key)
+    const data = await workspaceApi.getByKey(key);
     if (data) {
-      workspaceName.value = data.name || key
-      workspaceDescription.value = data.description || '工作空间首页'
+      workspaceName.value = data.name || key;
+      workspaceDescription.value = data.description || "工作空间首页";
+    } else {
+      setNotFound(true);
     }
   } catch (error) {
-    console.error('加载工作空间信息失败:', error)
+    // API请求失败或返回404，显示404内容
+    console.error("加载工作空间信息失败:", error);
+    setNotFound(true);
   }
 }
 
+function goBack() {
+  router.push("/");
+}
+
 async function loadActivities() {
-  loading.value = true
+  loading.value = true;
   try {
-    const key = route.params.spaceKey
+    const key = route.params.spaceKey;
     const data = await activityApi.getRecent({
       workspaceId: null, // 获取所有工作空间的活动
-      count: 20
-    })
+      count: 20,
+    });
 
     // 确保返回的是数组
     if (Array.isArray(data)) {
-      activities.value = data
+      activities.value = data;
     } else {
-      console.warn('活动 API 返回格式不正确:', data)
-      activities.value = []
+      console.warn("活动 API 返回格式不正确:", data);
+      activities.value = [];
     }
   } catch (error) {
-    console.error('加载活动失败:', error)
-    activities.value = []
+    console.error("加载活动失败:", error);
+    activities.value = [];
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
 function createPage() {
-  const key = route.params.spaceKey
-  router.push(`/${key}/page/new`)
+  const key = route.params.spaceKey;
+  router.push(`/${key}/page/new`);
 }
 
 function goToSettings() {
-  router.push('/settings/workspaces')
+  router.push("/settings/workspaces");
 }
 
 onMounted(() => {
-  loadWorkspaceInfo()
-  loadActivities()
-})
+  loadWorkspaceInfo();
+  loadActivities();
+});
 </script>
 
 <style scoped>
+/* 404 页面样式 */
+.not-found-container {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f7;
+}
+
+.not-found-content {
+  text-align: center;
+  padding: 48px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 500px;
+}
+
+.error-icon {
+  font-size: 72px;
+  font-weight: bold;
+  color: #0049b0;
+  margin-bottom: 16px;
+}
+
+.not-found-content h2 {
+  color: #172b4d;
+  margin: 0 0 8px;
+}
+
+.not-found-content p {
+  color: #6b778c;
+  font-size: 14px;
+  margin: 0 0 24px;
+}
+
+.back-btn {
+  background: #0049b0;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.back-btn:hover {
+  background: #0747a6;
+}
+
 .workspace-home {
-  max-width: 1000px; 
+  max-width: 1000px;
   padding: 20px 40px 0;
 }
 
@@ -238,8 +337,6 @@ onMounted(() => {
   width: 200px;
   flex-shrink: 0;
 }
-
- 
 
 /* 卡片样式 */
 .activity-card,
@@ -292,7 +389,7 @@ onMounted(() => {
 }
 
 .activity-page {
-  font-size: 14px; 
+  font-size: 14px;
   line-height: 1.4;
 }
 
@@ -320,7 +417,7 @@ onMounted(() => {
   color: #6b778c;
   display: flex;
   align-items: center;
-  padding-left: 20px;;
+  padding-left: 20px;
 }
 
 .activity-user {

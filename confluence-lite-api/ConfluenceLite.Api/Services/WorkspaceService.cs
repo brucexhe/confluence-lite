@@ -122,7 +122,7 @@ public class WorkspaceService
     {
         var workspaces = await _db.Db.Queryable<Workspace>()
             .Where(w => w.OwnerId == userId && !w.IsDeleted)
-            .OrderByDescending(w => w.UpdatedAt)
+            .OrderBy(w => w.CreatedAt)
             .ToListAsync();
 
         var dtos = new List<WorkspaceDto>();

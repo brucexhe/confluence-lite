@@ -10,15 +10,21 @@
         :style="{ width: sidebarWidth + 'px', minWidth: sidebarWidth + 'px' }"
       >
         <div class="space-header">
+          <img
+            v-if="currentSpaceIcon && isImageUrl(currentSpaceIcon)"
+            class="space-icon-img"
+            :src="currentSpaceIcon"
+            alt=""
+          />
           <div
+            v-else
             class="space-icon"
             :style="{
-              background: currentSpaceColor,
+              background: currentSpaceIcon || currentSpaceColor,
               color: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
               fontWeight: 600,
               fontSize: '14px',
             }"
@@ -88,6 +94,11 @@ import { useRoute, useRouter } from "vue-router";
 import NotFound from "../components/NotFound.vue";
 import { getSpaceColorById, getSpaceInitial } from "../utils/workspace";
 
+function isImageUrl(icon) {
+  if (!icon) return false;
+  return /^(https?:\/\/|data:image\/|\/)/.test(icon);
+}
+
 const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
@@ -120,7 +131,7 @@ const spaces = computed(() => {
 const currentSpace = computed(() => {
   const key = route.params.spaceKey;
   if (!key) return spaces.value[0] || null;
-  return spaces.value.find((s) => s.key === key) || { key, name: key };
+  return spaces.value.find((s) => s.key === key) || { key, name: key, icon: '' };
 });
 
 const currentSpaceName = computed(
@@ -129,6 +140,8 @@ const currentSpaceName = computed(
 const currentSpaceKey = computed(() => currentSpace.value?.key || "");
 
 const currentSpaceColor = computed(() => getSpaceColorById(currentSpace.value?.id));
+
+const currentSpaceIcon = computed(() => currentSpace.value?.icon || "");
 
 const currentSpaceInitial = computed(() =>
   getSpaceInitial(currentSpace.value || { key: "?" })
@@ -262,6 +275,13 @@ onUnmounted(() => {
   height: 40px;
   background: linear-gradient(135deg, #10b981, #059669);
   border-radius: var(--radius-md);
+}
+
+.space-icon-img {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
 }
 
 .space-info h3 {

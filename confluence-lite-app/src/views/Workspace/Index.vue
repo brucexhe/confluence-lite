@@ -119,13 +119,14 @@
 import { ref, computed, onMounted, inject, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { FileText } from "lucide-vue-next";
-import { activityApi, workspaceApi } from "@/api";
+import { activityApi } from "@/api";
 
 const route = useRoute();
 const router = useRouter();
 
 const loading = ref(false);
 const activities = ref([]);
+const notFound = ref(false);
 
 // 从 MainLayout 注入 setNotFound 方法
 const setNotFound = inject("setNotFound");
@@ -133,11 +134,38 @@ const setNotFound = inject("setNotFound");
 // 路由变化时重置 notFound 状态
 watch(
   () => route.path,
-  () => {}
+  () => {
+    notFound.value = false;
+  }
 );
 
-const workspaceName = ref("");
-const workspaceDescription = ref("");
+// 监听空间变化，重新加载活动
+watch(() => route.params.spaceKey, () => {
+  notFound.value = false;
+  activities.value = [];
+  loadActivities();
+});
+
+// 从 localStorage 读取空间列表
+const spaces = computed(() => {
+  return JSON.parse(localStorage.getItem("auth_spaces") || "[]");
+});
+
+// 当前空间（根据路由 spaceKey 匹配）
+const currentSpace = computed(() => {
+  const key = route.params.spaceKey?.toUpperCase();
+  return spaces.value.find((s) => s.key.toUpperCase() === key);
+});
+
+const workspaceName = computed(() => currentSpace.value?.name || route.params.spaceKey || "");
+const workspaceDescription = computed(() => currentSpace.value?.description || "工作空间首页");
+
+// 如果找不到空间，显示 404
+watch(currentSpace, (newSpace) => {
+  if (!newSpace && route.params.spaceKey) {
+    setNotFound(true);
+  }
+}, { immediate: true });
 
 // 用户颜色池
 const userColors = [
@@ -209,13 +237,11 @@ function goBack() {
 async function loadActivities() {
   loading.value = true;
   try {
-    const key = route.params.spaceKey;
     const data = await activityApi.getRecent({
-      workspaceId: null, // 获取所有工作空间的活动
+      workspaceId: currentSpace.value?.id || null,
       count: 20,
     });
 
-    // 确保返回的是数组
     if (Array.isArray(data)) {
       activities.value = data;
     } else {
@@ -240,7 +266,6 @@ function goToSettings() {
 }
 
 onMounted(() => {
-  loadWorkspaceInfo();
   loadActivities();
 });
 </script>

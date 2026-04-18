@@ -172,7 +172,14 @@ const spaces = computed(() => {
 })
 
 function navigateToSpace(key) {
-    router.push(`/${key}`)
+    const upperKey = key.toUpperCase()
+    const currentKey = route.params.spaceKey?.toUpperCase()
+
+    // 如果是同一个空间，不处理
+    if (upperKey === currentKey) return
+
+    // 导航到空间首页
+    router.push(`/${upperKey}`)
 }
 
 const userInitials = computed(() => {

@@ -27,6 +27,17 @@ public class CreateWorkspaceRequest
     [StringLength(50, MinimumLength = 2)]
     [RegularExpression("^[a-zA-Z0-9-_]+$", ErrorMessage = "Key只能包含字母、数字、横线和下划线")]
     public string Key { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 图标（颜色渐变或图片URL）
+    /// </summary>
+    [StringLength(500)]
+    public string? Icon { get; set; }
+
+    /// <summary>
+    /// 是否设置为默认空间
+    /// </summary>
+    public bool IsDefault { get; set; }
 }
 
 /// <summary>
@@ -50,6 +61,17 @@ public class UpdateWorkspaceRequest
     /// 工作空间状态: 0-禁用, 1-正常
     /// </summary>
     public int? Status { get; set; }
+
+    /// <summary>
+    /// 图标（颜色渐变或图片URL）
+    /// </summary>
+    [StringLength(500)]
+    public string? Icon { get; set; }
+
+    /// <summary>
+    /// 是否设置为默认空间
+    /// </summary>
+    public bool? IsDefault { get; set; }
 }
 
 /// <summary>
@@ -64,6 +86,7 @@ public class WorkspaceDto
     public string? Icon { get; set; }
     public long OwnerId { get; set; }
     public int Status { get; set; }
+    public bool IsDefault { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

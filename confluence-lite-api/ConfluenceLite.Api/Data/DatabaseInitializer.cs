@@ -101,10 +101,11 @@ public static class DatabaseInitializer
         AddColumnIfNotExists(db, "users", "deletedat", "TIMESTAMP");
 
         // workspaces 新增字段
-        AddColumnIfNotExists(db, "workspaces", "icon", "VARCHAR(50)");
+        AddColumnIfNotExists(db, "workspaces", "icon", "VARCHAR(500)");
         AddColumnIfNotExists(db, "workspaces", "color", "VARCHAR(7)");
         AddColumnIfNotExists(db, "workspaces", "homepageid", "BIGINT");
         AddColumnIfNotExists(db, "workspaces", "ispersonal", "BOOLEAN NOT NULL DEFAULT FALSE");
+        AddColumnIfNotExists(db, "workspaces", "isdefault", "BOOLEAN NOT NULL DEFAULT FALSE");
         AddColumnIfNotExists(db, "workspaces", "isdeleted", "BOOLEAN NOT NULL DEFAULT FALSE");
         AddColumnIfNotExists(db, "workspaces", "deletedat", "TIMESTAMP");
 
@@ -114,6 +115,9 @@ public static class DatabaseInitializer
         AddColumnIfNotExists(db, "pages", "isdeleted", "BOOLEAN NOT NULL DEFAULT FALSE");
         AddColumnIfNotExists(db, "pages", "deletedat", "TIMESTAMP");
         AddColumnIfNotExists(db, "pages", "deletedbyid", "BIGINT");
+
+        // 修改现有列的长度（用于已存在的数据库）
+        AlterColumnIfExists(db, "workspaces", "icon", "VARCHAR(500)");
     }
 
     private static void CreateUserGroupTables(ISqlSugarClient db)
@@ -414,6 +418,45 @@ public static class DatabaseInitializer
         {
             db.Ado.ExecuteCommand($@"ALTER TABLE ""{table}"" ADD COLUMN ""{column}"" {definition}");
             Console.WriteLine($"[Database] Added column {table}.{column}");
+        }
+    }
+
+    /// <summary>
+    /// 安全修改列类型（如果列存在且类型不同）
+    /// </summary>
+    private static void AlterColumnIfExists(ISqlSugarClient db, string table, string column, string newDefinition)
+    {
+        var sql = @"
+            SELECT character_maximum_length
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = @table AND column_name = @column";
+        var maxLength = db.Ado.GetInt(sql, new List<SugarParameter>
+        {
+            new("@table", table),
+            new("@column", column)
+        });
+
+        // 解析新定义中的长度（例如从 VARCHAR(500) 提取 500）
+        var varcharIndex = newDefinition.IndexOf("VARCHAR(");
+        if (varcharIndex >= 0)
+        {
+            var startIndex = varcharIndex + 8; // "VARCHAR(" 的长度
+            var endIndex = newDefinition.IndexOf(')', startIndex);
+            if (endIndex > startIndex && int.TryParse(newDefinition.AsSpan(startIndex, endIndex - startIndex), out int newLength))
+            {
+                if (maxLength < newLength)
+                {
+                    try
+                    {
+                        db.Ado.ExecuteCommand($@"ALTER TABLE ""{table}"" ALTER COLUMN ""{column}"" TYPE {newDefinition}");
+                        Console.WriteLine($"[Database] Altered column {table}.{column} to {newDefinition}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Database] Alter column {table}.{column} warning: {ex.Message}");
+                    }
+                }
+            }
         }
     }
 

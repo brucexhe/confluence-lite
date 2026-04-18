@@ -109,6 +109,7 @@ public class WorkspaceSummaryDto
     public string Name { get; set; } = string.Empty;
     public string Key { get; set; } = string.Empty;
     public string? Icon { get; set; }
+    public bool IsDefault { get; set; }
 }
 
 /// <summary>

@@ -56,7 +56,8 @@ public class UploadService
         using var sha256 = SHA256.Create();
         var hash = await sha256.ComputeHashAsync(stream);
         stream.Position = 0; // 重置流位置
-        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+        // 只取前 16 个字节（32个十六进制字符，与 GUID 长度相同）
+        return Convert.ToHexStringLower(hash, 0, 16);
     }
 
     /// <summary>
@@ -127,8 +128,8 @@ public class UploadService
             return (await MapToDtoAsync(existingAttachment), null);
         }
 
-        // 生成年月目录
-        var yearMonthPath = GetYearMonthPath();
+        // 生成年月目录（attachments 子目录）
+        var yearMonthPath = Path.Combine("attachments", GetYearMonthPath());
         var targetDir = Path.Combine(_uploadRootPath, yearMonthPath);
 
         if (!Directory.Exists(targetDir))
@@ -137,15 +138,13 @@ public class UploadService
         }
 
         // 生成唯一文件名
-        //var timestamp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         var originalFileName = Path.GetFileName(file.FileName);
         var uniqueFileName = $"{fileHash}_{originalFileName}";
-        // storagePath 需要包含 attachments 前缀，以便前端 /uploads/ 能正确访问
-        var storagePath = Path.Combine("attachments", yearMonthPath, uniqueFileName).Replace("\\", "/");
+        // storagePath 格式: attachments/2026/04/{hash}_{filename}
+        var storagePath = Path.Combine(yearMonthPath, uniqueFileName).Replace("\\", "/");
 
-        // 保存文件（storagePath 包含 attachments/，需要去掉前缀才能与 _uploadRootPath 拼接）
-        var relativePath = storagePath["attachments/".Length..];
-        var fullPath = Path.Combine(_uploadRootPath, relativePath);
+        // 保存物理文件
+        var fullPath = Path.Combine(_uploadRootPath, yearMonthPath, uniqueFileName);
         await using (var fileStream2 = new FileStream(fullPath, FileMode.Create))
         {
             await file.CopyToAsync(fileStream2);
@@ -235,11 +234,7 @@ public class UploadService
         await _db.Attachments.UpdateAsync(attachment);
 
         // 可选：同时删除物理文件
-        // storagePath 包含 "attachments/" 前缀，但 _uploadRootPath 已经包含了，需要去掉
-        var relativePath = attachment.StoragePath.StartsWith("attachments/")
-            ? attachment.StoragePath["attachments/".Length..]
-            : attachment.StoragePath;
-        var fullPath = Path.Combine(_uploadRootPath, relativePath);
+        var fullPath = Path.Combine(_uploadRootPath, attachment.StoragePath);
         if (File.Exists(fullPath))
         {
             try
@@ -267,13 +262,67 @@ public class UploadService
             return null;
         }
 
-        // storagePath 包含 "attachments/" 前缀，但 _uploadRootPath 已经包含了
-        // 所以需要去掉 "attachments/" 前缀才能正确拼接物理路径
-        var relativePath = attachment.StoragePath.StartsWith("attachments/")
-            ? attachment.StoragePath["attachments/".Length..]
-            : attachment.StoragePath;
-        var fullPath = Path.Combine(_uploadRootPath, relativePath);
+        // storagePath 格式: attachments/2026/04/xxx.jpg
+        var fullPath = Path.Combine(_uploadRootPath, attachment.StoragePath);
         return File.Exists(fullPath) ? fullPath : null;
+    }
+
+    /// <summary>
+    /// 通用文件上传（不依赖页面）
+    /// </summary>
+    public async Task<(string? filePath, string? error)> UploadFileAsync(
+        IFormFile file,
+        long creatorId,
+        string subFolder)
+    {
+        // 验证文件扩展名
+        var (validExt, extError) = ValidateFileExtension(file.FileName);
+        if (!validExt)
+        {
+            return (null, extError);
+        }
+
+        // 验证文件大小
+        if (file.Length > _options.MaxFileSizeBytes)
+        {
+            return (null, $"文件大小超过限制 ({_options.MaxFileSizeBytes / 1024 / 1024}MB)");
+        }
+
+        if (file.Length == 0)
+        {
+            return (null, "文件为空");
+        }
+
+        // 计算文件哈希
+        await using var fileStream = file.OpenReadStream();
+        var fileHash = await CalculateFileHashAsync(fileStream);
+
+        // 生成上传目录路径：uploads/{subFolder}/{year}/{month}/
+        var yearMonthPath = Path.Combine(subFolder, GetYearMonthPath());
+        var targetDir = Path.Combine(_uploadRootPath, yearMonthPath);
+
+        if (!Directory.Exists(targetDir))
+        {
+            Directory.CreateDirectory(targetDir);
+        }
+
+        // 生成唯一文件名
+        var originalFileName = Path.GetFileName(file.FileName);
+        var uniqueFileName = $"{fileHash}_{originalFileName}";
+
+        // 返回访问路径
+        // storagePath 格式: image/2026/04/{hash}_{filename}
+        var storagePath = Path.Combine(yearMonthPath, uniqueFileName).Replace("\\", "/");
+
+        // 保存物理文件
+        var fullPath = Path.Combine(_uploadRootPath, yearMonthPath, uniqueFileName);
+        await using (var outputStream = new FileStream(fullPath, FileMode.Create))
+        {
+            await file.CopyToAsync(outputStream);
+        }
+
+        // 返回可访问的 URL 路径（需要加上 uploads 前缀）
+        return ($"/uploads/{storagePath}", null);
     }
 
     /// <summary>

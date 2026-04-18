@@ -37,7 +37,8 @@ public static class UserRoutes
                     Id = w.Id,
                     Name = w.Name,
                     Key = w.Key,
-                    Icon = w.Icon
+                    Icon = w.Icon,
+                    IsDefault = w.IsDefault
                 }).ToList()
             };
 

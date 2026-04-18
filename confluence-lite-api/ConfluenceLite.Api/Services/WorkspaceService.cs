@@ -41,11 +41,22 @@ public class WorkspaceService
             Name = request.Name,
             Description = request.Description,
             Key = upperKey, // 存储为大写
+            Icon = request.Icon,
             OwnerId = ownerId,
             Status = 1,
+            IsDefault = request.IsDefault,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
+
+        // 如果设置为默认空间，先取消该用户其他空间的默认状态
+        if (request.IsDefault)
+        {
+            await _db.Db.Updateable<Workspace>()
+                .SetColumns(w => w.IsDefault == false)
+                .Where(w => w.OwnerId == ownerId && !w.IsDeleted)
+                .ExecuteCommandAsync();
+        }
 
         int workspaceId;
         try
@@ -116,13 +127,14 @@ public class WorkspaceService
     }
 
     /// <summary>
-    /// 获取用户的工作空间列表
+    /// 获取用户的工作空间列表（按默认空间优先、创建时间排序）
     /// </summary>
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(long userId)
     {
         var workspaces = await _db.Db.Queryable<Workspace>()
             .Where(w => w.OwnerId == userId && !w.IsDeleted)
-            .OrderBy(w => w.CreatedAt)
+            .OrderByDescending(w => w.IsDefault)  // 默认空间优先
+            .OrderBy(w => w.CreatedAt)             // 然后按创建时间
             .ToListAsync();
 
         var dtos = new List<WorkspaceDto>();
@@ -166,6 +178,29 @@ public class WorkspaceService
         if (request.Status.HasValue)
         {
             workspace.Status = request.Status.Value;
+        }
+
+        if (request.Icon != null)
+        {
+            workspace.Icon = request.Icon;
+        }
+
+        // 处理默认空间设置
+        if (request.IsDefault.HasValue)
+        {
+            if (request.IsDefault.Value && !workspace.IsDefault)
+            {
+                // 设置为默认空间：先取消该用户其他空间的默认状态
+                await _db.Db.Updateable<Workspace>()
+                    .SetColumns(w => w.IsDefault == false)
+                    .Where(w => w.OwnerId == userId && w.Id != id && !w.IsDeleted)
+                    .ExecuteCommandAsync();
+                workspace.IsDefault = true;
+            }
+            else if (!request.IsDefault.Value)
+            {
+                workspace.IsDefault = false;
+            }
         }
 
         workspace.UpdatedAt = DateTime.Now;
@@ -218,6 +253,7 @@ public class WorkspaceService
             Icon = workspace.Icon,
             OwnerId = workspace.OwnerId,
             Status = workspace.Status,
+            IsDefault = workspace.IsDefault,
             CreatedAt = workspace.CreatedAt,
             UpdatedAt = workspace.UpdatedAt,
             Owner = owner == null ? null : new UserSummaryDto

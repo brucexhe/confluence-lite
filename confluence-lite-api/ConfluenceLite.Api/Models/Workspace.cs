@@ -68,6 +68,12 @@ public class Workspace
     public bool IsPersonal { get; set; }
 
     /// <summary>
+    /// 是否为用户的默认空间（每个用户只能有一个默认空间）
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public bool IsDefault { get; set; }
+
+    /// <summary>
     /// 是否已删除
     /// </summary>
     [SugarColumn(IsNullable = false)]

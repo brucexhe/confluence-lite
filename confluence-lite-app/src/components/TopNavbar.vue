@@ -50,11 +50,22 @@
                                 @click="navigateToSpace(space.key)"
                             >
                                 <div style="display: flex; align-items: center; gap: 12px">
-                                    <div
+                                    <img
+                                        v-if="space.icon && isImageUrl(space.icon)"
+                                        :src="space.icon"
                                         :style="{
                                             width: '32px',
                                             height: '32px',
-                                            background: getSpaceColorById(space.id),
+                                            borderRadius: '3px',
+                                            objectFit: 'cover'
+                                        }"
+                                    />
+                                    <div
+                                        v-else
+                                        :style="{
+                                            width: '32px',
+                                            height: '32px',
+                                            background: space.icon || getSpaceColorById(space.id),
                                             borderRadius: '3px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -145,6 +156,11 @@ import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../store/auth';
 import { getSpaceColorById, getSpaceInitial } from '../utils/workspace';
+
+function isImageUrl(icon) {
+    if (!icon) return false;
+    return /^(https?:\/\/|data:image\/|\/)/.test(icon);
+}
 
 const router = useRouter();
 const route = useRoute();

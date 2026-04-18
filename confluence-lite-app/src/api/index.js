@@ -231,6 +231,21 @@ export const attachmentApi = {
   }
 }
 
+// ========== 通用上传 ==========
+
+export const uploadApi = {
+  /** 通用文件上传（用于空间 icon 等） */
+  upload(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return request('/api/upload', {
+      method: 'POST',
+      body: formData,
+      isFormData: true
+    })
+  }
+}
+
 // ========== 活动记录 ==========
 
 export const activityApi = {

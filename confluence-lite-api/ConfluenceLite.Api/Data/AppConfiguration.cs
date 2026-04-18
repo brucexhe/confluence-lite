@@ -134,5 +134,5 @@ public class AttachmentOptions
     /// <summary>
     /// 上传文件存储路径 (相对于 wwwroot)
     /// </summary>
-    public string UploadPath { get; set; } = "uploads/attachments";
+    public string UploadPath { get; set; } = "uploads";
 }

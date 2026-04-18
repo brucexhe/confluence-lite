@@ -391,6 +391,12 @@ const onEditorInit = () => {
         if (block && headerEl) {
             headerEl.after(block);
         }
+        // Focus to title input
+        const titleInput = document.querySelector(".editor-title-input");
+        if (titleInput) {
+            titleInput.focus();
+            //titleInput.select();
+        }
     }, 10);
 };
 

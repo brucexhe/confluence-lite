@@ -26,9 +26,9 @@ public class WorkspaceService
         // 将 Key 统一转换为大写
         var upperKey = request.Key.ToUpper();
 
-        // 检查Key是否已存在（使用大写比较）
+        // 检查Key是否已存在（只检查未删除的工作空间，允许重用已删除空间的 Key）
         var exists = await _db.Db.Queryable<Workspace>()
-            .Where(w => w.Key == upperKey)
+            .Where(w => w.Key == upperKey && !w.IsDeleted)
             .AnyAsync();
 
         if (exists)
@@ -66,7 +66,9 @@ public class WorkspaceService
     /// </summary>
     public async Task<WorkspaceDto?> GetWorkspaceByIdAsync(long id)
     {
-        var workspace = await _db.Workspaces.GetByIdAsync(id);
+        var workspace = await _db.Db.Queryable<Workspace>()
+            .Where(w => w.Id == id && !w.IsDeleted)
+            .FirstAsync();
         return workspace == null ? null : await MapToDtoAsync(workspace);
     }
 
@@ -78,7 +80,7 @@ public class WorkspaceService
         // 将输入的 key 转为大写进行查询
         var upperKey = key.ToUpper();
         var workspace = await _db.Db.Queryable<Workspace>()
-            .Where(w => w.Key == upperKey)
+            .Where(w => w.Key == upperKey && !w.IsDeleted)
             .FirstAsync();
 
         return workspace == null ? null : await MapToDtoAsync(workspace);
@@ -89,9 +91,10 @@ public class WorkspaceService
     /// </summary>
     public async Task<PagedResponse<WorkspaceDto>> GetWorkspaceListAsync(PagedRequest request)
     {
-        var total = await _db.Db.Queryable<Workspace>().CountAsync();
+        var total = await _db.Db.Queryable<Workspace>().Where(w => !w.IsDeleted).CountAsync();
 
         var workspaces = await _db.Db.Queryable<Workspace>()
+            .Where(w => !w.IsDeleted)
             .OrderBy(w => w.Id)
             .Skip(request.Skip)
             .Take(request.PageSize)
@@ -118,7 +121,7 @@ public class WorkspaceService
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(long userId)
     {
         var workspaces = await _db.Db.Queryable<Workspace>()
-            .Where(w => w.OwnerId == userId)
+            .Where(w => w.OwnerId == userId && !w.IsDeleted)
             .OrderByDescending(w => w.UpdatedAt)
             .ToListAsync();
 
@@ -136,7 +139,9 @@ public class WorkspaceService
     /// </summary>
     public async Task<(WorkspaceDto? workspace, string? error)> UpdateWorkspaceAsync(long id, long userId, UpdateWorkspaceRequest request)
     {
-        var workspace = await _db.Workspaces.GetByIdAsync(id);
+        var workspace = await _db.Db.Queryable<Workspace>()
+            .Where(w => w.Id == id && !w.IsDeleted)
+            .FirstAsync();
         if (workspace == null)
         {
             return (null, "工作空间不存在");
@@ -171,11 +176,13 @@ public class WorkspaceService
     }
 
     /// <summary>
-    /// 删除工作空间
+    /// 删除工作空间（逻辑删除）
     /// </summary>
     public async Task<(bool success, string? error)> DeleteWorkspaceAsync(long id, long userId)
     {
-        var workspace = await _db.Workspaces.GetByIdAsync(id);
+        var workspace = await _db.Db.Queryable<Workspace>()
+            .Where(w => w.Id == id && !w.IsDeleted)
+            .FirstAsync();
         if (workspace == null)
         {
             return (false, "工作空间不存在");
@@ -187,11 +194,12 @@ public class WorkspaceService
             return (false, "无权限删除此工作空间");
         }
 
-        // 删除工作空间的所有页面
-        await _db.Db.Deleteable<Page>().Where(p => p.WorkspaceId == id).ExecuteCommandAsync();
+        // 逻辑删除：标记为已删除
+        workspace.IsDeleted = true;
+        workspace.DeletedAt = DateTime.Now;
+        workspace.UpdatedAt = DateTime.Now;
 
-        // 删除工作空间
-        await _db.Workspaces.DeleteAsync(workspace);
+        await _db.Workspaces.UpdateAsync(workspace);
 
         return (true, null);
     }
@@ -199,7 +207,7 @@ public class WorkspaceService
     private async Task<WorkspaceDto> MapToDtoAsync(Workspace workspace)
     {
         var owner = await _db.Users.GetByIdAsync(workspace.OwnerId);
-        var pageCount = await _db.Db.Queryable<Page>().Where(p => p.WorkspaceId == workspace.Id).CountAsync();
+        var pageCount = await _db.Db.Queryable<Page>().Where(p => p.WorkspaceId == workspace.Id && !p.IsDeleted).CountAsync();
 
         return new WorkspaceDto
         {

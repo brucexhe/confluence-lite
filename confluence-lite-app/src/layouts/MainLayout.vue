@@ -61,7 +61,9 @@
         </div>
 
         <!-- Drag Handle for resizing sidebar -->
-        <div class="sidebar-resizer" @mousedown="startResize"></div>
+        <div class="sidebar-resizer" @mousedown="startResize">
+          <img src="/images/confluence-icon-grab-handle.svg" alt="grab handle" />
+        </div>
       </aside>
 
       <!-- Main Content Area -->
@@ -222,17 +224,27 @@ onUnmounted(() => {
 .sidebar-resizer {
   position: absolute;
   top: 0;
-  right: -3px;
+  right: 1px;
   width: 6px;
   height: 100%;
   cursor: col-resize;
   z-index: 100;
   transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.sidebar-resizer img {
+  width: 6px;
+  height: 14px;
+  opacity: 1;
 }
 
 .sidebar-resizer:hover,
 .layout-wrapper.is-resizing .sidebar-resizer {
-  background-color: #0052cc; /* Confluence blue hover */
+  background-color: #eee; /* Confluence blue hover */
 }
 
 /* Custom scrollbar for sidebar */

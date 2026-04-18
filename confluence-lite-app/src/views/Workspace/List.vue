@@ -16,22 +16,28 @@
             :columns="columns"
             :pagination="pagination"
             :rowKey="(record) => record.id"
+            :loading="loading"
         >
             <template #bodyCell="{ column, record }">
                 <template v-if="column.key === 'name'">
                     <div class="space-name-cell">
-                        <div class="space-icon" :style="{ background: record.color }"></div>
-                        <strong>{{ record.name }}</strong>
-                        <span class="space-desc" v-if="record.description">{{ record.description }}</span>
+                        <div class="space-icon" :style="{ background: getSpaceColorById(record.id) }"></div>
+                        <div>
+                            <div class="space-name">
+                                <router-link :to="`/${record.key}`">{{ record.name }}</router-link>
+                            </div>
+                            <span class="space-desc" v-if="record.description">{{ record.description }}</span>
+                        </div>
                     </div>
                 </template>
-                <template v-else-if="column.key === 'type'">
-                    <a-tag :color="record.type === 'Team' ? 'blue' : record.type === 'Project' ? 'purple' : 'green'">
-                        {{ record.type }}
-                    </a-tag>
+                <template v-else-if="column.key === 'key'">
+                    <code class="space-key">{{ record.key }}</code>
+                </template>
+                <template v-else-if="column.key === 'pages'">
+                    <span class="page-count">{{ record.pageCount || 0 }} pages</span>
                 </template>
                 <template v-else-if="column.key === 'action'">
-                    <a-button type="link" size="small">Settings</a-button>
+                    <a-button type="link" size="small" @click="goToSettings(record.key)">Settings</a-button>
                     <a-popconfirm
                         title="Are you sure you want to delete this space?"
                         ok-text="Yes"
@@ -51,31 +57,34 @@
             @ok="handleCreateSpace"
             okText="Create"
             cancelText="Cancel"
+            :confirmLoading="creating"
             :okButtonProps="{ style: { backgroundColor: '#0052cc' } }"
         >
             <a-form layout="vertical" style="margin-top: 1rem">
                 <a-form-item label="Space name" required>
-                    <a-input v-model:value="newSpace.name" placeholder="E.g. Engineering Team" />
+                    <a-input
+                        v-model:value="newSpace.name"
+                        placeholder="E.g. Engineering Team"
+                        :maxlength="100"
+                        showCount
+                    />
                 </a-form-item>
                 <a-form-item label="Space key" required>
                     <a-input
                         v-model:value="newSpace.key"
                         placeholder="E.g. ENG"
-                        style="width: 150px; text-transform: uppercase"
+                        :maxlength="50"
+                        style="width: 200px; text-transform: uppercase"
                     />
-                </a-form-item>
-                <a-form-item label="Space Type">
-                    <a-select v-model:value="newSpace.type">
-                        <a-select-option value="Knowledge Base">Knowledge Base</a-select-option>
-                        <a-select-option value="Team">Team Space</a-select-option>
-                        <a-select-option value="Project">Project Space</a-select-option>
-                    </a-select>
+                    <div class="form-hint">2-50 characters, letters, numbers, - and _ only</div>
                 </a-form-item>
                 <a-form-item label="Description">
                     <a-textarea
                         v-model:value="newSpace.description"
                         :rows="3"
                         placeholder="What is this space about?"
+                        :maxlength="1000"
+                        showCount
                     />
                 </a-form-item>
             </a-form>
@@ -84,43 +93,24 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { message } from "ant-design-vue";
+import { workspaceApi } from "../../api";
+import { getSpaceColorById } from "../../utils/workspace";
 
-const spaces = ref([
-    {
-        id: 1,
-        name: "Engineering Space",
-        key: "ENG",
-        type: "Knowledge Base",
-        color: "linear-gradient(135deg, #10b981, #059669)",
-        description: "Tech docs and architecture.",
-    },
-    {
-        id: 2,
-        name: "Marketing & Design",
-        key: "MKT",
-        type: "Team",
-        color: "linear-gradient(135deg, #3b82f6, #2563eb)",
-        description: "Campaigns and brand assets.",
-    },
-    {
-        id: 3,
-        name: "Q4 Product Launch",
-        key: "Q4L",
-        type: "Project",
-        color: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
-        description: "Temporary workspace for launch operations.",
-    },
-]);
-
+const router = useRouter();
+const spaces = ref([]);
+const loading = ref(false);
+const creating = ref(false);
 const searchText = ref("");
 const isCreateModalVisible = ref(false);
-const newSpace = ref({ name: "", key: "", type: "Knowledge Base", description: "" });
+const newSpace = ref({ name: "", key: "", description: "" });
 
 const columns = [
     { title: "Space", dataIndex: "name", key: "name" },
-    { title: "Key", dataIndex: "key", key: "key", width: "10%" },
-    { title: "Type", dataIndex: "type", key: "type", width: "15%" },
+    { title: "Key", dataIndex: "key", key: "key", width: "15%" },
+    { title: "Pages", dataIndex: "pages", key: "pages", width: "15%" },
     { title: "Action", key: "action", width: "20%" },
 ];
 
@@ -135,41 +125,84 @@ const filteredSpaces = computed(() => {
     );
 });
 
+// Load workspaces from API
+const loadWorkspaces = async () => {
+    loading.value = true;
+    try {
+        const response = await workspaceApi.getList(1, 100);
+        console.log('Workspace list response:', response);
+        // request.js 自动提取了 data 字段，所以 response 是 PagedResponse<WorkspaceDto>
+        if (response?.items && Array.isArray(response.items)) {
+            spaces.value = response.items;
+        } else if (Array.isArray(response)) {
+            spaces.value = response;
+        } else {
+            console.warn('Unexpected response format:', response);
+            spaces.value = [];
+        }
+    } catch (error) {
+        console.error("Failed to load workspaces:", error);
+        message.error("Failed to load workspaces");
+        spaces.value = [];
+    } finally {
+        loading.value = false;
+    }
+};
+
 const showCreateModal = () => {
-    newSpace.value = { name: "", key: "", type: "Knowledge Base", description: "" };
+    newSpace.value = { name: "", key: "", description: "" };
     isCreateModalVisible.value = true;
 };
 
-const handleCreateSpace = () => {
+const handleCreateSpace = async () => {
     if (!newSpace.value.name || !newSpace.value.key) {
-        alert("Name and Key are required.");
+        message.warning("Name and Key are required.");
         return;
     }
 
-    // Assign a random gradient
-    const colors = [
-        "linear-gradient(135deg, #F59E0B, #D97706)",
-        "linear-gradient(135deg, #EF4444, #B91C1C)",
-        "linear-gradient(135deg, #06B6D4, #0369A1)",
-        "linear-gradient(135deg, #3B82F6, #2563EB)",
-    ];
-    const color = colors[Math.floor(Math.random() * colors.length)];
+    // Validate key format
+    const keyRegex = /^[a-zA-Z0-9-_]+$/;
+    if (!keyRegex.test(newSpace.value.key)) {
+        message.warning("Key can only contain letters, numbers, hyphens and underscores.");
+        return;
+    }
 
-    spaces.value.push({
-        id: Date.now(),
-        name: newSpace.value.name,
-        key: newSpace.value.key.toUpperCase(),
-        type: newSpace.value.type,
-        color,
-        description: newSpace.value.description,
-    });
-
-    isCreateModalVisible.value = false;
+    creating.value = true;
+    try {
+        await workspaceApi.create({
+            name: newSpace.value.name,
+            key: newSpace.value.key,
+            description: newSpace.value.description,
+        });
+        message.success("Space created successfully");
+        isCreateModalVisible.value = false;
+        await loadWorkspaces();
+    } catch (error) {
+        console.error("Failed to create workspace:", error);
+        message.error(error?.response?.data?.message || "Failed to create space");
+    } finally {
+        creating.value = false;
+    }
 };
 
-const deleteSpace = (id) => {
-    spaces.value = spaces.value.filter((s) => s.id !== id);
+const deleteSpace = async (id) => {
+    try {
+        await workspaceApi.remove(id);
+        message.success("Space deleted successfully");
+        await loadWorkspaces();
+    } catch (error) {
+        console.error("Failed to delete workspace:", error);
+        message.error(error?.response?.data?.message || "Failed to delete space");
+    }
 };
+
+const goToSettings = (key) => {
+    router.push(`/${key}/settings`);
+};
+
+onMounted(() => {
+    loadWorkspaces();
+});
 </script>
 
 <style scoped>
@@ -201,27 +234,58 @@ const deleteSpace = (id) => {
 
 .space-name-cell {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
 }
 
-.space-name-cell strong {
+.space-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.space-name {
     font-weight: 500;
     color: #172b4d;
+}
+
+.space-name a {
+    color: #172b4d;
+    text-decoration: none;
+}
+
+.space-name a:hover {
+    color: #0052cc;
+    text-decoration: underline;
 }
 
 .space-desc {
     font-size: 13px;
     color: #6b778c;
-    margin-left: 8px;
+    margin-top: 2px;
+    display: block;
 }
 
-.space-icon {
-    width: 24px;
-    height: 24px;
+.space-key {
+    background-color: #f4f5f7;
+    padding: 2px 8px;
     border-radius: 3px;
-    background-color: #dfe1e6;
-    flex-shrink: 0;
+    font-size: 13px;
+    color: #42526e;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.page-count {
+    font-size: 13px;
+    color: #6b778c;
+}
+
+.form-hint {
+    font-size: 12px;
+    color: #6b778c;
+    margin-top: 4px;
 }
 
 :deep(.ant-table-thead > tr > th) {

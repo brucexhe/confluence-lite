@@ -86,6 +86,7 @@ import PageTree from "../components/PageTree.vue";
 import TopNavbar from "../components/TopNavbar.vue";
 import { useRoute, useRouter } from "vue-router";
 import NotFound from "../components/NotFound.vue";
+import { getSpaceColorById, getSpaceInitial } from "../utils/workspace";
 
 const authStore = useAuthStore();
 const route = useRoute();
@@ -127,27 +128,10 @@ const currentSpaceName = computed(
 );
 const currentSpaceKey = computed(() => currentSpace.value?.key || "");
 
-const spaceColors = [
-  "linear-gradient(135deg, #10b981, #059669)",
-  "linear-gradient(135deg, #3b82f6, #2563eb)",
-  "linear-gradient(135deg, #8b5cf6, #7c3aed)",
-  "linear-gradient(135deg, #f59e0b, #d97706)",
-  "linear-gradient(135deg, #ef4444, #dc2626)",
-  "linear-gradient(135deg, #06b6d4, #0891b2)",
-];
-
-function spaceColor(id) {
-  return spaceColors[(id || 0) % spaceColors.length];
-}
-
-const currentSpaceColor = computed(() => spaceColor(currentSpace.value?.id));
-
-function spaceKeyInitial(space) {
-  return (space.key || "?").charAt(0).toUpperCase();
-}
+const currentSpaceColor = computed(() => getSpaceColorById(currentSpace.value?.id));
 
 const currentSpaceInitial = computed(() =>
-  spaceKeyInitial(currentSpace.value || { key: "?" })
+  getSpaceInitial(currentSpace.value || { key: "?" })
 );
 
 function navigateToSpace(key) {

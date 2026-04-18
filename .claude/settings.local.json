@@ -8,7 +8,9 @@
       "Bash(ls -la \"d:/Projects/confluence-lite/confluence-lite-app/public/\"*.js)",
       "Bash(npm run *)",
       "Bash(ls -d /Users/artefact/project/confluence-lite/confluence-lite-app/public/tinymce/plugins/*/)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "Bash(curl -s http://localhost:5135/api/setup/status)",
+      "Bash(curl -s -X POST http://localhost:5135/api/user/login -H \"Content-Type: application/json\" -d '{\"username\":\"admin\",\"password\":\"admin123\"}')"
     ]
   }
 }

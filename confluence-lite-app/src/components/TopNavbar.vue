@@ -54,7 +54,7 @@
                                         :style="{
                                             width: '32px',
                                             height: '32px',
-                                            background: spaceColor(space.id),
+                                            background: getSpaceColorById(space.id),
                                             borderRadius: '3px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -63,7 +63,7 @@
                                             fontWeight: 600,
                                             fontSize: '14px'
                                         }"
-                                    >{{ spaceKeyInitial(space) }}</div>
+                                    >{{ getSpaceInitial(space) }}</div>
                                     <div>
                                         <div
                                             style="
@@ -144,6 +144,7 @@
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../store/auth';
+import { getSpaceColorById, getSpaceInitial } from '../utils/workspace';
 
 const router = useRouter();
 const route = useRoute();
@@ -153,23 +154,6 @@ const authStore = useAuthStore();
 const spaces = computed(() => {
     return JSON.parse(localStorage.getItem('auth_spaces') || '[]')
 })
-
-const spaceColors = [
-    'linear-gradient(135deg, #10b981, #059669)',
-    'linear-gradient(135deg, #3b82f6, #2563eb)',
-    'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-    'linear-gradient(135deg, #f59e0b, #d97706)',
-    'linear-gradient(135deg, #ef4444, #dc2626)',
-    'linear-gradient(135deg, #06b6d4, #0891b2)',
-]
-
-function spaceColor(id) {
-    return spaceColors[(id || 0) % spaceColors.length]
-}
-
-function spaceKeyInitial(space) {
-    return (space.key || '?').charAt(0).toUpperCase()
-}
 
 function navigateToSpace(key) {
     router.push(`/${key}`)

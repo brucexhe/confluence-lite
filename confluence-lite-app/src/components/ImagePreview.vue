@@ -70,13 +70,13 @@
         </div>
 
         <!-- 图片容器 -->
-        <div class="preview-image-container">
+        <div class="preview-image-container" @click="close">
             <img
                 :src="currentSrc"
                 :style="imageStyle"
                 class="preview-image"
                 draggable="false"
-                @click="close"
+                @click.stop
             />
         </div>
 

@@ -89,6 +89,14 @@
                 <pre><code>{{ pageContent }}</code></pre>
             </div>
         </a-modal>
+
+        <!-- 图片预览组件 -->
+        <ImagePreview
+            v-model:open="imagePreviewOpen"
+            :src="currentImageSrc"
+            :images="pageImages"
+            v-model:currentIndex="currentImageIndex"
+        />
     </div>
 </template>
 
@@ -98,6 +106,7 @@ import { useRoute, useRouter } from "vue-router";
 import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import PageAttachments from "../../components/PageAttachments.vue";
+import ImagePreview from "../../components/ImagePreview.vue";
 import { pageApi, attachmentApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { usePageTreeStore } from "../../store/pageTree";
@@ -245,6 +254,33 @@ function highlightCode() {
     });
 }
 
+// 为 v-html 渲染内容中的图片添加点击事件
+function initImagePreview() {
+    nextTick(() => {
+        const el = contentRef.value;
+        if (!el) return;
+
+        // 获取所有图片 URL 列表
+        pageImages.value = Array.from(el.querySelectorAll('img')).map(img => img.src);
+
+        // 为每张图片添加点击事件
+        el.querySelectorAll('img').forEach((img, index) => {
+            img.style.cursor = 'pointer';
+
+            if (!img.dataset.hasPreviewListener) {
+                img.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    currentImageSrc.value = img.src;
+                    currentImageIndex.value = index;
+                    imagePreviewOpen.value = true;
+                });
+                img.dataset.hasPreviewListener = 'true';
+            }
+        });
+    });
+}
+
 // 表格排序
 function initTableSort() {
     nextTick(() => {
@@ -304,6 +340,7 @@ function initTableSort() {
 watch(pageContent, () => {
     initTableSort();
     highlightCode();
+    initImagePreview();
 });
 
 onMounted(() => {
@@ -352,6 +389,11 @@ const attachmentsVisible = ref(false);
 const sourceVisible = ref(false);
 // 附件数量
 const attachmentCount = ref(0);
+// 图片预览
+const imagePreviewOpen = ref(false);
+const currentImageSrc = ref('');
+const pageImages = ref([]);
+const currentImageIndex = ref(0);
 </script>
 
 <style scoped>

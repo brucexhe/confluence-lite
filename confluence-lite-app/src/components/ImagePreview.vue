@@ -120,7 +120,12 @@ const scale = ref(1);
 const rotation = ref(0);
 const currentIndex = ref(0);
 
-const currentSrc = computed(() => props.src || props.images[props.currentIndex]?.src || '');
+const currentSrc = computed(() => {
+    if (props.images.length > 0 && props.currentIndex < props.images.length) {
+        return props.images[props.currentIndex];
+    }
+    return props.src || '';
+});
 
 const fileName = computed(() => {
     if (!currentSrc.value) return '';

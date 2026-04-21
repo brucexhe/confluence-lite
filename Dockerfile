@@ -1,6 +1,10 @@
 # 1. 基础镜像：只包含运行 .NET 原生程序必须的极简库 (如 zlib, libgcc)
 FROM mcr.microsoft.com/dotnet/runtime-deps:10.0-noble
 
+
+ENV TZ=Asia/Shanghai
+RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime    && echo $TZ > /etc/timezone
+
 WORKDIR /app
 
 COPY --chmod=755 ./release/ConfluenceLite.Api .

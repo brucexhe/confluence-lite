@@ -384,8 +384,8 @@ onMounted(() => {
 
 .logo-preview {
     position: relative;
-    width: 120px;
-    height: 120px;
+    width: 80px;
+    height: 80px;
     border: 1px solid #d9d9d9;
     border-radius: 4px;
     overflow: hidden;

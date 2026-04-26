@@ -39,6 +39,11 @@ public class AppConfiguration
     /// 显示设置
     /// </summary>
     public DisplaySettings DisplaySettings { get; set; } = new();
+
+    /// <summary>
+    /// 安全设置
+    /// </summary>
+    public SecuritySettings SecuritySettings { get; set; } = new();
 }
 
 /// <summary>
@@ -207,4 +212,29 @@ public class DisplaySettings
     public int DefaultSidebarWidth { get; set; } = 260;
     public bool ShowSpaceIcon { get; set; } = true;
     public bool AllowCollapseSidebar { get; set; } = true;
+}
+
+/// <summary>
+/// 安全设置
+/// </summary>
+public class SecuritySettings
+{
+    // 用户注册
+    public bool AllowPublicRegistration { get; set; } = true;
+    public bool RequireEmailVerification { get; set; }
+    public string DefaultUserRole { get; set; } = "user";
+
+    // 密码策略
+    public int MinPasswordLength { get; set; } = 8;
+    public string PasswordComplexity { get; set; } = "medium";
+    public int PasswordExpireDays { get; set; }
+
+    // 会话管理
+    public int SessionTimeout { get; set; } = 60;
+    public bool AllowConcurrentSessions { get; set; } = true;
+    public bool AllowRememberMe { get; set; } = true;
+
+    // 访问控制
+    public string IpWhitelist { get; set; } = "";
+    public bool EnableTwoFactor { get; set; }
 }

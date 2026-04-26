@@ -162,6 +162,51 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
         });
 
+        // ========== 安全配置 ==========
+
+        group.MapGet("/security-config", (AppConfiguration appConfig) =>
+        {
+            var s = appConfig.SecuritySettings;
+            var dto = new SecurityConfigDto
+            {
+                AllowPublicRegistration = s.AllowPublicRegistration,
+                RequireEmailVerification = s.RequireEmailVerification,
+                DefaultUserRole = s.DefaultUserRole,
+                MinPasswordLength = s.MinPasswordLength,
+                PasswordComplexity = s.PasswordComplexity,
+                PasswordExpireDays = s.PasswordExpireDays,
+                SessionTimeout = s.SessionTimeout,
+                AllowConcurrentSessions = s.AllowConcurrentSessions,
+                AllowRememberMe = s.AllowRememberMe,
+                IpWhitelist = s.IpWhitelist,
+                EnableTwoFactor = s.EnableTwoFactor
+            };
+            return Results.Ok(ApiResponse<SecurityConfigDto>.Ok(dto));
+        });
+
+        group.MapPut("/security-config", (
+            SecurityConfigDto dto,
+            AppConfiguration appConfig,
+            IHostEnvironment env) =>
+        {
+            var s = appConfig.SecuritySettings;
+            s.AllowPublicRegistration = dto.AllowPublicRegistration;
+            s.RequireEmailVerification = dto.RequireEmailVerification;
+            s.DefaultUserRole = dto.DefaultUserRole;
+            s.MinPasswordLength = dto.MinPasswordLength;
+            s.PasswordComplexity = dto.PasswordComplexity;
+            s.PasswordExpireDays = dto.PasswordExpireDays;
+            s.SessionTimeout = dto.SessionTimeout;
+            s.AllowConcurrentSessions = dto.AllowConcurrentSessions;
+            s.AllowRememberMe = dto.AllowRememberMe;
+            s.IpWhitelist = dto.IpWhitelist;
+            s.EnableTwoFactor = dto.EnableTwoFactor;
+
+            SaveSecuritySettingsConfig(env, dto);
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
+        });
+
         // ========== 公开端点（无需认证） ==========
 
         app.MapGet("/api/siteinfo", (AppConfiguration appConfig, SetupService setupService) =>
@@ -298,6 +343,49 @@ public static class SystemRoutes
             ["DefaultSidebarWidth"] = dto.DefaultSidebarWidth,
             ["ShowSpaceIcon"] = dto.ShowSpaceIcon,
             ["AllowCollapseSidebar"] = dto.AllowCollapseSidebar
+        };
+        root!["App"] = appNode;
+
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        File.WriteAllText(configPath, root.ToJsonString(options));
+    }
+
+    private static void SaveSecuritySettingsConfig(IHostEnvironment env, SecurityConfigDto dto)
+    {
+        var dataDir = Path.Combine(env.ContentRootPath, "data");
+        if (!Directory.Exists(dataDir))
+            Directory.CreateDirectory(dataDir);
+
+        var configPath = Path.Combine(dataDir, "appsettings.runtime.json");
+
+        JsonObject? root;
+        if (File.Exists(configPath))
+        {
+            var existingJson = File.ReadAllText(configPath);
+            root = JsonNode.Parse(existingJson)?.AsObject();
+        }
+        else
+        {
+            root = new JsonObject();
+        }
+
+        var appNode = root!.TryGetPropertyValue("App", out var appVal)
+            ? appVal?.AsObject() ?? new JsonObject()
+            : new JsonObject();
+
+        appNode!["SecuritySettings"] = new JsonObject
+        {
+            ["AllowPublicRegistration"] = dto.AllowPublicRegistration,
+            ["RequireEmailVerification"] = dto.RequireEmailVerification,
+            ["DefaultUserRole"] = dto.DefaultUserRole,
+            ["MinPasswordLength"] = dto.MinPasswordLength,
+            ["PasswordComplexity"] = dto.PasswordComplexity,
+            ["PasswordExpireDays"] = dto.PasswordExpireDays,
+            ["SessionTimeout"] = dto.SessionTimeout,
+            ["AllowConcurrentSessions"] = dto.AllowConcurrentSessions,
+            ["AllowRememberMe"] = dto.AllowRememberMe,
+            ["IpWhitelist"] = dto.IpWhitelist,
+            ["EnableTwoFactor"] = dto.EnableTwoFactor
         };
         root!["App"] = appNode;
 

@@ -220,7 +220,7 @@ public class DisplaySettings
 public class SecuritySettings
 {
     // 用户注册
-    public bool AllowPublicRegistration { get; set; } = true;
+    public bool AllowPublicRegistration { get; set; } = false;
     public bool RequireEmailVerification { get; set; }
     public string DefaultUserRole { get; set; } = "user";
 

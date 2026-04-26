@@ -163,7 +163,7 @@ const saving = ref(false)
 // 表单数据
 const formState = ref({
     // 用户注册
-    allowPublicRegistration: true,
+    allowPublicRegistration: false,
     requireEmailVerification: false,
     defaultUserRole: 'user',
 

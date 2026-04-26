@@ -6,7 +6,7 @@ namespace ConfluenceLite.Api.DTOs;
 public class SecurityConfigDto
 {
     // 用户注册
-    public bool AllowPublicRegistration { get; set; } = true;
+    public bool AllowPublicRegistration { get; set; } = false;
     public bool RequireEmailVerification { get; set; }
     public string DefaultUserRole { get; set; } = "user";
 

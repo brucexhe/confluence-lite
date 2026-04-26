@@ -1,8 +1,9 @@
 <template>
     <header class="top-navbar">
         <div class="nav-left">
-            <div class="logo" @click="navigateTo('/')" style="cursor: pointer"></div>
-            <a class="nav-title" href="/" style="cursor: pointer;color: #fff">Confluence Lite</a>
+            <img v-if="siteLogo" class="logo" :src="siteLogo" alt="" @click="navigateTo('/')" style="cursor: pointer" />
+            <div v-else class="logo" @click="navigateTo('/')" style="cursor: pointer"></div>
+            <a class="nav-title" href="/" style="cursor: pointer;color: #fff">{{ siteName }}</a>
             <nav class="nav-links">
                 <a-dropdown :trigger="['click']" placement="bottomLeft">
                     <a class="nav-link dropdown-link" @click.prevent>
@@ -155,6 +156,7 @@
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../store/auth';
+import { useSiteInfo } from '../store/site';
 import { getSpaceColorById, getSpaceInitial } from '../utils/workspace';
 
 function isImageUrl(icon) {
@@ -165,6 +167,7 @@ function isImageUrl(icon) {
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const { siteName, siteLogo } = useSiteInfo();
 
 // 空间列表（从 localStorage 读取）
 const spaces = computed(() => {
@@ -236,8 +239,9 @@ const handleCreate = () => {
 .logo {
     width: 24px;
     height: 24px;
-    background-color: #ffffff;
+    background-color: transparent;
     border-radius: 3px;
+    object-fit: contain;
 }
 
 .logo:hover {

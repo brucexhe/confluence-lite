@@ -2,8 +2,9 @@
   <div class="login-container">
     <div class="login-left">
       <div class="brand">
-        <div class="logo"></div>
-        <h1>Confluence Lite</h1>
+        <img v-if="siteLogo" class="logo" :src="siteLogo" alt="" />
+        <div v-else class="logo"></div>
+        <h1>{{ siteName }}</h1>
       </div>
       <p class="tagline">Your modern team workspace.</p>
     </div>
@@ -51,6 +52,9 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '../store/auth'
+import { useSiteInfo } from '../store/site'
+
+const { siteName, siteLogo } = useSiteInfo()
 
 const username = ref('')
 const password = ref('')
@@ -115,17 +119,18 @@ const handleLogin = async () => {
 }
 
 .logo {
-  width: 48px;
-  height: 48px;
-  background-color: white;
+  width: 40px;
+  height: 40px;
+  background-color: transparent;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-md);
+  object-fit: contain;
 }
 
 .brand h1 {
   font-size: 2.5rem;
   font-weight: 700;
   letter-spacing: -0.025em;
+  margin-bottom:0;
 }
 
 .tagline {

@@ -5,6 +5,7 @@ namespace ConfluenceLite.Api.DTOs;
 /// </summary>
 public class SiteInfoDto
 {
+    public bool Installed { get; set; }
     public string SiteName { get; set; } = "Confluence Lite";
     public string SiteLogo { get; set; } = "";
     public bool AllowRegistration { get; set; } = true;

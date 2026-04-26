@@ -164,10 +164,11 @@ public static class SystemRoutes
 
         // ========== 公开端点（无需认证） ==========
 
-        app.MapGet("/api/system/public/site-info", (AppConfiguration appConfig) =>
+        app.MapGet("/api/siteinfo", (AppConfiguration appConfig, SetupService setupService) =>
         {
             var dto = new SiteInfoDto
             {
+                Installed = setupService.IsInstalled(),
                 SiteName = appConfig.SiteSettings.SiteName,
                 SiteLogo = appConfig.SiteSettings.SiteLogo,
                 AllowRegistration = appConfig.SiteSettings.AllowRegistration

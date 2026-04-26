@@ -141,7 +141,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { Plus } from 'lucide-vue-next'
-import { systemSettingApi, workspaceApi, pageApi, attachmentApi } from '@/api'
+import { systemSettingApi, workspaceApi, pageApi, attachmentApi, uploadApi } from '@/api'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -304,17 +304,8 @@ const handleFileChange = async (event) => {
 
     uploadingLogo.value = true
     try {
-        // 创建预览
-        const reader = new FileReader()
-        reader.onload = (e) => {
-            formState.value.siteLogo = e.target.result
-        }
-        reader.readAsDataURL(file)
-
-        // TODO: 上传到服务器
-        // const result = await attachmentApi.upload(null, file, '站点LOGO')
-        // formState.value.siteLogo = result.url
-
+        const result = await uploadApi.upload(file)
+        formState.value.siteLogo = result
         message.success('LOGO上传成功')
     } catch (error) {
         console.error('上传LOGO失败:', error)
@@ -399,6 +390,7 @@ onMounted(() => {
     border-radius: 4px;
     overflow: hidden;
     cursor: pointer;
+    background-color: #eee;
 }
 
 .logo-preview img {

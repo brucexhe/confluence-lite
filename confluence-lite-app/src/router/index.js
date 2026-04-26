@@ -5,7 +5,8 @@ import SettingsLayout from '../layouts/SettingsLayout.vue'
 import Login from '../views/Login.vue'
 import Setup from '../views/Setup.vue'
 import WorkspaceHome from '../views/Workspace/Index.vue'
-import {setupApi, workspaceApi} from '../api'
+import {workspaceApi} from '../api'
+import { loadSiteInfo, useSiteInfo } from '../store/site'
 
 const ErrorPage = {
     render() {
@@ -189,28 +190,19 @@ const router = createRouter({
 
 // Install status cache
 let _installChecked = false
-let _isInstalled = false
-let _apiAvailable = true
 
 async function checkInstalled() {
-    if (_installChecked) return {installed: _isInstalled, apiAvailable: _apiAvailable}
-    try {
-        const data = await setupApi.getStatus()
-        _isInstalled = data?.installed === true
-        _apiAvailable = true
-        _installChecked = true
-        return {installed: _isInstalled, apiAvailable: true}
-    } catch {
-        _apiAvailable = false
-        _installChecked = true
-        return {installed: false, apiAvailable: false}
+    if (_installChecked) {
+        const site = useSiteInfo()
+        return {installed: site.installed.value, apiAvailable: true}
     }
+    _installChecked = true
+    const result = await loadSiteInfo()
+    return result
 }
 
 window.__resetInstallCheck = () => {
     _installChecked = false
-    _isInstalled = false
-    _apiAvailable = true
 }
 
 router.beforeEach(async (to, from, next) => {

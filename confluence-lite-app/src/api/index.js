@@ -4,6 +4,15 @@
  */
 import { request } from './request'
 
+// ========== 站点信息（公开，无需认证） ==========
+
+export const siteInfoApi = {
+  /** 获取站点信息（含安装状态、站点名称、LOGO等） */
+  get() {
+    return request('/api/siteinfo', { auth: false })
+  }
+}
+
 // ========== 安装向导 ==========
 
 export const setupApi = {

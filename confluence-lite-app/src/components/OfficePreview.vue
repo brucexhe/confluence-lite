@@ -85,6 +85,10 @@ const error = ref('');
 const pdfData = ref(null);
 const notConfigured = ref(false);
 
+const isPdfFile = (path) => {
+    return path?.toLowerCase().endsWith('.pdf');
+};
+
 const loadPdf = async () => {
     if (!props.filePath) return;
 
@@ -94,32 +98,42 @@ const loadPdf = async () => {
     notConfigured.value = false;
 
     try {
-        // 先检查预览功能是否启用
-        const config = await systemSettingApi.getOfficePreviewConfig();
-        if (!config?.enabled) {
-            notConfigured.value = true;
-            loading.value = false;
-            return;
-        }
-
-        const relativePath = props.filePath.replace(/^\//, '');
-        const url = `/api/office/preview?path=${encodeURIComponent(relativePath)}`;
-
         const token = localStorage.getItem('auth_token');
-        const response = await fetch(url, {
-            headers: {
-                'Authorization': `Bearer ${token}`
+        const headers = { 'Authorization': `Bearer ${token}` };
+
+        if (isPdfFile(props.filePath)) {
+            // PDF 文件直接加载，无需转换
+            const response = await fetch(props.filePath, { headers });
+
+            if (!response.ok) {
+                throw new Error(`加载失败 (HTTP ${response.status})`);
             }
-        });
 
-        if (!response.ok) {
-            throw new Error(response.status === 503
-                ? '文档转换服务不可用，请稍后再试'
-                : `加载失败 (HTTP ${response.status})`);
+            const arrayBuffer = await response.arrayBuffer();
+            pdfData.value = new Uint8Array(arrayBuffer);
+        } else {
+            // Office 文件需要通过转换 API
+            const config = await systemSettingApi.getOfficePreviewConfig();
+            if (!config?.enabled) {
+                notConfigured.value = true;
+                loading.value = false;
+                return;
+            }
+
+            const relativePath = props.filePath.replace(/^\//, '');
+            const url = `/api/office/preview?path=${encodeURIComponent(relativePath)}`;
+
+            const response = await fetch(url, { headers });
+
+            if (!response.ok) {
+                throw new Error(response.status === 503
+                    ? '文档转换服务不可用，请稍后再试'
+                    : `加载失败 (HTTP ${response.status})`);
+            }
+
+            const arrayBuffer = await response.arrayBuffer();
+            pdfData.value = new Uint8Array(arrayBuffer);
         }
-
-        const arrayBuffer = await response.arrayBuffer();
-        pdfData.value = new Uint8Array(arrayBuffer);
     } catch (e) {
         error.value = e.message || '文档加载失败';
     } finally {

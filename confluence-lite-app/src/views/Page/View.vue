@@ -294,7 +294,7 @@ function initOfficePreview() {
     nextTick(() => {
         const el = contentRef.value;
         if (!el) return;
-        const officeExtensions = ['.docx', '.xlsx', '.pptx'];
+        const officeExtensions = ['.docx', '.xlsx', '.pptx', '.pdf'];
         el.querySelectorAll('a.file').forEach(link => {
             const href = link.getAttribute('href') || '';
             const isOffice = officeExtensions.some(ext => href.toLowerCase().endsWith(ext));

@@ -234,7 +234,7 @@ async function handleFileInsert(file) {
     // 支持的文件类型
     const supportedExtensions = /\.(md|txt|json|xml|zip|pptx|pdf|docx|xlsx|mp4|mp3)$/i;
 
-    if (!isImage && !file.name.match(supportedExtensions)) {
+    if (!isImage && !file.name.toLowerCase().match(supportedExtensions)) {
         message.warning('暂不支持此文件类型');
         return;
     }

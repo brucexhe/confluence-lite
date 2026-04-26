@@ -127,7 +127,7 @@ public class AttachmentOptions
         // 图片
         ".jpg", ".jpeg", ".bmp", ".png", ".gif",
         // 文档
-        ".docx", ".pptx", ".xlsx",
+        ".docx", ".pptx", ".xlsx", ".pdf",
         // 视频
         ".mp4",
         // 压缩

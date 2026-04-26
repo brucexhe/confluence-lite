@@ -15,5 +15,6 @@ public static class ApiRoutes
         app.MapAttachmentRoutes();
         app.MapUploadRoutes();
         app.MapActivityRoutes();
+        app.MapOfficeRoutes();
     }
 }

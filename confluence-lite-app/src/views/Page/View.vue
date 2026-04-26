@@ -97,6 +97,13 @@
             :images="pageImages"
             v-model:currentIndex="currentImageIndex"
         />
+
+        <!-- Office 文件预览组件 -->
+        <OfficePreview
+            v-model:open="officePreviewOpen"
+            :filePath="officeFilePath"
+            :fileName="officeFileName"
+        />
     </div>
 </template>
 
@@ -107,6 +114,7 @@ import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import PageAttachments from "../../components/PageAttachments.vue";
 import ImagePreview from "../../components/ImagePreview.vue";
+import OfficePreview from "../../components/OfficePreview.vue";
 import { pageApi, attachmentApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { usePageTreeStore } from "../../store/pageTree";
@@ -281,6 +289,29 @@ function initImagePreview() {
     });
 }
 
+// 为 v-html 渲染内容中的 Office 文件链接添加预览事件
+function initOfficePreview() {
+    nextTick(() => {
+        const el = contentRef.value;
+        if (!el) return;
+        const officeExtensions = ['.docx', '.xlsx', '.pptx'];
+        el.querySelectorAll('a.file').forEach(link => {
+            const href = link.getAttribute('href') || '';
+            const isOffice = officeExtensions.some(ext => href.toLowerCase().endsWith(ext));
+            if (!isOffice) return;
+            if (link.dataset.hasOfficePreview) return;
+            link.dataset.hasOfficePreview = 'true';
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                officeFilePath.value = href;
+                officeFileName.value = link.textContent?.trim() || href.split('/').pop() || 'Document';
+                officePreviewOpen.value = true;
+            });
+        });
+    });
+}
+
 // 表格排序
 function initTableSort() {
     nextTick(() => {
@@ -341,6 +372,7 @@ watch(pageContent, () => {
     initTableSort();
     highlightCode();
     initImagePreview();
+    initOfficePreview();
 });
 
 onMounted(() => {
@@ -394,6 +426,10 @@ const imagePreviewOpen = ref(false);
 const currentImageSrc = ref('');
 const pageImages = ref([]);
 const currentImageIndex = ref(0);
+// Office 文件预览
+const officePreviewOpen = ref(false);
+const officeFilePath = ref('');
+const officeFileName = ref('');
 </script>
 
 <style scoped>

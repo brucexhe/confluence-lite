@@ -112,6 +112,8 @@ builder.Services.AddScoped<PageService>();
 builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<SetupService>();
 builder.Services.AddScoped<UploadService>();
+builder.Services.AddHttpClient("Gotenberg");
+builder.Services.AddScoped<OfficePreviewService>();
 
 // ========== JSON 配置 - Native AOT 使用源生成器 ==========
 builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>

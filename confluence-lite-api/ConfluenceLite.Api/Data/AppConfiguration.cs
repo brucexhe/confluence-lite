@@ -24,6 +24,11 @@ public class AppConfiguration
     /// 附件存储配置
     /// </summary>
     public AttachmentOptions Attachment { get; set; } = new();
+
+    /// <summary>
+    /// Gotenberg 配置
+    /// </summary>
+    public GotenbergOptions Gotenberg { get; set; } = new();
 }
 
 /// <summary>
@@ -135,4 +140,20 @@ public class AttachmentOptions
     /// 上传文件存储路径 (相对于 wwwroot)
     /// </summary>
     public string UploadPath { get; set; } = "uploads";
+}
+
+/// <summary>
+/// Gotenberg 文档转换服务配置
+/// </summary>
+public class GotenbergOptions
+{
+    /// <summary>
+    /// Gotenberg 服务地址
+    /// </summary>
+    public string BaseUrl { get; set; } = "http://gotenberg:3000";
+
+    /// <summary>
+    /// 请求超时时间(秒)
+    /// </summary>
+    public int TimeoutSeconds { get; set; } = 120;
 }

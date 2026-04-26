@@ -14,7 +14,7 @@
                     <div class="nav-group">
                         <div class="nav-group-title">基本设置</div>
                         <router-link to="/settings" class="nav-item" :class="{ active: route.path === '/settings' }">
-                            常规设置
+                            站点设置
                         </router-link>
                         <router-link to="/settings/security" class="nav-item" :class="{ active: route.path === '/settings/security' }">
                             安全设置

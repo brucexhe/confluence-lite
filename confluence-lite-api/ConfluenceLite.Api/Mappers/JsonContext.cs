@@ -77,6 +77,12 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(ApiResponse<SetupResponse>))]
 [JsonSerializable(typeof(ApiResponse<OfficePreviewConfigDto>))]
 [JsonSerializable(typeof(OfficePreviewConfigDto))]
+[JsonSerializable(typeof(SiteConfigDto))]
+[JsonSerializable(typeof(DisplayConfigDto))]
+[JsonSerializable(typeof(SiteInfoDto))]
+[JsonSerializable(typeof(ApiResponse<SiteConfigDto>))]
+[JsonSerializable(typeof(ApiResponse<DisplayConfigDto>))]
+[JsonSerializable(typeof(ApiResponse<SiteInfoDto>))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

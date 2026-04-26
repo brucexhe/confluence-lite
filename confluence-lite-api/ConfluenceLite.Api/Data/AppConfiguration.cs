@@ -29,6 +29,16 @@ public class AppConfiguration
     /// Gotenberg 配置
     /// </summary>
     public GotenbergOptions Gotenberg { get; set; } = new();
+
+    /// <summary>
+    /// 站点设置
+    /// </summary>
+    public SiteSettings SiteSettings { get; set; } = new();
+
+    /// <summary>
+    /// 显示设置
+    /// </summary>
+    public DisplaySettings DisplaySettings { get; set; } = new();
 }
 
 /// <summary>
@@ -161,4 +171,40 @@ public class GotenbergOptions
     /// 请求超时时间(秒)
     /// </summary>
     public int TimeoutSeconds { get; set; } = 120;
+}
+
+/// <summary>
+/// 站点设置
+/// </summary>
+public class SiteSettings
+{
+    public string SiteName { get; set; } = "Confluence Lite";
+    public string SiteDescription { get; set; } = "";
+    public string SiteLogo { get; set; } = "";
+    public string SiteDomain { get; set; } = "";
+    public string DefaultLanguage { get; set; } = "zh-CN";
+    public string DefaultHomePage { get; set; } = "";
+    public string Timezone { get; set; } = "Asia/Shanghai";
+    public bool AllowRegistration { get; set; } = true;
+}
+
+/// <summary>
+/// 显示设置
+/// </summary>
+public class DisplaySettings
+{
+    public string DefaultTheme { get; set; } = "light";
+    public string PrimaryColor { get; set; } = "#0052cc";
+    public bool CompactMode { get; set; }
+    public int PageSize { get; set; } = 20;
+    public string PageTreeExpandMode { get; set; } = "first";
+    public bool ShowPageViews { get; set; } = true;
+    public bool ShowAuthorInfo { get; set; } = true;
+    public bool ShowLastModified { get; set; } = true;
+    public string DefaultEditorMode { get; set; } = "visual";
+    public int AutoSaveInterval { get; set; } = 60;
+    public bool EnableSpellCheck { get; set; } = true;
+    public int DefaultSidebarWidth { get; set; } = 260;
+    public bool ShowSpaceIcon { get; set; } = true;
+    public bool AllowCollapseSidebar { get; set; } = true;
 }

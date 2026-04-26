@@ -1,7 +1,7 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>常规设置</h1>
+            <h1>站点设置</h1>
             <p class="page-description">配置站点的基本信息和默认选项</p>
         </div>
 

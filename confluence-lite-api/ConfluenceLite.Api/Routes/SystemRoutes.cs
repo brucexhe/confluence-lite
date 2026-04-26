@@ -207,6 +207,58 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
         });
 
+        // ========== 邮件配置 ==========
+
+        group.MapGet("/mail-config", (AppConfiguration appConfig) =>
+        {
+            var m = appConfig.MailSettings;
+            var dto = new MailConfigDto
+            {
+                Enabled = m.Enabled,
+                SmtpHost = m.SmtpHost,
+                SmtpPort = m.SmtpPort,
+                Encryption = m.Encryption,
+                FromEmail = m.FromEmail,
+                FromName = m.FromName,
+                Username = m.Username,
+                Password = "", // 不返回已保存的密码
+                NotifyOnRegister = m.NotifyOnRegister,
+                AdminEmail = m.AdminEmail,
+                EmailSignature = m.EmailSignature
+            };
+            return Results.Ok(ApiResponse<MailConfigDto>.Ok(dto));
+        });
+
+        group.MapPut("/mail-config", (
+            MailConfigDto dto,
+            AppConfiguration appConfig,
+            IHostEnvironment env) =>
+        {
+            var m = appConfig.MailSettings;
+            m.Enabled = dto.Enabled;
+            m.SmtpHost = dto.SmtpHost;
+            m.SmtpPort = dto.SmtpPort;
+            m.Encryption = dto.Encryption;
+            m.FromEmail = dto.FromEmail;
+            m.FromName = dto.FromName;
+            m.Username = dto.Username;
+            if (!string.IsNullOrEmpty(dto.Password))
+                m.Password = dto.Password;
+            m.NotifyOnRegister = dto.NotifyOnRegister;
+            m.AdminEmail = dto.AdminEmail;
+            m.EmailSignature = dto.EmailSignature;
+
+            SaveMailSettingsConfig(env, dto, m.Password);
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
+        });
+
+        group.MapPost("/mail-config/test", (MailConfigDto dto) =>
+        {
+            // TODO: 实现邮件发送测试
+            return Results.Ok(ApiResponse<bool>.Ok(true, "测试功能暂未实现"));
+        });
+
         // ========== 公开端点（无需认证） ==========
 
         app.MapGet("/api/siteinfo", (AppConfiguration appConfig, SetupService setupService) =>
@@ -386,6 +438,49 @@ public static class SystemRoutes
             ["AllowRememberMe"] = dto.AllowRememberMe,
             ["IpWhitelist"] = dto.IpWhitelist,
             ["EnableTwoFactor"] = dto.EnableTwoFactor
+        };
+        root!["App"] = appNode;
+
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        File.WriteAllText(configPath, root.ToJsonString(options));
+    }
+
+    private static void SaveMailSettingsConfig(IHostEnvironment env, MailConfigDto dto, string savedPassword)
+    {
+        var dataDir = Path.Combine(env.ContentRootPath, "data");
+        if (!Directory.Exists(dataDir))
+            Directory.CreateDirectory(dataDir);
+
+        var configPath = Path.Combine(dataDir, "appsettings.runtime.json");
+
+        JsonObject? root;
+        if (File.Exists(configPath))
+        {
+            var existingJson = File.ReadAllText(configPath);
+            root = JsonNode.Parse(existingJson)?.AsObject();
+        }
+        else
+        {
+            root = new JsonObject();
+        }
+
+        var appNode = root!.TryGetPropertyValue("App", out var appVal)
+            ? appVal?.AsObject() ?? new JsonObject()
+            : new JsonObject();
+
+        appNode!["MailSettings"] = new JsonObject
+        {
+            ["Enabled"] = dto.Enabled,
+            ["SmtpHost"] = dto.SmtpHost,
+            ["SmtpPort"] = dto.SmtpPort,
+            ["Encryption"] = dto.Encryption,
+            ["FromEmail"] = dto.FromEmail,
+            ["FromName"] = dto.FromName,
+            ["Username"] = dto.Username,
+            ["Password"] = !string.IsNullOrEmpty(dto.Password) ? dto.Password : savedPassword,
+            ["NotifyOnRegister"] = dto.NotifyOnRegister,
+            ["AdminEmail"] = dto.AdminEmail,
+            ["EmailSignature"] = dto.EmailSignature
         };
         root!["App"] = appNode;
 

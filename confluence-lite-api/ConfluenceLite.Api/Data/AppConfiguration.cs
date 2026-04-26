@@ -44,6 +44,11 @@ public class AppConfiguration
     /// 安全设置
     /// </summary>
     public SecuritySettings SecuritySettings { get; set; } = new();
+
+    /// <summary>
+    /// 邮件设置
+    /// </summary>
+    public MailSettings MailSettings { get; set; } = new();
 }
 
 /// <summary>
@@ -237,4 +242,22 @@ public class SecuritySettings
     // 访问控制
     public string IpWhitelist { get; set; } = "";
     public bool EnableTwoFactor { get; set; }
+}
+
+/// <summary>
+/// 邮件设置
+/// </summary>
+public class MailSettings
+{
+    public bool Enabled { get; set; }
+    public string SmtpHost { get; set; } = "";
+    public int SmtpPort { get; set; } = 587;
+    public string Encryption { get; set; } = "tls";
+    public string FromEmail { get; set; } = "";
+    public string FromName { get; set; } = "";
+    public string Username { get; set; } = "";
+    public string Password { get; set; } = "";
+    public bool NotifyOnRegister { get; set; }
+    public string AdminEmail { get; set; } = "";
+    public string EmailSignature { get; set; } = "";
 }

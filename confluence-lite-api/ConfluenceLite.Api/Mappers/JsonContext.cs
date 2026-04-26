@@ -87,6 +87,8 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(ApiResponse<SecurityConfigDto>))]
 [JsonSerializable(typeof(MailConfigDto))]
 [JsonSerializable(typeof(ApiResponse<MailConfigDto>))]
+[JsonSerializable(typeof(AuthConfigDto))]
+[JsonSerializable(typeof(ApiResponse<AuthConfigDto>))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

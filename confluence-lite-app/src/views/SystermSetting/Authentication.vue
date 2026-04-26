@@ -214,7 +214,7 @@ const testResult = ref(null)
 const formState = reactive({
     // 密码认证
     passwordEnabled: true,
-    emailLoginEnabled: true,
+    emailLoginEnabled: false,
 
     // OpenID Connect
     oidcEnabled: false,

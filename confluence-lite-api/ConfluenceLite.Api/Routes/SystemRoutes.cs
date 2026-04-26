@@ -259,6 +259,69 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<bool>.Ok(true, "测试功能暂未实现"));
         });
 
+        // ========== 身份验证配置 ==========
+
+        group.MapGet("/auth-config", (AppConfiguration appConfig) =>
+        {
+            var a = appConfig.AuthSettings;
+            var dto = new AuthConfigDto
+            {
+                PasswordEnabled = a.PasswordEnabled,
+                EmailLoginEnabled = a.EmailLoginEnabled,
+                OidcEnabled = a.OidcEnabled,
+                OidcProviderName = a.OidcProviderName,
+                OidcDiscoveryUrl = a.OidcDiscoveryUrl,
+                OidcClientId = a.OidcClientId,
+                OidcClientSecret = "", // 不返回已保存的密钥
+                OidcScopes = a.OidcScopes,
+                OidcAutoCreateUser = a.OidcAutoCreateUser,
+                OidcDefaultRole = a.OidcDefaultRole,
+                LdapEnabled = a.LdapEnabled,
+                LdapUrl = a.LdapUrl,
+                LdapBindDn = a.LdapBindDn,
+                LdapBindPassword = "", // 不返回已保存的密码
+                LdapBaseDn = a.LdapBaseDn,
+                LdapUserFilter = a.LdapUserFilter
+            };
+            return Results.Ok(ApiResponse<AuthConfigDto>.Ok(dto));
+        });
+
+        group.MapPut("/auth-config", (
+            AuthConfigDto dto,
+            AppConfiguration appConfig,
+            IHostEnvironment env) =>
+        {
+            var a = appConfig.AuthSettings;
+            a.PasswordEnabled = dto.PasswordEnabled;
+            a.EmailLoginEnabled = dto.EmailLoginEnabled;
+            a.OidcEnabled = dto.OidcEnabled;
+            a.OidcProviderName = dto.OidcProviderName;
+            a.OidcDiscoveryUrl = dto.OidcDiscoveryUrl;
+            a.OidcClientId = dto.OidcClientId;
+            if (!string.IsNullOrEmpty(dto.OidcClientSecret))
+                a.OidcClientSecret = dto.OidcClientSecret;
+            a.OidcScopes = dto.OidcScopes;
+            a.OidcAutoCreateUser = dto.OidcAutoCreateUser;
+            a.OidcDefaultRole = dto.OidcDefaultRole;
+            a.LdapEnabled = dto.LdapEnabled;
+            a.LdapUrl = dto.LdapUrl;
+            a.LdapBindDn = dto.LdapBindDn;
+            if (!string.IsNullOrEmpty(dto.LdapBindPassword))
+                a.LdapBindPassword = dto.LdapBindPassword;
+            a.LdapBaseDn = dto.LdapBaseDn;
+            a.LdapUserFilter = dto.LdapUserFilter;
+
+            SaveAuthSettingsConfig(env, dto, a.OidcClientSecret, a.LdapBindPassword);
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
+        });
+
+        group.MapPost("/auth-config/test", (AuthConfigDto dto) =>
+        {
+            // TODO: 实现认证连接测试
+            return Results.Ok(ApiResponse<bool>.Ok(true, "测试功能暂未实现"));
+        });
+
         // ========== 公开端点（无需认证） ==========
 
         app.MapGet("/api/siteinfo", (AppConfiguration appConfig, SetupService setupService) =>
@@ -481,6 +544,54 @@ public static class SystemRoutes
             ["NotifyOnRegister"] = dto.NotifyOnRegister,
             ["AdminEmail"] = dto.AdminEmail,
             ["EmailSignature"] = dto.EmailSignature
+        };
+        root!["App"] = appNode;
+
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        File.WriteAllText(configPath, root.ToJsonString(options));
+    }
+
+    private static void SaveAuthSettingsConfig(IHostEnvironment env, AuthConfigDto dto, string savedOidcSecret, string savedLdapPassword)
+    {
+        var dataDir = Path.Combine(env.ContentRootPath, "data");
+        if (!Directory.Exists(dataDir))
+            Directory.CreateDirectory(dataDir);
+
+        var configPath = Path.Combine(dataDir, "appsettings.runtime.json");
+
+        JsonObject? root;
+        if (File.Exists(configPath))
+        {
+            var existingJson = File.ReadAllText(configPath);
+            root = JsonNode.Parse(existingJson)?.AsObject();
+        }
+        else
+        {
+            root = new JsonObject();
+        }
+
+        var appNode = root!.TryGetPropertyValue("App", out var appVal)
+            ? appVal?.AsObject() ?? new JsonObject()
+            : new JsonObject();
+
+        appNode!["AuthSettings"] = new JsonObject
+        {
+            ["PasswordEnabled"] = dto.PasswordEnabled,
+            ["EmailLoginEnabled"] = dto.EmailLoginEnabled,
+            ["OidcEnabled"] = dto.OidcEnabled,
+            ["OidcProviderName"] = dto.OidcProviderName,
+            ["OidcDiscoveryUrl"] = dto.OidcDiscoveryUrl,
+            ["OidcClientId"] = dto.OidcClientId,
+            ["OidcClientSecret"] = !string.IsNullOrEmpty(dto.OidcClientSecret) ? dto.OidcClientSecret : savedOidcSecret,
+            ["OidcScopes"] = dto.OidcScopes,
+            ["OidcAutoCreateUser"] = dto.OidcAutoCreateUser,
+            ["OidcDefaultRole"] = dto.OidcDefaultRole,
+            ["LdapEnabled"] = dto.LdapEnabled,
+            ["LdapUrl"] = dto.LdapUrl,
+            ["LdapBindDn"] = dto.LdapBindDn,
+            ["LdapBindPassword"] = !string.IsNullOrEmpty(dto.LdapBindPassword) ? dto.LdapBindPassword : savedLdapPassword,
+            ["LdapBaseDn"] = dto.LdapBaseDn,
+            ["LdapUserFilter"] = dto.LdapUserFilter
         };
         root!["App"] = appNode;
 

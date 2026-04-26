@@ -149,6 +149,11 @@ const router = createRouter({
                     component: () => import('../views/SystermSetting/Pages.vue')
                 },
                 {
+                    path: 'office-preview',
+                    name: 'settings-office-preview',
+                    component: () => import('../views/SystermSetting/OfficePreview.vue')
+                },
+                {
                     path: 'system-info',
                     name: 'settings-system-info',
                     component: () => import('../views/SystermSetting/SystemInfo.vue')

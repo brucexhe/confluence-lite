@@ -36,6 +36,17 @@
                 <a-spin size="large" tip="正在转换文档..." />
             </div>
 
+            <!-- 未配置 -->
+            <div v-else-if="notConfigured" class="preview-error">
+                <SettingsIcon :size="48" />
+                <p class="error-text">转换 API 未配置</p>
+                <p class="error-sub-text">请联系管理员在系统设置中启用 Office 预览功能</p>
+                <a-button type="primary" @click="handleDownload">
+                    <template #icon><DownloadIcon :size="14" /></template>
+                    下载原文件
+                </a-button>
+            </div>
+
             <!-- 加载失败 -->
             <div v-else-if="error" class="preview-error">
                 <FileXIcon :size="48" />
@@ -57,7 +68,8 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import VuePdfEmbed from 'vue-pdf-embed';
-import { XIcon, DownloadIcon, FileXIcon } from 'lucide-vue-next';
+import { XIcon, DownloadIcon, FileXIcon, SettingsIcon } from 'lucide-vue-next';
+import { systemSettingApi } from '@/api';
 
 const props = defineProps({
     open: Boolean,
@@ -71,6 +83,7 @@ const visible = ref(false);
 const loading = ref(false);
 const error = ref('');
 const pdfData = ref(null);
+const notConfigured = ref(false);
 
 const loadPdf = async () => {
     if (!props.filePath) return;
@@ -78,8 +91,17 @@ const loadPdf = async () => {
     loading.value = true;
     error.value = '';
     pdfData.value = null;
+    notConfigured.value = false;
 
     try {
+        // 先检查预览功能是否启用
+        const config = await systemSettingApi.getOfficePreviewConfig();
+        if (!config?.enabled) {
+            notConfigured.value = true;
+            loading.value = false;
+            return;
+        }
+
         const relativePath = props.filePath.replace(/^\//, '');
         const url = `/api/office/preview?path=${encodeURIComponent(relativePath)}`;
 
@@ -122,6 +144,7 @@ watch(() => props.open, (val) => {
     } else {
         pdfData.value = null;
         error.value = '';
+        notConfigured.value = false;
     }
 });
 
@@ -228,6 +251,12 @@ onUnmounted(() => {
 .error-text {
     font-size: 14px;
     margin: 0;
+}
+
+.error-sub-text {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: -8px 0 0 0;
 }
 
 .pdf-container {

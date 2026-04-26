@@ -148,6 +148,11 @@ public class AttachmentOptions
 public class GotenbergOptions
 {
     /// <summary>
+    /// 是否启用 Office 文档预览
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
     /// Gotenberg 服务地址
     /// </summary>
     public string BaseUrl { get; set; } = "http://gotenberg:3000";

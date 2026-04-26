@@ -10,7 +10,7 @@ namespace ConfluenceLite.Api.Services;
 public class OfficePreviewService
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly GotenbergOptions _gotenbergOptions;
+    private readonly AppConfiguration _appConfig;
     private readonly string _wwwrootPath;
     private readonly string _cacheDir;
 
@@ -24,7 +24,7 @@ public class OfficePreviewService
     public OfficePreviewService(IHttpClientFactory httpClientFactory, AppConfiguration appConfig)
     {
         _httpClientFactory = httpClientFactory;
-        _gotenbergOptions = appConfig.Gotenberg;
+        _appConfig = appConfig;
 
         var contentRoot = Directory.GetCurrentDirectory();
         _wwwrootPath = Path.Combine(contentRoot, "wwwroot");
@@ -38,6 +38,9 @@ public class OfficePreviewService
 
     public async Task<byte[]> GetOrConvertPdfAsync(string relativePath)
     {
+        if (!_appConfig.Gotenberg.Enabled)
+            throw new InvalidOperationException("Office 预览功能未启用");
+
         // 安全校验：禁止路径穿越
         if (relativePath.Contains(".."))
             throw new ArgumentException("非法路径");
@@ -88,9 +91,9 @@ public class OfficePreviewService
         content.Add(fileContent, "files", fileName);
 
         var client = _httpClientFactory.CreateClient("Gotenberg");
-        client.Timeout = TimeSpan.FromSeconds(_gotenbergOptions.TimeoutSeconds);
+        client.Timeout = TimeSpan.FromSeconds(_appConfig.Gotenberg.TimeoutSeconds);
 
-        var baseUrl = _gotenbergOptions.BaseUrl.TrimEnd('/');
+        var baseUrl = _appConfig.Gotenberg.BaseUrl.TrimEnd('/');
         var response = await client.PostAsync($"{baseUrl}/forms/libreoffice/convert", content);
 
         if (!response.IsSuccessStatusCode)

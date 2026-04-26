@@ -48,6 +48,9 @@
                         <router-link to="/settings/pages" class="nav-item" :class="{ active: route.path === '/settings/pages' }">
                             页面管理
                         </router-link>
+                        <router-link to="/settings/office-preview" class="nav-item" :class="{ active: route.path === '/settings/office-preview' }">
+                            Office 预览
+                        </router-link>
                     </div>
 
                     <div class="nav-group">

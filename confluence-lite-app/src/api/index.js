@@ -412,5 +412,20 @@ export const systemSettingApi = {
   /** 获取任务执行日志 */
   getJobLogs(id, page = 1, pageSize = 20) {
     return request(`/api/system/jobs/${id}/logs?page=${page}&pageSize=${pageSize}`)
+  },
+
+  /** 获取 Office 预览配置 */
+  getOfficePreviewConfig() {
+    return request('/api/system/office-preview-config')
+  },
+
+  /** 更新 Office 预览配置 */
+  updateOfficePreviewConfig(data) {
+    return request('/api/system/office-preview-config', { method: 'PUT', body: data })
+  },
+
+  /** 测试 Office 预览连接 */
+  testOfficePreviewConfig(data) {
+    return request('/api/system/office-preview-config/test', { method: 'POST', body: data })
   }
 }

@@ -7,3 +7,4 @@
 /.vs
 /confluence-lite-api/ConfluenceLite.Api/Data/INSTALLED
 cache
+/confluence-lite-api/ConfluenceLite.Api/appsettings.Development.json

@@ -34,7 +34,7 @@
                     <div class="spacer"></div>
                     <span class="hint">按 <kbd>回车</kbd> 提交</span>
                     <a-button type="primary" size="small" @click="addComment" :disabled="!newComment.trim()">
-                        Save
+                        保存
                     </a-button>
                 </div>
             </div>
@@ -85,7 +85,7 @@
                         @click="toggleReply(comment.id)"
                         class="reply-btn"
                     >
-                        Reply
+                        回复
                     </a-button>
 
                     <!-- Reply Input -->

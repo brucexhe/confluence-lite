@@ -1,6 +1,7 @@
 
 #build app
 cd confluence-lite-app
+pnpm i
 yarn build
 cp -r dist/* ../release/wwwroot/
 cd ..

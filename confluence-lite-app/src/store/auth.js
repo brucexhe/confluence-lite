@@ -5,7 +5,15 @@ import { userApi } from '../api'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('auth_token') || null)
-  const user = ref(JSON.parse(localStorage.getItem('auth_user') || 'null'))
+  const getUserFromStorage = () => {
+    try {
+      return JSON.parse(localStorage.getItem('auth_user') || 'null')
+    } catch {
+      localStorage.removeItem('auth_user')
+      return null
+    }
+  }
+  const user = ref(getUserFromStorage())
   const router = useRouter()
 
   async function login(username, password) {

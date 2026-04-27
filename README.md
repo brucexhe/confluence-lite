@@ -33,10 +33,10 @@ POWERD BY: 代码全程由Claude Code完成。
 
 ## 截图
 
+![](./snapshots/内存占用.png)
 ![](./snapshots/主页.png)
 ![](./snapshots/文件上传.png)
 ![](./snapshots/代码高亮.png)
 ![](./snapshots/OFFICE文件预览.png)
 ![](./snapshots/系统设置.png)
-![](./snapshots/主页.png)
 

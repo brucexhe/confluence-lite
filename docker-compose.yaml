@@ -1,10 +1,36 @@
-version: '3.8'
+version: '3'
+
 services:
-  converter:
-    image: sgbj/versed:latest
-    container_name: libreoffice-converter
-    environment:
-      - PORT=3000
+  confluencelite:
+    image: confluencelite
+    container_name: confluencelite
+    restart: always
+    volumes:
+      - ./uploads:/app/wwwroot/uploads
+      - ./data:/app/data #配置、缓存等数据目录
+    # 映射端口到群晖
     ports:
-      - "3000:3000"
-    restart: unless-stopped
+      - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M 
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+  
+  gotenberg:
+    container_name: gotenberg
+    image: gotenberg/gotenberg:8
+    ports:
+      - "13000:3000"
+    volumes:
+      # 挂载本地字体，这是 Confluence 级别还原度的关键
+      - ./fonts:/usr/local/share/fonts:ro
+    # 限制资源，防止极端情况下的 OOM
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    restart: always

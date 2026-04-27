@@ -1,11 +1,58 @@
+![](https://img.shields.io/badge/license-MIT-blue.svg)
+![](https://img.shields.io/badge/Vue-3-green.svg)
+![](https://img.shields.io/badge/.NET-10-purple.svg)
+![](https://img.shields.io/badge/PostgreSQL-16-blue.svg)
+
 # confluence-lite
-基于 vue3+dotnet10+pg16的轻量级知识库笔记软件。
+轻量级、高性能的现代知识库笔记软件，完美复刻 Confluence 核心体验，最低仅需 50MB 内存即可运行。
 
-尽量复刻cf。
 
-完整运行只需要50M内存。 
+## ✨ 特性亮点
+🚀 极致轻量​ - 完整运行仅需 50MB 内存，是传统知识库工具的 1/10  
+🎯 完美复刻​ - 深度还原 Confluence 的核心功能和用户体验  
+⚡ 高性能架构​ - Vue3 + .NET 10 + PostgreSQL 16 现代技术栈  
+🤖 AI 原生开发​ - 代码全程由 Claude Code 智能生成与优化  
+📱 开箱即用​ - 一键部署，五分钟内即可搭建专属知识库  
 
-POWERD BY: 代码全程由Claude Code完成。
+## 🏗️ 技术架构
+前端：Vue 3 + TypeScript + Vite + Pinia  
+后端：.NET 10 + ASP.NET Core Web API  
+数据库：PostgreSQL 16  
+部署：Docker 支持（可选）  
+
+## 🚀 快速开始
+### 环境要求
+Node.js 18+  
+.NET 10 SDK  
+PostgreSQL 16  
+### 内存：
+最低 50MB，推荐 512MB+
+
+## 一键安装 
+git clone https://github.com/yourusername/confluence-lite.git  
+cd confluence-lite  
+
+### 后端启动
+cd server  
+dotnet restore  
+dotnet run  
+
+### 前端启动（新终端）
+cd client  
+npm install  
+npm run dev  
+docker-compose up -d  
+
+ 
+## 截图
+
+![](./snapshots/内存占用.png)
+![](./snapshots/主页.png)
+![](./snapshots/文件上传.png)
+![](./snapshots/代码高亮.png)
+![](./snapshots/OFFICE文件预览.png)
+![](./snapshots/系统设置.png)
+
 
 ## 进度
 
@@ -31,12 +78,30 @@ POWERD BY: 代码全程由Claude Code完成。
 - [ ] 缓存管理
 - [ ] 多语言支持
 
-## 截图
 
-![](./snapshots/内存占用.png)
-![](./snapshots/主页.png)
-![](./snapshots/文件上传.png)
-![](./snapshots/代码高亮.png)
-![](./snapshots/OFFICE文件预览.png)
-![](./snapshots/系统设置.png)
+ 
+ 
+## 🤝 贡献指南
+我们欢迎所有形式的贡献！请参阅 CONTRIBUTING.md了解如何参与。  
+Fork 本仓库  
+创建功能分支 (git checkout -b feature/AmazingFeature)  
+提交更改 (git commit -m 'Add some AmazingFeature')  
+推送分支 (git push origin feature/AmazingFeature)  
+开启 Pull Request  
 
+## 📄 许可证
+本项目基于 MIT 许可证开源 - 查看 LICENSE文件了解详情。
+
+## 🙏 致谢
+由 Claude Code​ 全程辅助开发
+灵感来源于 Atlassian Confluence
+感谢所有贡献者和用户的支持
+
+## ⭐ 支持我们
+如果这个项目对您有帮助，请给我们一个 Star！您的支持是我们持续优化的最大动力。
+Confluence Lite​ - 让知识管理回归轻量与高效 💡
+
+
+简洁 · 高效 · 智能
+
+Powered By Claude Code

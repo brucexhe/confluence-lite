@@ -122,6 +122,13 @@ builder.Services.AddScoped<CacheService>();
 builder.Services.AddScoped<JobSchedulerService>();
 builder.Services.AddScoped<BackupService>();
 
+// ========== 审计日志服务 ==========
+builder.Services.Configure<AuditLogOptions>(
+    builder.Configuration.GetSection("App:AuditLog"));
+builder.Services.AddSingleton<AuditLogService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<AuditLogService>());
+builder.Services.AddScoped<IAuditDiffGenerator, AuditDiffGenerator>();
+
 // ========== JSON 配置 - Native AOT 使用源生成器 ==========
 builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
 {
@@ -192,6 +199,9 @@ app.UseCors("AllowSpecificOrigins");
 
 // JWT 认证中间件
 app.UseMiddleware<JwtAuthMiddleware>();
+
+// 审计日志中间件
+app.UseMiddleware<AuditLoggingMiddleware>();
 
 // ========== 注册 Minimal API 路由 ==========
 ApiRoutes.RegisterRoutes(app);

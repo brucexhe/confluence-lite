@@ -145,6 +145,10 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(RestoreBackupRequest))]
 [JsonSerializable(typeof(ApiResponse<BackupDto>))]
 [JsonSerializable(typeof(ApiResponse<List<BackupDto>>))]
+// Audit Log
+[JsonSerializable(typeof(AuditLogEntry))]
+[JsonSerializable(typeof(AuditChangeDetails))]
+[JsonSerializable(typeof(ChangeDetail))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

@@ -1,3 +1,5 @@
+using ConfluenceLite.Api.Attributes;
+
 namespace ConfluenceLite.Api.Data;
 
 /// <summary>
@@ -54,6 +56,11 @@ public class AppConfiguration
     /// 身份验证设置
     /// </summary>
     public AuthSettings AuthSettings { get; set; } = new();
+
+    /// <summary>
+    /// 审计日志设置
+    /// </summary>
+    public AuditLogOptions AuditLog { get; set; } = new();
 }
 
 /// <summary>
@@ -261,6 +268,7 @@ public class MailSettings
     public string FromEmail { get; set; } = "";
     public string FromName { get; set; } = "";
     public string Username { get; set; } = "";
+    [SensitiveData]
     public string Password { get; set; } = "";
     public bool NotifyOnRegister { get; set; }
     public string AdminEmail { get; set; } = "";
@@ -279,6 +287,7 @@ public class AuthSettings
     public string OidcProviderName { get; set; } = "";
     public string OidcDiscoveryUrl { get; set; } = "";
     public string OidcClientId { get; set; } = "";
+    [SensitiveData]
     public string OidcClientSecret { get; set; } = "";
     public string OidcScopes { get; set; } = "openid profile email";
     public bool OidcAutoCreateUser { get; set; } = true;
@@ -288,7 +297,34 @@ public class AuthSettings
     public bool LdapEnabled { get; set; }
     public string LdapUrl { get; set; } = "";
     public string LdapBindDn { get; set; } = "";
+    [SensitiveData]
     public string LdapBindPassword { get; set; } = "";
     public string LdapBaseDn { get; set; } = "";
     public string LdapUserFilter { get; set; } = "(uid={username})";
+}
+
+/// <summary>
+/// 审计日志配置选项
+/// </summary>
+public class AuditLogOptions
+{
+    /// <summary>
+    /// 是否启用审计日志
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// 批处理大小
+    /// </summary>
+    public int BatchSize { get; set; } = 50;
+
+    /// <summary>
+    /// 刷新间隔（秒）
+    /// </summary>
+    public int FlushIntervalSeconds { get; set; } = 5;
+
+    /// <summary>
+    /// 最大队列长度
+    /// </summary>
+    public int MaxQueueSize { get; set; } = 10000;
 }

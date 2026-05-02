@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc;
-using SqlSugar;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Mappers;
@@ -38,11 +37,21 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<OfficePreviewConfigDto>.Ok(dto));
         });
 
-        group.MapPut("/office-preview-config", (
+        group.MapPut("/office-preview-config", async (
             OfficePreviewConfigDto dto,
             AppConfiguration appConfig,
-            IHostEnvironment env) =>
+            IHostEnvironment env,
+            IAuditLogService auditService,
+            HttpContext context) =>
         {
+            // 保存旧值用于审计
+            var oldValue = new OfficePreviewConfigDto
+            {
+                Enabled = appConfig.Gotenberg.Enabled,
+                BaseUrl = appConfig.Gotenberg.BaseUrl,
+                TimeoutSeconds = appConfig.Gotenberg.TimeoutSeconds
+            };
+
             // 更新内存中的配置（单例）
             appConfig.Gotenberg.Enabled = dto.Enabled;
             appConfig.Gotenberg.BaseUrl = dto.BaseUrl;
@@ -50,6 +59,9 @@ public static class SystemRoutes
 
             // 持久化到 appsettings.runtime.json
             SaveGotenbergConfig(env, dto);
+
+            // 记录审计日志
+            await auditService.EnqueueChangeAsync(context, "office", oldValue, dto);
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
         });
@@ -95,11 +107,26 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<SiteConfigDto>.Ok(dto));
         });
 
-        group.MapPut("/site-config", (
+        group.MapPut("/site-config", async (
             SiteConfigDto dto,
             AppConfiguration appConfig,
-            IHostEnvironment env) =>
+            IHostEnvironment env,
+            IAuditLogService auditService,
+            HttpContext context) =>
         {
+            // 保存旧值用于审计
+            var oldValue = new SiteConfigDto
+            {
+                SiteName = appConfig.SiteSettings.SiteName,
+                SiteDescription = appConfig.SiteSettings.SiteDescription,
+                SiteLogo = appConfig.SiteSettings.SiteLogo,
+                SiteDomain = appConfig.SiteSettings.SiteDomain,
+                DefaultLanguage = appConfig.SiteSettings.DefaultLanguage,
+                DefaultHomePage = appConfig.SiteSettings.DefaultHomePage,
+                Timezone = appConfig.SiteSettings.Timezone,
+                AllowRegistration = appConfig.SiteSettings.AllowRegistration
+            };
+
             appConfig.SiteSettings.SiteName = dto.SiteName;
             appConfig.SiteSettings.SiteDescription = dto.SiteDescription;
             appConfig.SiteSettings.SiteLogo = dto.SiteLogo;
@@ -110,6 +137,9 @@ public static class SystemRoutes
             appConfig.SiteSettings.AllowRegistration = dto.AllowRegistration;
 
             SaveSiteSettingsConfig(env, dto);
+
+            // 记录审计日志
+            await auditService.EnqueueChangeAsync(context, "site", oldValue, dto);
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
         });
@@ -138,11 +168,32 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<DisplayConfigDto>.Ok(dto));
         });
 
-        group.MapPut("/display-config", (
+        group.MapPut("/display-config", async (
             DisplayConfigDto dto,
             AppConfiguration appConfig,
-            IHostEnvironment env) =>
+            IHostEnvironment env,
+            IAuditLogService auditService,
+            HttpContext context) =>
         {
+            // 保存旧值用于审计
+            var oldValue = new DisplayConfigDto
+            {
+                DefaultTheme = appConfig.DisplaySettings.DefaultTheme,
+                PrimaryColor = appConfig.DisplaySettings.PrimaryColor,
+                CompactMode = appConfig.DisplaySettings.CompactMode,
+                PageSize = appConfig.DisplaySettings.PageSize,
+                PageTreeExpandMode = appConfig.DisplaySettings.PageTreeExpandMode,
+                ShowPageViews = appConfig.DisplaySettings.ShowPageViews,
+                ShowAuthorInfo = appConfig.DisplaySettings.ShowAuthorInfo,
+                ShowLastModified = appConfig.DisplaySettings.ShowLastModified,
+                DefaultEditorMode = appConfig.DisplaySettings.DefaultEditorMode,
+                AutoSaveInterval = appConfig.DisplaySettings.AutoSaveInterval,
+                EnableSpellCheck = appConfig.DisplaySettings.EnableSpellCheck,
+                DefaultSidebarWidth = appConfig.DisplaySettings.DefaultSidebarWidth,
+                ShowSpaceIcon = appConfig.DisplaySettings.ShowSpaceIcon,
+                AllowCollapseSidebar = appConfig.DisplaySettings.AllowCollapseSidebar
+            };
+
             appConfig.DisplaySettings.DefaultTheme = dto.DefaultTheme;
             appConfig.DisplaySettings.PrimaryColor = dto.PrimaryColor;
             appConfig.DisplaySettings.CompactMode = dto.CompactMode;
@@ -159,6 +210,9 @@ public static class SystemRoutes
             appConfig.DisplaySettings.AllowCollapseSidebar = dto.AllowCollapseSidebar;
 
             SaveDisplaySettingsConfig(env, dto);
+
+            // 记录审计日志
+            await auditService.EnqueueChangeAsync(context, "display", oldValue, dto);
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
         });
@@ -185,12 +239,31 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<SecurityConfigDto>.Ok(dto));
         });
 
-        group.MapPut("/security-config", (
+        group.MapPut("/security-config", async (
             SecurityConfigDto dto,
             AppConfiguration appConfig,
-            IHostEnvironment env) =>
+            IHostEnvironment env,
+            IAuditLogService auditService,
+            HttpContext context) =>
         {
             var s = appConfig.SecuritySettings;
+
+            // 保存旧值用于审计
+            var oldValue = new SecurityConfigDto
+            {
+                AllowPublicRegistration = s.AllowPublicRegistration,
+                RequireEmailVerification = s.RequireEmailVerification,
+                DefaultUserRole = s.DefaultUserRole,
+                MinPasswordLength = s.MinPasswordLength,
+                PasswordComplexity = s.PasswordComplexity,
+                PasswordExpireDays = s.PasswordExpireDays,
+                SessionTimeout = s.SessionTimeout,
+                AllowConcurrentSessions = s.AllowConcurrentSessions,
+                AllowRememberMe = s.AllowRememberMe,
+                IpWhitelist = s.IpWhitelist,
+                EnableTwoFactor = s.EnableTwoFactor
+            };
+
             s.AllowPublicRegistration = dto.AllowPublicRegistration;
             s.RequireEmailVerification = dto.RequireEmailVerification;
             s.DefaultUserRole = dto.DefaultUserRole;
@@ -198,12 +271,15 @@ public static class SystemRoutes
             s.PasswordComplexity = dto.PasswordComplexity;
             s.PasswordExpireDays = dto.PasswordExpireDays;
             s.SessionTimeout = dto.SessionTimeout;
-            s.AllowConcurrentSessions = dto.AllowConcurrentSessions;
+            s.AllowConcurrentSessions = s.AllowConcurrentSessions;
             s.AllowRememberMe = dto.AllowRememberMe;
             s.IpWhitelist = dto.IpWhitelist;
             s.EnableTwoFactor = dto.EnableTwoFactor;
 
             SaveSecuritySettingsConfig(env, dto);
+
+            // 记录审计日志
+            await auditService.EnqueueChangeAsync(context, "security", oldValue, dto);
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
         });
@@ -230,12 +306,31 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<MailConfigDto>.Ok(dto));
         });
 
-        group.MapPut("/mail-config", (
+        group.MapPut("/mail-config", async (
             MailConfigDto dto,
             AppConfiguration appConfig,
-            IHostEnvironment env) =>
+            IHostEnvironment env,
+            IAuditLogService auditService,
+            HttpContext context) =>
         {
             var m = appConfig.MailSettings;
+
+            // 保存旧值用于审计（密码不返回）
+            var oldValue = new MailConfigDto
+            {
+                Enabled = m.Enabled,
+                SmtpHost = m.SmtpHost,
+                SmtpPort = m.SmtpPort,
+                Encryption = m.Encryption,
+                FromEmail = m.FromEmail,
+                FromName = m.FromName,
+                Username = m.Username,
+                Password = "", // 不记录旧密码
+                NotifyOnRegister = m.NotifyOnRegister,
+                AdminEmail = m.AdminEmail,
+                EmailSignature = m.EmailSignature
+            };
+
             m.Enabled = dto.Enabled;
             m.SmtpHost = dto.SmtpHost;
             m.SmtpPort = dto.SmtpPort;
@@ -250,6 +345,23 @@ public static class SystemRoutes
             m.EmailSignature = dto.EmailSignature;
 
             SaveMailSettingsConfig(env, dto, m.Password);
+
+            // 记录审计日志（新值中的密码会被脱敏）
+            var newValueForAudit = new MailConfigDto
+            {
+                Enabled = dto.Enabled,
+                SmtpHost = dto.SmtpHost,
+                SmtpPort = dto.SmtpPort,
+                Encryption = dto.Encryption,
+                FromEmail = dto.FromEmail,
+                FromName = dto.FromName,
+                Username = dto.Username,
+                Password = !string.IsNullOrEmpty(dto.Password) ? "***" : "",
+                NotifyOnRegister = dto.NotifyOnRegister,
+                AdminEmail = dto.AdminEmail,
+                EmailSignature = dto.EmailSignature
+            };
+            await auditService.EnqueueChangeAsync(context, "mail", oldValue, newValueForAudit);
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
         });
@@ -287,12 +399,36 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<AuthConfigDto>.Ok(dto));
         });
 
-        group.MapPut("/auth-config", (
+        group.MapPut("/auth-config", async (
             AuthConfigDto dto,
             AppConfiguration appConfig,
-            IHostEnvironment env) =>
+            IHostEnvironment env,
+            IAuditLogService auditService,
+            HttpContext context) =>
         {
             var a = appConfig.AuthSettings;
+
+            // 保存旧值用于审计（敏感字段不返回）
+            var oldValue = new AuthConfigDto
+            {
+                PasswordEnabled = a.PasswordEnabled,
+                EmailLoginEnabled = a.EmailLoginEnabled,
+                OidcEnabled = a.OidcEnabled,
+                OidcProviderName = a.OidcProviderName,
+                OidcDiscoveryUrl = a.OidcDiscoveryUrl,
+                OidcClientId = a.OidcClientId,
+                OidcClientSecret = "", // 不记录旧密钥
+                OidcScopes = a.OidcScopes,
+                OidcAutoCreateUser = a.OidcAutoCreateUser,
+                OidcDefaultRole = a.OidcDefaultRole,
+                LdapEnabled = a.LdapEnabled,
+                LdapUrl = a.LdapUrl,
+                LdapBindDn = a.LdapBindDn,
+                LdapBindPassword = "", // 不记录旧密码
+                LdapBaseDn = a.LdapBaseDn,
+                LdapUserFilter = a.LdapUserFilter
+            };
+
             a.PasswordEnabled = dto.PasswordEnabled;
             a.EmailLoginEnabled = dto.EmailLoginEnabled;
             a.OidcEnabled = dto.OidcEnabled;
@@ -313,6 +449,28 @@ public static class SystemRoutes
             a.LdapUserFilter = dto.LdapUserFilter;
 
             SaveAuthSettingsConfig(env, dto, a.OidcClientSecret, a.LdapBindPassword);
+
+            // 记录审计日志（敏感字段会被脱敏）
+            var newValueForAudit = new AuthConfigDto
+            {
+                PasswordEnabled = dto.PasswordEnabled,
+                EmailLoginEnabled = dto.EmailLoginEnabled,
+                OidcEnabled = dto.OidcEnabled,
+                OidcProviderName = dto.OidcProviderName,
+                OidcDiscoveryUrl = dto.OidcDiscoveryUrl,
+                OidcClientId = dto.OidcClientId,
+                OidcClientSecret = !string.IsNullOrEmpty(dto.OidcClientSecret) ? "***" : "",
+                OidcScopes = dto.OidcScopes,
+                OidcAutoCreateUser = dto.OidcAutoCreateUser,
+                OidcDefaultRole = dto.OidcDefaultRole,
+                LdapEnabled = dto.LdapEnabled,
+                LdapUrl = dto.LdapUrl,
+                LdapBindDn = dto.LdapBindDn,
+                LdapBindPassword = !string.IsNullOrEmpty(dto.LdapBindPassword) ? "***" : "",
+                LdapBaseDn = dto.LdapBaseDn,
+                LdapUserFilter = dto.LdapUserFilter
+            };
+            await auditService.EnqueueChangeAsync(context, "auth", oldValue, newValueForAudit);
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
         });

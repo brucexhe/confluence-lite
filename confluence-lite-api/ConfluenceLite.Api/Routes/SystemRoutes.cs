@@ -6,6 +6,7 @@ using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Mappers;
 using ConfluenceLite.Api.Services;
+using ConfluenceLite.Api.Middleware;
 
 namespace ConfluenceLite.Api.Routes;
 
@@ -322,6 +323,257 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<bool>.Ok(true, "测试功能暂未实现"));
         });
 
+        // ========== 系统信息 ==========
+
+        group.MapGet("/info", async (SystemInfoService systemInfoService) =>
+        {
+            var (data, error) = await systemInfoService.GetSystemInfoAsync();
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<SystemInfoDto>.Fail(error));
+
+            return Results.Ok(ApiResponse<SystemInfoDto>.Ok(data!));
+        });
+
+        group.MapGet("/stats", async (SystemInfoService systemInfoService) =>
+        {
+            var (data, error) = await systemInfoService.GetStatsAsync();
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<SystemStatsDto>.Fail(error));
+
+            return Results.Ok(ApiResponse<SystemStatsDto>.Ok(data!));
+        });
+
+        // ========== 日志管理 ==========
+
+        group.MapGet("/logs", async (
+            LogService logService,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? level = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null,
+            [FromQuery] string? searchText = null) =>
+        {
+            var request = new LogQueryRequest
+            {
+                Page = page,
+                PageSize = pageSize,
+                Level = level,
+                StartDate = startDate,
+                EndDate = endDate,
+                SearchText = searchText
+            };
+
+            var (data, error) = await logService.GetLogsAsync(request);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<PagedResponse<LogEntryDto>>.Fail(error));
+
+            return Results.Ok(ApiResponse<PagedResponse<LogEntryDto>>.Ok(data!));
+        });
+
+        group.MapGet("/logs/export", async (
+            LogService logService,
+            [FromQuery] string? level = null,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null) =>
+        {
+            var request = new LogExportRequest
+            {
+                Level = level,
+                StartDate = startDate,
+                EndDate = endDate,
+                Format = "txt"
+            };
+
+            var (data, error) = await logService.ExportLogsAsync(request);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<byte[]>.Fail(error));
+
+            return Results.File(data!, "text/plain", $"logs_{DateTime.Now:yyyyMMdd_HHmmss}.txt");
+        });
+
+        group.MapDelete("/logs/cleanup", async (
+            LogService logService,
+            [FromQuery] int daysToKeep = 30) =>
+        {
+            var (success, error) = await logService.CleanupOldLogsAsync(daysToKeep);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error));
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, error ?? "清理完成"));
+        });
+
+        // ========== 缓存管理 ==========
+
+        group.MapGet("/cache/stats", async (CacheService cacheService) =>
+        {
+            var stats = await cacheService.GetStatsAsync();
+            return Results.Ok(ApiResponse<CacheStatsDto>.Ok(stats));
+        });
+
+        group.MapGet("/cache/types", async (CacheService cacheService) =>
+        {
+            var types = await cacheService.GetCacheTypesAsync();
+            return Results.Ok(ApiResponse<List<CacheTypeDto>>.Ok(types));
+        });
+
+        group.MapGet("/cache/{type}/keys", async (
+            CacheService cacheService,
+            string type) =>
+        {
+            var keys = await cacheService.GetCacheKeysAsync(type);
+            return Results.Ok(ApiResponse<List<CacheKeyDto>>.Ok(keys));
+        });
+
+        group.MapPost("/cache/clear-all", async (CacheService cacheService) =>
+        {
+            await cacheService.ClearAllCacheAsync();
+            return Results.Ok(ApiResponse<bool>.Ok(true, "缓存已清空"));
+        });
+
+        group.MapPost("/cache/{type}/clear", async (
+            CacheService cacheService,
+            string type) =>
+        {
+            await cacheService.ClearCacheByTypeAsync(type);
+            return Results.Ok(ApiResponse<bool>.Ok(true, $"{type} 缓存已清空"));
+        });
+
+        group.MapDelete("/cache/{type}/keys/{key}", async (
+            CacheService cacheService,
+            string type,
+            string key) =>
+        {
+            await cacheService.RemoveKeyAsync(type, key);
+            return Results.Ok(ApiResponse<bool>.Ok(true, "缓存键已删除"));
+        });
+
+        // ========== 作业管理 ==========
+
+        group.MapGet("/jobs", async (JobSchedulerService jobService) =>
+        {
+            var (jobs, error) = await jobService.GetJobsAsync();
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<List<ScheduledJobDto>>.Fail(error));
+
+            return Results.Ok(ApiResponse<List<ScheduledJobDto>>.Ok(jobs!));
+        });
+
+        group.MapGet("/jobs/stats", async (JobSchedulerService jobService) =>
+        {
+            var (stats, error) = await jobService.GetJobStatsAsync();
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<JobStatsDto>.Fail(error));
+
+            return Results.Ok(ApiResponse<JobStatsDto>.Ok(stats!));
+        });
+
+        group.MapGet("/jobs/{id}", async (
+            long id,
+            JobSchedulerService jobService) =>
+        {
+            var (job, error) = await jobService.GetJobByIdAsync(id);
+
+            if (error != null)
+                return Results.NotFound(ApiResponse<ScheduledJobDto>.Fail(error));
+
+            return Results.Ok(ApiResponse<ScheduledJobDto>.Ok(job!));
+        });
+
+        group.MapPost("/jobs/{id}/run", async (
+            long id,
+            JobSchedulerService jobService) =>
+        {
+            var (success, error) = await jobService.RunJobAsync(id);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error));
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "任务已启动"));
+        });
+
+        group.MapGet("/jobs/{id}/logs", async (
+            long id,
+            JobSchedulerService jobService) =>
+        {
+            var (executions, error) = await jobService.GetJobExecutionsAsync(id);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<List<JobExecutionDto>>.Fail(error));
+
+            return Results.Ok(ApiResponse<List<JobExecutionDto>>.Ok(executions!));
+        });
+
+        // ========== 备份管理 ==========
+
+        group.MapGet("/backup/list", async (BackupService backupService) =>
+        {
+            var (backups, error) = await backupService.GetBackupsAsync();
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<List<BackupDto>>.Fail(error));
+
+            return Results.Ok(ApiResponse<List<BackupDto>>.Ok(backups!));
+        });
+
+        group.MapPost("/backup", async (
+            HttpContext context,
+            CreateBackupRequest request,
+            BackupService backupService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            var (backup, error) = await backupService.CreateBackupAsync(request, currentUser?.UserId ?? 0);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<BackupDto>.Fail(error));
+
+            return Results.Ok(ApiResponse<BackupDto>.Ok(backup!, "备份任务已创建"));
+        });
+
+        group.MapGet("/backup/{id}/download", async (
+            long id,
+            BackupService backupService) =>
+        {
+            var (data, fileName, error) = await backupService.GetBackupFileAsync(id);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<byte[]>.Fail(error));
+
+            return Results.File(data!, "application/zip", fileName!);
+        });
+
+        group.MapPost("/backup/{id}/restore", async (
+            long id,
+            RestoreBackupRequest request,
+            BackupService backupService) =>
+        {
+            var (success, error) = await backupService.RestoreBackupAsync(id, request);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error));
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "备份还原成功"));
+        });
+
+        group.MapDelete("/backup/{id}", async (
+            long id,
+            BackupService backupService) =>
+        {
+            var (success, error) = await backupService.DeleteBackupAsync(id);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error));
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "备份已删除"));
+        });
+
         // ========== 公开端点（无需认证） ==========
 
         app.MapGet("/api/siteinfo", (AppConfiguration appConfig, SetupService setupService) =>
@@ -334,6 +586,21 @@ public static class SystemRoutes
                 AllowRegistration = appConfig.SiteSettings.AllowRegistration
             };
             return Results.Ok(ApiResponse<SiteInfoDto>.Ok(dto));
+        });
+
+        // 公开的认证配置（供登录页面使用）
+        app.MapGet("/api/auth/config/public", (AppConfiguration appConfig) =>
+        {
+            var a = appConfig.AuthSettings;
+            var dto = new PublicAuthConfigDto
+            {
+                PasswordEnabled = a.PasswordEnabled,
+                EmailLoginEnabled = a.EmailLoginEnabled,
+                OidcEnabled = a.OidcEnabled,
+                OidcProviderName = a.OidcProviderName,
+                LdapEnabled = a.LdapEnabled
+            };
+            return Results.Ok(ApiResponse<PublicAuthConfigDto>.Ok(dto));
         });
     }
 

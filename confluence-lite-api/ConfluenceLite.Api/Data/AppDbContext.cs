@@ -83,7 +83,10 @@ public class AppDbContext
             typeof(SearchHistory),
             typeof(ActivityEvent),
             typeof(AuditLog),
-            typeof(UserFavorite)
+            typeof(UserFavorite),
+            typeof(ScheduledJob),
+            typeof(JobExecution),
+            typeof(SystemBackup)
         );
     }
 
@@ -201,4 +204,19 @@ public class AppDbContext
     /// 获取用户收藏表的SimpleClient
     /// </summary>
     public SimpleClient<UserFavorite> UserFavorites => new(_db);
+
+    /// <summary>
+    /// 获取定时任务表的SimpleClient
+    /// </summary>
+    public SimpleClient<ScheduledJob> ScheduledJobs => new(_db);
+
+    /// <summary>
+    /// 获取任务执行历史表的SimpleClient
+    /// </summary>
+    public SimpleClient<JobExecution> JobExecutions => new(_db);
+
+    /// <summary>
+    /// 获取系统备份表的SimpleClient
+    /// </summary>
+    public SimpleClient<SystemBackup> SystemBackups => new(_db);
 }

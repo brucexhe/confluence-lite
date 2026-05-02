@@ -40,7 +40,7 @@
                     row-key="id"
                 >
                     <template #bodyCell="{ column, record }">
-                        <template v-if="column.key === 'status'">
+                        <template v-if="column.key === 'enabled'">
                             <a-switch
                                 :checked="record.enabled"
                                 @change="toggleJob(record)"
@@ -48,7 +48,7 @@
                                 un-checked-children="禁用"
                             />
                         </template>
-                        <template v-else-if="column.key === 'schedule'">
+                        <template v-else-if="column.key === 'cron'">
                             <a-tag color="blue">{{ record.cron }}</a-tag>
                         </template>
                         <template v-else-if="column.key === 'lastRun'">
@@ -88,11 +88,15 @@
                                 {{ getExecutionStatusText(record.status) }}
                             </a-tag>
                         </template>
-                        <template v-else-if="column.key === 'startTime'">
-                            <span>{{ formatDateTime(record.startTime) }}</span>
+                        <template v-else-if="column.key === 'startedAt'">
+                            <span>{{ formatDateTime(record.startedAt) }}</span>
                         </template>
-                        <template v-else-if="column.key === 'duration'">
-                            {{ record.duration }}ms
+                        <template v-else-if="column.key === 'durationMs'">
+                            <span v-if="record.durationMs">{{ record.durationMs }}ms</span>
+                            <span v-else class="text-muted">-</span>
+                        </template>
+                        <template v-else-if="column.key === 'outputMessage'">
+                            <span>{{ record.outputMessage || record.errorMessage || '-' }}</span>
                         </template>
                     </template>
                 </a-table>
@@ -208,19 +212,18 @@ const jobHistory = ref([
 const jobColumns = [
     { title: '任务名称', dataIndex: 'name', key: 'name' },
     { title: '描述', dataIndex: 'description', key: 'description' },
-    { title: '执行计划', key: 'schedule' },
-    { title: '状态', key: 'status' },
+    { title: '执行计划', key: 'cron' },
+    { title: '状态', key: 'enabled' },
     { title: '上次执行', key: 'lastRun' },
     { title: '下次执行', key: 'nextRun' },
     { title: '操作', key: 'action', width: 180 }
 ]
 
 const historyColumns = [
-    { title: '任务名称', dataIndex: 'jobName', key: 'jobName' },
     { title: '状态', key: 'status' },
-    { title: '开始时间', key: 'startTime' },
-    { title: '耗时', key: 'duration' },
-    { title: '消息', dataIndex: 'message', key: 'message' }
+    { title: '开始时间', key: 'startedAt' },
+    { title: '耗时', key: 'durationMs' },
+    { title: '消息', dataIndex: 'outputMessage', key: 'outputMessage' }
 ]
 
 const getExecutionStatusColor = (status) => {
@@ -263,8 +266,10 @@ const runNow = async (job) => {
 const showJobLog = async (job) => {
     try {
         const data = await systemSettingApi.getJobLogs(job.id)
-        // TODO: 显示任务执行日志弹窗
-        message.info('查看任务日志: ' + job.name + '，共 ' + (data?.total || 0) + ' 条记录')
+        if (data) {
+            jobHistory.value = data || []
+        }
+        message.info(`查看任务日志: ${job.name}，共 ${jobHistory.value.length} 条记录`)
     } catch (error) {
         message.error('加载任务日志失败')
     }
@@ -272,15 +277,29 @@ const showJobLog = async (job) => {
 
 const loadJobs = async () => {
     try {
-        const data = await systemSettingApi.getJobs()
-        if (data) {
-            scheduledJobs.value = data.scheduledJobs || scheduledJobs.value
-            jobHistory.value = data.jobHistory || jobHistory.value
-            stats.value = data.stats || stats.value
+        // 加载定时任务列表
+        const jobsData = await systemSettingApi.getJobs()
+        if (jobsData) {
+            scheduledJobs.value = jobsData || []
+        }
+
+        // 加载统计数据
+        const statsData = await fetch('/api/system/jobs/stats', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+            }
+        }).then(res => res.json()).then(data => data.success ? data.data : null)
+
+        if (statsData) {
+            stats.value = {
+                running: statsData.running || 0,
+                completed: statsData.completed || 0,
+                failed: statsData.failed || 0,
+                pending: statsData.pending || 0
+            }
         }
     } catch (error) {
-        // 如果 API 调用失败，使用默认模拟数据
-        console.log('Using mock data for jobs')
+        console.error('Failed to load jobs:', error)
     }
 }
 

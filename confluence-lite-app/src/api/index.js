@@ -13,6 +13,15 @@ export const siteInfoApi = {
   }
 }
 
+// ========== 认证配置（公开，无需认证） ==========
+
+export const authConfigApi = {
+  /** 获取公开的认证配置（供登录页面使用） */
+  getPublicConfig() {
+    return request('/api/auth/config/public', { auth: false })
+  }
+}
+
 // ========== 安装向导 ==========
 
 export const setupApi = {
@@ -267,6 +276,55 @@ export const activityApi = {
     queryParams.append('offset', params.offset || 0)
 
     return request(`/api/activity/recent?${queryParams.toString()}`)
+  }
+}
+
+// ========== 用户组 ==========
+
+export const userGroupApi = {
+  /** 获取用户组列表 */
+  getList(page = 1, pageSize = 20, search = '') {
+    const params = new URLSearchParams({ page, pageSize })
+    if (search) params.append('search', search)
+    return request(`/api/user-groups?${params.toString()}`)
+  },
+
+  /** 获取用户组详情 */
+  getById(id) {
+    return request(`/api/user-groups/${id}`)
+  },
+
+  /** 创建用户组 */
+  create(data) {
+    return request('/api/user-groups/', { method: 'POST', body: data })
+  },
+
+  /** 更新用户组 */
+  update(id, data) {
+    return request(`/api/user-groups/${id}`, { method: 'PUT', body: data })
+  },
+
+  /** 删除用户组 */
+  remove(id) {
+    return request(`/api/user-groups/${id}`, { method: 'DELETE' })
+  },
+
+  /** 获取用户组成员列表 */
+  getMembers(id) {
+    return request(`/api/user-groups/${id}/members`)
+  },
+
+  /** 添加用户组成员 */
+  addMembers(id, userIds) {
+    return request(`/api/user-groups/${id}/members`, {
+      method: 'POST',
+      body: { userIds }
+    })
+  },
+
+  /** 移除用户组成员 */
+  removeMember(id, userId) {
+    return request(`/api/user-groups/${id}/members/${userId}`, { method: 'DELETE' })
   }
 }
 

@@ -10,6 +10,7 @@ public static class ApiRoutes
         app.MapSystemRoutes();
         app.MapSetupRoutes();
         app.MapUserRoutes();
+        app.MapUserGroupRoutes();
         app.MapWorkspaceRoutes();
         app.MapPageRoutes();
         app.MapAttachmentRoutes();

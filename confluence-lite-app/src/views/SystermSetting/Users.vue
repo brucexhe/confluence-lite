@@ -89,8 +89,8 @@
                 <a-form-item label="用户名" name="username" :rules="[{ required: true, message: '请输入用户名' }]">
                     <a-input v-model:value="formState.username" :disabled="!!editingUser" />
                 </a-form-item>
-                <a-form-item label="姓名" name="name" :rules="[{ required: true, message: '请输入姓名' }]">
-                    <a-input v-model:value="formState.name" />
+                <a-form-item label="姓名" name="displayName" :rules="[{ required: true, message: '请输入姓名' }]">
+                    <a-input v-model:value="formState.displayName" />
                 </a-form-item>
                 <a-form-item label="邮箱" name="email" :rules="[
                     { required: true, message: '请输入邮箱' },
@@ -178,7 +178,7 @@ const pagination = reactive({
 const columns = [
     { title: '', key: 'avatar', width: 60 },
     { title: '用户名', dataIndex: 'username', key: 'username' },
-    { title: '姓名', dataIndex: 'name', key: 'name' },
+    { title: '姓名', dataIndex: 'displayName', key: 'displayName' },
     { title: '邮箱', dataIndex: 'email', key: 'email' },
     { title: '角色', key: 'roles' },
     { title: '状态', key: 'status' },

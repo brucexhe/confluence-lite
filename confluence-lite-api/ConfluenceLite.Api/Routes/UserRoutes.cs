@@ -89,5 +89,26 @@ public static class UserRoutes
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "密码修改成功"));
         });
+
+        group.MapPut("/{id}", async (
+            long id,
+            UpdateUserRequest request,
+            UserService userService) =>
+        {
+            var (user, error) = await userService.UpdateUserAsync(id, request);
+            if (user == null || error != null)
+                return Results.BadRequest(ApiResponse<UserDto>.Fail(error ?? "更新用户失败"));
+
+            return Results.Ok(ApiResponse<UserDto>.Ok(user, "用户更新成功"));
+        });
+
+        group.MapDelete("/{id}", async (long id, UserService userService) =>
+        {
+            var (success, error) = await userService.DeleteUserAsync(id);
+            if (!success || error != null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error ?? "删除用户失败"));
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "用户删除成功"));
+        });
     }
 }

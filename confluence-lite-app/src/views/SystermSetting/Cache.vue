@@ -89,7 +89,7 @@
                 >
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'ttl'">
-                            <span v-if="record.ttl === -1">永久</span>
+                            <span v-if="record.ttl === '-1' || record.ttl === -1">永久</span>
                             <span v-else>{{ record.ttl }}秒</span>
                         </template>
                         <template v-else-if="column.key === 'action'">
@@ -201,23 +201,76 @@ const formatBytes = (bytes) => {
 const refreshStats = async () => {
     loading.value = true
     try {
-        const data = await systemSettingApi.getCacheStats()
-        if (data) {
+        // 加载缓存统计
+        const statsData = await systemSettingApi.getCacheStats()
+        if (statsData) {
             cacheStats.value = {
-                keyCount: data.keyCount || 0,
-                memoryUsed: data.memoryUsed || 0,
-                memoryTotal: data.memoryTotal || 0,
-                hitRate: data.hitRate || 0
+                keyCount: statsData.keyCount || 0,
+                memoryUsed: statsData.memoryUsed || 0,
+                memoryTotal: statsData.memoryTotal || 0,
+                hitRate: statsData.hitRate || 0
             }
         }
-        message.success('缓存统计已刷新')
+
+        // 加载缓存类型列表
+        const typesData = await fetch('/api/system/cache/types', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+            }
+        }).then(res => res.json()).then(data => data.success ? data.data : [])
+
+        if (typesData) {
+            cacheTypes.value = typesData.map((type, index) => ({
+                ...type,
+                name: getTypeName(type.key),
+                description: getTypeDescription(type.key),
+                keyCount: type.count || 0,
+                memory: type.memory || 0,
+                ttl: getTtlForType(type.key)
+            }))
+        }
     } catch (error) {
-        // 如果 API 调用失败，使用模拟数据作为后备
-        await new Promise(resolve => setTimeout(resolve, 500))
+        console.error('Failed to refresh cache stats:', error)
         message.error('刷新统计失败')
     } finally {
         loading.value = false
     }
+}
+
+const getTypeName = (key) => {
+    const names = {
+        user: '用户缓存',
+        page: '页面缓存',
+        workspace: '空间缓存',
+        attachment: '附件缓存',
+        search: '搜索缓存',
+        default: key
+    }
+    return names[key] || names.default
+}
+
+const getTypeDescription = (key) => {
+    const descriptions = {
+        user: '用户信息和权限',
+        page: '页面内容和渲染结果',
+        workspace: '空间配置和页面树',
+        attachment: '附件元数据和预览',
+        search: '搜索结果和索引',
+        default: ''
+    }
+    return descriptions[key] || descriptions.default
+}
+
+const getTtlForType = (key) => {
+    const ttls = {
+        user: 3600,
+        page: 1800,
+        workspace: 7200,
+        attachment: 86400,
+        search: 600,
+        default: 3600
+    }
+    return ttls[key] || ttls.default
 }
 
 const clearAllCache = async () => {
@@ -249,16 +302,15 @@ const viewCacheKeys = async (type) => {
     try {
         const data = await systemSettingApi.getCacheKeys(type)
         if (data) {
-            cacheKeys.value = data.items || []
+            cacheKeys.value = data.map(item => ({
+                ...item,
+                size: item.size || 0,
+                ttl: item.ttl || '-1'
+            })) || []
         }
     } catch (error) {
-        // 如果 API 调用失败，使用模拟数据作为后备
-        await new Promise(resolve => setTimeout(resolve, 500))
-        cacheKeys.value = [
-            { key: `${type}:1`, size: 1024, ttl: 3600 },
-            { key: `${type}:2`, size: 1024, ttl: 3600 },
-            { key: `${type}:session:abc123`, size: 512, ttl: 1800 }
-        ]
+        console.error('Failed to load cache keys:', error)
+        cacheKeys.value = []
     } finally {
         loadingKeys.value = false
     }

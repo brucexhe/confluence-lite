@@ -222,35 +222,64 @@ const getDiskColor = (percent) => {
 const loadSystemInfo = async () => {
     loading.value = true
     try {
-        const data = await systemSettingApi.getSystemInfo()
-        if (data) {
+        // 调用系统信息接口
+        const infoData = await systemSettingApi.getSystemInfo()
+        if (infoData) {
             systemInfo.value = {
                 ...systemInfo.value,
-                ...data.systemInfo,
-                buildTime: data.systemInfo?.buildTime ? formatDateTime(data.systemInfo.buildTime) : systemInfo.value.buildTime,
-                startTime: data.systemInfo?.startTime ? formatDateTime(data.systemInfo.startTime) : formatDateTime(new Date()),
-                uptime: data.systemInfo?.uptimeSeconds ? formatUptime(data.systemInfo.uptimeSeconds) : '0分钟'
+                version: infoData.version || systemInfo.value.version,
+                buildTime: infoData.buildTime ? formatDateTime(infoData.buildTime) : systemInfo.value.buildTime,
+                environment: infoData.environment || systemInfo.value.environment,
+                startTime: infoData.startTime ? formatDateTime(infoData.startTime) : formatDateTime(new Date()),
+                uptime: infoData.uptimeSeconds ? formatUptime(infoData.uptimeSeconds) : '0分钟',
+                hostname: infoData.hostname || systemInfo.value.hostname,
+                platform: infoData.platform || systemInfo.value.platform,
+                arch: infoData.arch || systemInfo.value.arch,
+                cpu: {
+                    ...systemInfo.value.cpu,
+                    cores: infoData.cpu?.cores || systemInfo.value.cpu.cores,
+                    usage: infoData.cpu?.usage ?? systemInfo.value.cpu.usage
+                },
+                memory: {
+                    ...systemInfo.value.memory,
+                    used: infoData.memory?.used ?? systemInfo.value.memory.used,
+                    total: infoData.memory?.total ?? systemInfo.value.memory.total,
+                    free: infoData.memory?.free ?? systemInfo.value.memory.free
+                },
+                database: {
+                    ...systemInfo.value.database,
+                    type: infoData.database?.type || systemInfo.value.database.type,
+                    version: infoData.database?.version || systemInfo.value.database.version,
+                    name: infoData.database?.name || systemInfo.value.database.name,
+                    connected: infoData.database?.connected ?? systemInfo.value.database.connected
+                }
             }
-            stats.value = data.stats || stats.value
         }
     } catch (error) {
-        // 如果 API 调用失败，使用模拟数据作为后备
-        await new Promise(resolve => setTimeout(resolve, 800))
-        const startTime = Date.now() - 5 * 24 * 60 * 60 * 1000
-        systemInfo.value = {
-            ...systemInfo.value,
-            startTime: formatDateTime(startTime),
-            uptime: formatUptime((Date.now() - startTime) / 1000)
-        }
-        stats.value = {
-            userCount: 15,
-            workspaceCount: 8,
-            pageCount: 120,
-            attachmentCount: 45
-        }
-    } finally {
-        loading.value = false
+        console.error('Failed to load system info:', error)
     }
+
+    try {
+        // 调用统计数据接口
+        const statsData = await fetch('/api/system/stats', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+            }
+        }).then(res => res.json()).then(data => data.success ? data.data : null)
+
+        if (statsData) {
+            stats.value = {
+                userCount: statsData.userCount || 0,
+                workspaceCount: statsData.workspaceCount || 0,
+                pageCount: statsData.pageCount || 0,
+                attachmentCount: statsData.attachmentCount || 0
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load stats:', error)
+    }
+
+    loading.value = false
 }
 
 onMounted(() => {

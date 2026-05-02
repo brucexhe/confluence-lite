@@ -160,30 +160,16 @@ const loadBackups = async () => {
     try {
         const data = await systemSettingApi.getBackups()
         if (data) {
-            backups.value = data.items || []
+            backups.value = data.map(item => ({
+                ...item,
+                size: item.fileSize,
+                description: item.description || '',
+                type: item.type || '完整'
+            })) || []
         }
     } catch (error) {
-        // 如果 API 调用失败，使用模拟数据作为后备
-        backups.value = [
-            {
-                id: 1,
-                name: '自动备份-2024-01-15',
-                description: '包含数据库、附件和配置',
-                type: '完整',
-                size: 1024 * 1024 * 50,
-                status: 'completed',
-                createdAt: '2024-01-15 02:00:00'
-            },
-            {
-                id: 2,
-                name: '手动备份',
-                description: '升级前备份',
-                type: '完整',
-                size: 1024 * 1024 * 48,
-                status: 'completed',
-                createdAt: '2024-01-14 10:30:00'
-            }
-        ]
+        console.error('Failed to load backups:', error)
+        backups.value = []
     } finally {
         loading.value = false
     }

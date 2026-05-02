@@ -28,8 +28,8 @@
                 row-key="id"
             >
                 <template #bodyCell="{ column, record }">
-                    <template v-if="column.key === 'userCount'">
-                        <a-tag color="blue">{{ record.userCount || 0 }} 人</a-tag>
+                    <template v-if="column.key === 'memberCount'">
+                        <a-tag color="blue">{{ record.memberCount || 0 }} 人</a-tag>
                     </template>
                     <template v-else-if="column.key === 'createdAt'">
                         <span>{{ formatDateTime(record.createdAt) }}</span>
@@ -61,14 +61,6 @@
                 </a-form-item>
                 <a-form-item label="描述" name="description">
                     <a-textarea v-model:value="formState.description" :rows="3" />
-                </a-form-item>
-                <a-form-item label="权限" name="permissions">
-                    <a-select
-                        v-model:value="formState.permissions"
-                        mode="multiple"
-                        placeholder="选择权限"
-                        :options="permissionOptions"
-                    />
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -113,7 +105,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { Plus } from 'lucide-vue-next'
-import { userApi } from '@/api'
+import { userApi, userGroupApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
@@ -132,18 +124,8 @@ const currentGroupId = ref(null)
 
 const formState = reactive({
     name: '',
-    description: '',
-    permissions: []
+    description: ''
 })
-
-const permissionOptions = [
-    { label: '阅读页面', value: 'page:read' },
-    { label: '编辑页面', value: 'page:write' },
-    { label: '删除页面', value: 'page:delete' },
-    { label: '管理空间', value: 'space:manage' },
-    { label: '管理用户', value: 'user:manage' },
-    { label: '系统管理', value: 'system:admin' }
-]
 
 const availableUserOptions = computed(() => {
     return availableUsers.value.map(user => ({
@@ -161,7 +143,7 @@ const pagination = reactive({
 const columns = [
     { title: '组名称', dataIndex: 'name', key: 'name' },
     { title: '描述', dataIndex: 'description', key: 'description' },
-    { title: '成员数', key: 'userCount' },
+    { title: '成员数', key: 'memberCount' },
     { title: '创建时间', key: 'createdAt' },
     { title: '操作', key: 'action', width: 180 }
 ]
@@ -169,12 +151,9 @@ const columns = [
 const loadGroups = async () => {
     loading.value = true
     try {
-        // TODO: 调用 API 获取用户组列表
-        groups.value = [
-            { id: 1, name: '管理员组', description: '系统管理员', userCount: 3, createdAt: '2024-01-01' },
-            { id: 2, name: '编辑组', description: '内容编辑者', userCount: 10, createdAt: '2024-01-02' }
-        ]
-        pagination.total = groups.value.length
+        const data = await userGroupApi.getList(pagination.current, pagination.pageSize, searchText.value)
+        groups.value = data?.items || []
+        pagination.total = data?.total || 0
     } catch (error) {
         message.error('加载用户组列表失败')
     } finally {
@@ -191,6 +170,22 @@ const loadAvailableUsers = async () => {
     }
 }
 
+const loadGroupMembers = async (groupId) => {
+    loadingMembers.value = true
+    try {
+        const data = await userGroupApi.getMembers(groupId)
+        currentMembers.value = data?.members?.map(m => ({
+            id: m.userId,
+            name: m.displayName || m.username,
+            username: m.username
+        })) || []
+    } catch (error) {
+        message.error('加载组成员失败')
+    } finally {
+        loadingMembers.value = false
+    }
+}
+
 const handleSearch = () => {
     pagination.current = 1
     loadGroups()
@@ -203,7 +198,7 @@ const handleTableChange = (pag) => {
 
 const showCreateModal = () => {
     editingGroup.value = null
-    Object.assign(formState, { name: '', description: '', permissions: [] })
+    Object.assign(formState, { name: '', description: '' })
     modalVisible.value = true
 }
 
@@ -211,8 +206,7 @@ const showEditModal = (group) => {
     editingGroup.value = group
     Object.assign(formState, {
         name: group.name,
-        description: group.description,
-        permissions: group.permissions || []
+        description: group.description
     })
     modalVisible.value = true
 }
@@ -221,21 +215,28 @@ const showMembersModal = async (group) => {
     currentGroupId.value = group.id
     membersModalVisible.value = true
     await loadAvailableUsers()
-    // TODO: 加载组成员
-    currentMembers.value = [
-        { id: 1, name: 'Admin', username: 'admin' }
-    ]
+    await loadGroupMembers(group.id)
 }
 
 const handleSubmit = async () => {
     submitting.value = true
     try {
-        // TODO: 调用 API 创建/更新用户组
+        if (editingGroup.value) {
+            await userGroupApi.update(editingGroup.value.id, {
+                name: formState.name,
+                description: formState.description
+            })
+        } else {
+            await userGroupApi.create({
+                name: formState.name,
+                description: formState.description
+            })
+        }
         message.success(editingGroup.value ? '用户组更新成功' : '用户组创建成功')
         modalVisible.value = false
         loadGroups()
     } catch (error) {
-        message.error('操作失败')
+        message.error(error?.message || '操作失败')
     } finally {
         submitting.value = false
     }
@@ -243,11 +244,11 @@ const handleSubmit = async () => {
 
 const handleDelete = async (id) => {
     try {
-        // TODO: 调用 API 删除用户组
+        await userGroupApi.remove(id)
         message.success('用户组删除成功')
         loadGroups()
     } catch (error) {
-        message.error('删除用户组失败')
+        message.error(error?.message || '删除用户组失败')
     }
 }
 
@@ -258,21 +259,22 @@ const filterUser = (input, option) => {
 const addMembers = async () => {
     if (selectedUsers.value.length === 0) return
     try {
-        // TODO: 调用 API 添加成员
+        await userGroupApi.addMembers(currentGroupId.value, selectedUsers.value)
         message.success('成员添加成功')
-        showMembersModal({ id: currentGroupId.value })
+        selectedUsers.value = []
+        await loadGroupMembers(currentGroupId.value)
     } catch (error) {
-        message.error('添加成员失败')
+        message.error(error?.message || '添加成员失败')
     }
 }
 
 const removeMember = async (userId) => {
     try {
-        // TODO: 调用 API 移除成员
+        await userGroupApi.removeMember(currentGroupId.value, userId)
         message.success('成员移除成功')
-        showMembersModal({ id: currentGroupId.value })
+        await loadGroupMembers(currentGroupId.value)
     } catch (error) {
-        message.error('移除成员失败')
+        message.error(error?.message || '移除成员失败')
     }
 }
 

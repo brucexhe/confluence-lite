@@ -125,8 +125,8 @@ builder.Services.AddScoped<BackupService>();
 // ========== 审计日志服务 ==========
 builder.Services.Configure<AuditLogOptions>(
     builder.Configuration.GetSection("App:AuditLog"));
-builder.Services.AddSingleton<AuditLogService>();
-builder.Services.AddHostedService(sp => sp.GetRequiredService<AuditLogService>());
+builder.Services.AddSingleton<IAuditLogService, AuditLogService>();
+builder.Services.AddHostedService(sp => (AuditLogService)sp.GetRequiredService<IAuditLogService>());
 builder.Services.AddScoped<IAuditDiffGenerator, AuditDiffGenerator>();
 
 // ========== JSON 配置 - Native AOT 使用源生成器 ==========

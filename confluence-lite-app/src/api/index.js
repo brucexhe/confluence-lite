@@ -13,15 +13,6 @@ export const siteInfoApi = {
   }
 }
 
-// ========== 认证配置（公开，无需认证） ==========
-
-export const authConfigApi = {
-  /** 获取公开的认证配置（供登录页面使用） */
-  getPublicConfig() {
-    return request('/api/auth/config/public', { auth: false })
-  }
-}
-
 // ========== 安装向导 ==========
 
 export const setupApi = {

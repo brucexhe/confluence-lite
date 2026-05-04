@@ -736,29 +736,20 @@ public static class SystemRoutes
 
         app.MapGet("/api/siteinfo", (AppConfiguration appConfig, SetupService setupService) =>
         {
+            var a = appConfig.AuthSettings;
             var dto = new SiteInfoDto
             {
                 Installed = setupService.IsInstalled(),
                 SiteName = appConfig.SiteSettings.SiteName,
                 SiteLogo = appConfig.SiteSettings.SiteLogo,
-                AllowRegistration = appConfig.SiteSettings.AllowRegistration
-            };
-            return Results.Ok(ApiResponse<SiteInfoDto>.Ok(dto));
-        });
-
-        // 公开的认证配置（供登录页面使用）
-        app.MapGet("/api/auth/config/public", (AppConfiguration appConfig) =>
-        {
-            var a = appConfig.AuthSettings;
-            var dto = new PublicAuthConfigDto
-            {
+                AllowRegistration = appConfig.SiteSettings.AllowRegistration,
                 PasswordEnabled = a.PasswordEnabled,
                 EmailLoginEnabled = a.EmailLoginEnabled,
                 OidcEnabled = a.OidcEnabled,
                 OidcProviderName = a.OidcProviderName,
                 LdapEnabled = a.LdapEnabled
             };
-            return Results.Ok(ApiResponse<PublicAuthConfigDto>.Ok(dto));
+            return Results.Ok(ApiResponse<SiteInfoDto>.Ok(dto));
         });
     }
 

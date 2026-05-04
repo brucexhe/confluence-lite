@@ -122,9 +122,8 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../store/auth'
 import { useSiteInfo } from '../store/site'
-import { authConfigApi } from '../api'
 
-const { siteName, siteLogo } = useSiteInfo()
+const { siteName, siteLogo, authConfig } = useSiteInfo()
 
 const username = ref('')
 const password = ref('')
@@ -132,27 +131,6 @@ const loading = ref(false)
 const errorMsg = ref('')
 const showPasswordForm = ref(false)
 const authStore = useAuthStore()
-
-// 认证配置
-const authConfig = ref({
-  passwordEnabled: true,
-  emailLoginEnabled: false,
-  oidcEnabled: false,
-  oidcProviderName: '',
-  ldapEnabled: false
-})
-
-// 加载认证配置
-const loadAuthConfig = async () => {
-  try {
-    const data = await authConfigApi.getPublicConfig()
-    if (data) {
-      authConfig.value = data
-    }
-  } catch (error) {
-    console.error('加载认证配置失败:', error)
-  }
-}
 
 const handleLogin = async () => {
   if (!username.value || !password.value) return
@@ -181,8 +159,6 @@ const handleOidcLogin = () => {
 }
 
 onMounted(() => {
-  loadAuthConfig()
-
   // 检查是否有登录错误信息
   const error = new URLSearchParams(window.location.search).get('error')
   if (error) {

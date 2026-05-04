@@ -89,8 +89,6 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(ApiResponse<MailConfigDto>))]
 [JsonSerializable(typeof(AuthConfigDto))]
 [JsonSerializable(typeof(ApiResponse<AuthConfigDto>))]
-[JsonSerializable(typeof(PublicAuthConfigDto))]
-[JsonSerializable(typeof(ApiResponse<PublicAuthConfigDto>))]
 // User Group
 [JsonSerializable(typeof(UserGroupDto))]
 [JsonSerializable(typeof(List<UserGroupDto>))]

@@ -9,4 +9,11 @@ public class SiteInfoDto
     public string SiteName { get; set; } = "Confluence Lite";
     public string SiteLogo { get; set; } = "";
     public bool AllowRegistration { get; set; } = true;
+
+    // 认证配置
+    public bool PasswordEnabled { get; set; } = true;
+    public bool EmailLoginEnabled { get; set; }
+    public bool OidcEnabled { get; set; }
+    public string OidcProviderName { get; set; } = "";
+    public bool LdapEnabled { get; set; }
 }

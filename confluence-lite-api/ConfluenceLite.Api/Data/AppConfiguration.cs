@@ -74,9 +74,9 @@ public class DatabaseOptions
     public string ConnectionString { get; set; } = "Host=localhost;Port=5432;Database=confluence_lite;Username=postgres;Password=postgres";
 
     /// <summary>
-    /// 数据库类型 (PostgreSQL = 1)
+    /// 数据库类型 (PostgreSQL = 4)
     /// </summary>
-    public int DbType { get; set; } = 1;
+    public int DbType { get; set; } = 4;
 
     /// <summary>
     /// 是否自动创建数据库表

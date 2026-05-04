@@ -9,3 +9,4 @@
 cache
 /confluence-lite-api/ConfluenceLite.Api/appsettings.Development.json
 /.idea
+confluence-lite-api/ConfluenceLite.Api/Data/appsettings.runtime.json

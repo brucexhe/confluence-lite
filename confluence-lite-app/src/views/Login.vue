@@ -1,85 +1,117 @@
 <template>
   <div class="login-container">
     <div class="login-left">
-      <div class="brand">
-        <img v-if="siteLogo" class="logo" :src="siteLogo" alt="" />
-        <div v-else class="logo"></div>
-        <h1>{{ siteName }}</h1>
+      <div class="left-decor-circle decor-1"></div>
+      <div class="left-decor-circle decor-2"></div>
+      <div class="left-decor-circle decor-3"></div>
+      <div class="left-content">
+        <div class="brand">
+          <img v-if="siteLogo" class="logo" :src="siteLogo" alt="" />
+          <div v-else class="logo-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zm-9 9h7v7H4v-7zm9.5 1.5a2.5 2.5 0 1 1 5 0 2.5 2.5 0 0 1-5 0z" fill="rgba(255,255,255,0.9)"/></svg>
+          </div>
+          <h1>{{ siteName }}</h1>
+        </div>
+        <p class="tagline">Your modern team workspace.</p>
       </div>
-      <p class="tagline">Your modern team workspace.</p>
     </div>
 
     <div class="login-right">
-      <div class="login-card glass-panel">
-        <h2>Welcome Back</h2>
-        <p class="subtitle">Please enter your credentials to access your workspace.</p>
+      <div class="login-card">
+        <!-- Login methods selection -->
+        <div v-if="!showPasswordForm" class="login-options-view">
+          <div class="card-header">
+            <h2>Welcome Back</h2>
+            <p class="subtitle">选择一种方式登录你的工作空间</p>
+          </div>
 
-        <!-- 默认显示的登录方式选择 -->
-        <div v-if="!showPasswordForm" class="login-options">
-          <!-- OpenID Connect 登录按钮 -->
-          <button
-            v-if="authConfig.oidcEnabled && authConfig.oidcProviderName"
-            @click="handleOidcLogin"
-            class="option-btn oidc-btn"
-            :disabled="loading"
-          >
-            <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="currentColor"/>
-              <path d="M12 6C8.69 6 6 8.69 6 12C6 15.31 8.69 18 12 18C15.31 18 18 15.31 18 12C18 8.69 15.31 6 12 6ZM12 16C9.79 16 8 14.21 8 12C8 9.79 9.79 8 12 8C14.21 8 16 9.79 16 12C16 14.21 14.21 16 12 16Z" fill="currentColor"/>
-            </svg>
-            <span>使用 {{ authConfig.oidcProviderName }} 登录</span>
-          </button>
+          <div class="login-options">
+            <!-- OpenID Connect -->
+            <button
+              v-if="authConfig.oidcEnabled && authConfig.oidcProviderName"
+              @click="handleOidcLogin"
+              class="option-btn oidc-btn"
+              :disabled="loading"
+            >
+              <div class="option-btn-icon oidc-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <div class="option-btn-text">
+                <span class="option-title">使用 {{ authConfig.oidcProviderName }} 登录</span>
+                <span class="option-desc">通过企业身份认证</span>
+              </div>
+              <svg class="option-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
 
-          <!-- 账号密码登录按钮 -->
-          <button
-            v-if="authConfig.passwordEnabled"
-            @click="showPasswordForm = true"
-            class="option-btn password-btn"
-          >
-            <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 15C13.6569 15 15 13.6569 15 12C15 10.3431 13.6569 9 12 9C10.3431 9 9 10.3431 9 12C9 13.6569 10.3431 15 12 15Z" fill="currentColor"/>
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M19.5 9.5C19.5 6.46243 17.0376 4 14 4H10C6.96243 4 4.5 6.46243 4.5 9.5V11.5C4.5 11.7761 4.72386 12 5 12H6C6.27614 12 6.5 11.7761 6.5 11.5V9.5C6.5 7.567 8.067 6 10 6H14C15.933 6 17.5 7.567 17.5 9.5V11.5C17.5 11.7761 17.7239 12 18 12H19C19.2761 12 19.5 11.7761 19.5 11.5V9.5Z" fill="currentColor"/>
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M5 12C3.34315 12 2 13.3431 2 15V19C2 20.6569 3.34315 22 5 22H19C20.6569 22 22 20.6569 22 19V15C22 13.3431 20.6569 12 19 12H5ZM12 17C10.3431 17 9 15.6569 9 14C9 12.3431 10.3431 11 12 11C13.6569 11 15 12.3431 15 14C15 15.6569 13.6569 17 12 17Z" fill="currentColor"/>
-            </svg>
-            <span>使用账号密码登录</span>
-          </button>
+            <!-- Password login -->
+            <button
+              v-if="authConfig.passwordEnabled"
+              @click="showPasswordForm = true"
+              class="option-btn password-btn"
+            >
+              <div class="option-btn-icon password-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.74 5.87L11 18H9v2H7v2H4a1 1 0 01-1-1v-2.59a1 1 0 01.29-.7l7.42-7.43A6 6 0 1121 9z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="option-btn-text">
+                <span class="option-title">使用账号密码登录</span>
+                <span class="option-desc">输入用户名和密码</span>
+              </div>
+              <svg class="option-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
         </div>
 
-        <!-- 密码登录表单 -->
-        <form v-else @submit.prevent="handleLogin" class="login-form">
-          <div class="form-group">
-            <label for="username">Username</label>
-            <input
-              id="username"
-              v-model="username"
-              type="text"
-              class="premium-input"
-              placeholder="e.g. admin"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input
-              id="password"
-              v-model="password"
-              type="password"
-              class="premium-input"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <button type="submit" class="premium-btn login-btn" :disabled="loading">
-            {{ loading ? '登录中...' : 'Sign In' }}
+        <!-- Password login form -->
+        <form v-else @submit.prevent="handleLogin" class="login-form-view">
+          <button type="button" @click="showPasswordForm = false" class="back-link">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>返回</span>
           </button>
 
-          <button type="button" @click="showPasswordForm = false" class="back-btn">
-            返回
-          </button>
+          <div class="card-header">
+            <h2>账号密码登录</h2>
+            <p class="subtitle">请输入你的用户名和密码</p>
+          </div>
 
-          <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
+          <div class="alert-error" v-if="errorMsg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v2m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>{{ errorMsg }}</span>
+          </div>
+
+          <div class="form-field">
+            <label for="username">用户名</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 3a4 4 0 110 8 4 4 0 010-8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <input
+                id="username"
+                v-model="username"
+                type="text"
+                placeholder="请输入用户名"
+                required
+                autocomplete="username"
+              />
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="password">密码</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <input
+                id="password"
+                v-model="password"
+                type="password"
+                placeholder="请输入密码"
+                required
+                autocomplete="current-password"
+              />
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn" :disabled="loading">
+            <span v-if="!loading">登 录</span>
+            <span v-else class="loading-spinner"></span>
+          </button>
         </form>
       </div>
     </div>
@@ -163,15 +195,17 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ── Container ── */
 .login-container {
   display: flex;
   height: 100vh;
   width: 100%;
 }
 
+/* ── Left panel ── */
 .login-left {
   flex: 1;
-  background: linear-gradient(135deg, var(--color-primary-accent) 0%, #1E3A8A 100%);
+  background: linear-gradient(160deg, #1e3a8a 0%, var(--color-primary-accent) 50%, #6366f1 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -181,188 +215,316 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.login-left::before {
-  content: '';
+.left-decor-circle {
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
-  z-index: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+}
+.decor-1 { width: 500px; height: 500px; top: -15%; left: -10%; }
+.decor-2 { width: 300px; height: 300px; bottom: -8%; right: -5%; background: rgba(255,255,255,0.04); }
+.decor-3 { width: 150px; height: 150px; top: 40%; left: 55%; background: rgba(255,255,255,0.03); }
+
+.left-content {
+  position: relative;
+  z-index: 2;
 }
 
 .brand {
-  position: relative;
-  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.875rem;
+  margin-bottom: 1.25rem;
 }
 
 .logo {
-  width: 40px;
-  height: 40px;
-  background-color: transparent;
-  border-radius: var(--radius-md);
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
   object-fit: contain;
 }
 
+.logo-placeholder {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
 .brand h1 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
-  letter-spacing: -0.025em;
-  margin-bottom:0;
+  letter-spacing: -0.02em;
+  margin: 0;
 }
 
 .tagline {
-  position: relative;
-  z-index: 2;
-  font-size: 1.25rem;
-  opacity: 0.9;
+  font-size: 1.125rem;
+  opacity: 0.85;
   font-weight: 300;
+  margin: 0;
 }
 
+/* ── Right panel ── */
 .login-right {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: var(--color-bg-primary);
-  position: relative;
+  padding: 2rem;
 }
 
 .login-card {
   width: 100%;
-  max-width: 440px;
-  padding: 3rem;
+  max-width: 420px;
+  padding: 2.5rem;
   border-radius: var(--radius-lg);
   background-color: var(--color-bg-secondary);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
 }
 
-.login-card h2 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+/* ── Card header ── */
+.card-header {
+  margin-bottom: 1.75rem;
+}
+
+.card-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.375rem;
   color: var(--color-text-primary);
+  letter-spacing: -0.01em;
 }
 
 .subtitle {
   color: var(--color-text-secondary);
-  font-size: 0.95rem;
-  margin-bottom: 2rem;
+  font-size: 0.875rem;
+  margin: 0;
 }
 
-/* 登录方式选择按钮 */
+/* ── Login option buttons ── */
 .login-options {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .option-btn {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
+  gap: 0.875rem;
+  padding: 1rem;
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
-  font-weight: 500;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
+  text-align: left;
 }
 
-.oidc-btn {
-  background-color: white;
-  border: 1px solid #d1d5db;
-  color: #374151;
-}
-
-.oidc-btn:hover:not(:disabled) {
-  background-color: #f9fafb;
-  border-color: #9ca3af;
-}
-
-.password-btn {
-  background-color: var(--color-primary-accent);
-  border: 1px solid var(--color-primary-accent);
-  color: white;
-}
-
-.password-btn:hover {
-  opacity: 0.9;
+.option-btn:hover:not(:disabled) {
+  border-color: var(--color-primary-accent);
+  background: #eff6ff;
 }
 
 .option-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-icon {
-  color: currentColor;
+.option-btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-primary-accent);
 }
 
-/* 登录表单 */
-.login-form {
+.oidc-icon {
+  background: #eff6ff;
+}
+
+.password-icon {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.option-btn-text {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.125rem;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.form-group label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-
-.login-btn {
-  margin-top: 0.5rem;
-  width: 100%;
-  padding: 0.875rem;
-  font-size: 1rem;
-}
-
-.back-btn {
-  width: 100%;
-  padding: 0.75rem;
-  background: transparent;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.back-btn:hover {
-  background-color: var(--color-bg-hover);
+.option-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
   color: var(--color-text-primary);
 }
 
-.error-msg {
-  color: #bf2600;
-  font-size: 0.875rem;
-  text-align: center;
-  margin: 0;
+.option-desc {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
 }
 
+.option-arrow {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Login form ── */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1.25rem;
+  transition: color 0.15s;
+}
+
+.back-link:hover {
+  color: var(--color-primary-accent);
+}
+
+.alert-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 0.8125rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-field {
+  margin-bottom: 1.25rem;
+}
+
+.form-field label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.375rem;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.875rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  transition: color 0.15s;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 0.75rem 0.875rem 0.75rem 2.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.9375rem;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.input-wrapper input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input-wrapper input:focus {
+  border-color: var(--color-primary-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.input-wrapper input:focus + .input-icon,
+.input-wrapper:focus-within .input-icon {
+  color: var(--color-primary-accent);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 0.8125rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-accent);
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
   .login-container {
     flex-direction: column;
   }
   .login-left {
     flex: none;
-    height: 30vh;
     padding: 2rem;
+    min-height: auto;
+  }
+  .brand h1 {
+    font-size: 1.5rem;
+  }
+  .login-right {
+    padding: 1.5rem;
+  }
+  .login-card {
+    padding: 1.75rem;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    max-width: 100%;
   }
 }
 </style>

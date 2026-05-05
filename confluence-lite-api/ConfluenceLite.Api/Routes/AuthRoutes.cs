@@ -47,9 +47,44 @@ public static class AuthRoutes
 
             var token = tokenService.GenerateToken(user.Id, user.Username);
 
+            var response = new LoginResponse
+            {
+                Token = token,
+                TokenType = "Bearer",
+                ExpiresIn = 1440,
+                User = user,
+                Workspaces = workspaces.Select(w => new WorkspaceSummaryDto
+                {
+                    Id = w.Id,
+                    Name = w.Name,
+                    Key = w.Key,
+                    Icon = w.Icon,
+                    IsDefault = w.IsDefault
+                }).ToList()
+            };
+
             var redirectUrl = context.Request.Query["redirect_url"].FirstOrDefault() ?? "/";
 
-            return Results.Redirect($"{redirectUrl}#token={Uri.EscapeDataString(token)}");
+            // 返回 HTML 页面，将登录数据传递给前端
+            var html = $"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>登录成功</title>
+                </head>
+                <body>
+                    <script>
+                        // 存储登录数据到 localStorage
+                        localStorage.setItem('auth_login_response', {System.Text.Json.JsonSerializer.Serialize(response)});
+                        // 重定向到目标页面
+                        window.location.href = '{redirectUrl}';
+                    </script>
+                </body>
+                </html>
+                """;
+
+            return Results.Text(html, "text/html");
         });
 
         group.MapGet("/config", (AppConfiguration config) =>

@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ConfluenceLite.Api.Data;
@@ -58,8 +57,6 @@ public class OidcService
             }
 
             var state = GenerateState();
-            var codeVerifier = GenerateCodeVerifier();
-            var codeChallenge = GenerateCodeChallenge(codeVerifier);
             var callbackUrl = GetCallbackUrl();
 
             var authUrl = $"{config.AuthorizationEndpoint}?" +
@@ -67,11 +64,10 @@ public class OidcService
                 $"response_type=code&" +
                 $"scope={Uri.EscapeDataString(_config.AuthSettings.OidcScopes)}&" +
                 $"redirect_uri={Uri.EscapeDataString(callbackUrl)}&" +
-                $"state={Uri.EscapeDataString(state)}&" +
-                $"code_challenge={Uri.EscapeDataString(codeChallenge)}&" +
-                $"code_challenge_method=S256";
+                $"state={Uri.EscapeDataString(state)}";
 
             Console.WriteLine($"[OIDC] Callback URL: {callbackUrl}");
+            Console.WriteLine($"[OIDC] State: {state}");
 
             return (authUrl, null);
         }
@@ -93,6 +89,8 @@ public class OidcService
 
         try
         {
+            Console.WriteLine($"[OIDC] Handling callback with state: {state}");
+
             var (config, configError) = await GetDiscoveryConfigAsync();
             if (config == null || configError != null)
             {
@@ -105,7 +103,7 @@ public class OidcService
                 return (null, "交换 Token 失败");
             }
 
-            var userInfo = await GetUserInfoAsync(tokenResponse.IdToken, config.UserInfoEndpoint);
+            var userInfo = await GetUserInfoAsync(tokenResponse.AccessToken, config.UserInfoEndpoint);
             if (userInfo == null)
             {
                 return (null, "获取用户信息失败");
@@ -124,7 +122,8 @@ public class OidcService
     /// </summary>
     public async Task<(UserDto? user, string? error)> FindOrCreateUserAsync(OidcUserInfo userInfo)
     {
-        var username = userInfo.PreferredUsername ?? userInfo.Email?.Split('@')[0] ?? $"oidc_{userInfo.Sub[..8]}";
+        var sub = userInfo.Sub.Length >= 8 ? userInfo.Sub[..8] : userInfo.Sub;
+        var username = userInfo.PreferredUsername ?? userInfo.Email?.Split('@')[0] ?? $"oidc_{sub}";
 
         var user = await _db.Db.Queryable<User>()
             .Where(u => u.Username == username || (userInfo.Email != null && u.Email == userInfo.Email))
@@ -206,42 +205,59 @@ public class OidcService
     {
         try
         {
+            var callbackUrl = GetCallbackUrl();
             var parameters = new Dictionary<string, string>
             {
                 ["grant_type"] = "authorization_code",
                 ["code"] = code,
-                ["redirect_uri"] = GetCallbackUrl(),
+                ["redirect_uri"] = callbackUrl,
                 ["client_id"] = _config.AuthSettings.OidcClientId,
                 ["client_secret"] = _config.AuthSettings.OidcClientSecret
             };
 
+            Console.WriteLine($"[OIDC] Exchanging code for token at: {tokenEndpoint}");
+            Console.WriteLine($"[OIDC] Callback URL: {callbackUrl}");
+            Console.WriteLine($"[OIDC] Client ID: {_config.AuthSettings.OidcClientId}");
+
             var response = await _httpClient.PostAsync(tokenEndpoint, new FormUrlEncodedContent(parameters));
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[OIDC] Token response status: {response.StatusCode}");
+            Console.WriteLine($"[OIDC] Token response content: {responseContent}");
+
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize(json, AppJsonContext.Default.OidcTokenResponse);
+            return JsonSerializer.Deserialize(responseContent, AppJsonContext.Default.OidcTokenResponse);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[OIDC] Token exchange failed: {ex.GetType().Name} - {ex.Message}");
             return null;
         }
     }
 
-    private async Task<OidcUserInfo?> GetUserInfoAsync(string idToken, string userInfoEndpoint)
+    private async Task<OidcUserInfo?> GetUserInfoAsync(string accessToken, string userInfoEndpoint)
     {
         try
         {
             _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {idToken}");
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+
+            Console.WriteLine($"[OIDC] Fetching user info from: {userInfoEndpoint}");
 
             var response = await _httpClient.GetAsync(userInfoEndpoint);
+
+            var responseContent = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"[OIDC] User info response status: {response.StatusCode}");
+            Console.WriteLine($"[OIDC] User info response content: {responseContent}");
+
             response.EnsureSuccessStatusCode();
 
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<OidcUserInfo>(json);
+            return JsonSerializer.Deserialize(responseContent, AppJsonContext.Default.OidcUserInfo);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[OIDC] Get user info failed: {ex.GetType().Name} - {ex.Message}");
             return null;
         }
     }
@@ -251,11 +267,21 @@ public class OidcService
         var domain = _config.SiteSettings.SiteDomain;
         if (!string.IsNullOrEmpty(domain))
         {
-            // 如果配置的域名不包含 scheme，默认使用 https
-            var fullDomain = domain.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                             domain.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
-                ? domain
-                : $"https://{domain}";
+            // 如果配置的域名不包含 scheme，根据域名类型决定默认使用 http 或 https
+            string fullDomain;
+            if (domain.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                domain.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                fullDomain = domain;
+            }
+            else
+            {
+                // localhost/127.0.0.1 使用 http，其他域名使用 https
+                bool isLocal = domain.Contains("localhost", StringComparison.OrdinalIgnoreCase) ||
+                               domain.StartsWith("127.", StringComparison.OrdinalIgnoreCase) ||
+                               domain.StartsWith("[::1]", StringComparison.OrdinalIgnoreCase);
+                fullDomain = isLocal ? $"http://{domain}" : $"https://{domain}";
+            }
             return $"{fullDomain}/api/auth/oidc/callback";
         }
 
@@ -278,30 +304,6 @@ public class OidcService
         using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(bytes);
         return Convert.ToBase64String(bytes).Replace("+", "-").Replace("/", "_").Replace("=", "");
-    }
-
-    private static string GenerateCodeVerifier()
-    {
-        var bytes = new byte[32];
-        using var rng = RandomNumberGenerator.Create();
-        rng.GetBytes(bytes);
-        return Base64UrlEncode(bytes);
-    }
-
-    private static string GenerateCodeChallenge(string codeVerifier)
-    {
-        using var sha256 = SHA256.Create();
-        var bytes = Encoding.ASCII.GetBytes(codeVerifier);
-        var hash = sha256.ComputeHash(bytes);
-        return Base64UrlEncode(hash);
-    }
-
-    private static string Base64UrlEncode(byte[] input)
-    {
-        return Convert.ToBase64String(input)
-            .Replace("+", "-")
-            .Replace("/", "_")
-            .Replace("=", "");
     }
 
     private static UserDto MapToDto(User user)

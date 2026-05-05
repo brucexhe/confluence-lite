@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using ConfluenceLite.Api.DTOs;
+using ConfluenceLite.Api.Services;
 
 namespace ConfluenceLite.Api.Mappers;
 
@@ -147,6 +148,10 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(AuditLogEntry))]
 [JsonSerializable(typeof(AuditChangeDetails))]
 [JsonSerializable(typeof(ChangeDetail))]
+// OIDC
+[JsonSerializable(typeof(OidcDiscoveryConfig))]
+[JsonSerializable(typeof(OidcTokenResponse))]
+[JsonSerializable(typeof(OidcUserInfo))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

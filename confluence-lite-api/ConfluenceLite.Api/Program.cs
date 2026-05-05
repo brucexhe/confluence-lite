@@ -131,7 +131,7 @@ builder.Services.Configure<AuditLogOptions>(
     builder.Configuration.GetSection("App:AuditLog"));
 builder.Services.AddSingleton<IAuditLogService, AuditLogService>();
 builder.Services.AddHostedService(sp => (AuditLogService)sp.GetRequiredService<IAuditLogService>());
-builder.Services.AddScoped<IAuditDiffGenerator, AuditDiffGenerator>();
+builder.Services.AddSingleton<IAuditDiffGenerator, AuditDiffGenerator>();
 
 // ========== JSON 配置 - Native AOT 使用源生成器 ==========
 builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Reflection;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Attributes;
+using ConfluenceLite.Api.Mappers;
 
 namespace ConfluenceLite.Api.Services;
 
@@ -19,7 +20,8 @@ public class AuditDiffGenerator : IAuditDiffGenerator
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = false,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            TypeInfoResolver = AppJsonContext.Default
         };
     }
 

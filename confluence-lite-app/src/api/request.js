@@ -52,12 +52,15 @@ async function request(url, options = {}) {
 
   const res = await fetch(url, config)
 
-  // 处理 401 未授权 - 清除认证信息并跳转到登录页
+  // 处理 401 未授权 - 登录接口返回 401 表示用户名密码错误，不应跳转
   if (res.status === 401) {
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('auth_spaces')
-    // 使用 window.location 而不是 router 跳转，避免循环依赖
-    window.location.href = '/login'
+    if (!url.includes('/login')) {
+      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_user')
+      localStorage.removeItem('auth_spaces')
+      // 使用 window.location 而不是 router 跳转，避免循环依赖
+      window.location.href = '/login'
+    }
     throw new ApiError('未授权，请重新登录', 401)
   }
 

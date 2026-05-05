@@ -15,6 +15,7 @@ wsl rm -rf ./release/wwwroot/uploads/*
 
 
 #build docker image
+wsl service docker start
 wsl docker build -t docker.peos.cn/brucexhe/confluencelite .
 
 wsl docker push docker.peos.cn/brucexhe/confluencelite

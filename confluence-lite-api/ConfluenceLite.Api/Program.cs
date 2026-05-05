@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.AspNetCore.HttpOverrides;
 using SqlSugar;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Models;
@@ -105,6 +106,7 @@ else if (!isInstalled)
 }
 
 // ========== 服务注册 - Native AOT 兼容 ==========
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<WorkspaceService>();
@@ -194,6 +196,15 @@ app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(wwwroot),
     RequestPath = "/uploads"
+});
+
+// ForwardedHeaders - 用于获取 nginx 反向代理后的真实 Scheme/Host
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+    // 只允许来自本地网络的代理转发（可根据实际情况调整）
+    // KnownNetworks = { }, // 允许所有网络
+    // KnownProxies = { }  // 允许所有代理
 });
 
 // CORS

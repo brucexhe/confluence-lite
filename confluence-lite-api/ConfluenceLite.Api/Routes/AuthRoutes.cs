@@ -12,10 +12,9 @@ public static class AuthRoutes
             .WithTags("Authentication");
 
         group.MapGet("/oidc/login", async (
-            HttpContext context,
             OidcService oidcService) =>
         {
-            var (authUrl, error) = await oidcService.GetAuthorizationUrlAsync(null);
+            var (authUrl, error) = await oidcService.GetAuthorizationUrlAsync();
             if (authUrl == null || error != null)
             {
                 return Results.Redirect($"/login?error={Uri.EscapeDataString(error ?? "OIDC 配置错误")}");

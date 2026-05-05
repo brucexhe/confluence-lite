@@ -19,22 +19,25 @@ public class OidcService
     private readonly HttpClient _httpClient;
     private readonly AppConfiguration _config;
     private readonly AppDbContext _db;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public OidcService(
         IHttpClientFactory httpClientFactory,
         AppConfiguration config,
-        AppDbContext db)
+        AppDbContext db,
+        IHttpContextAccessor httpContextAccessor)
     {
         _httpClient = httpClientFactory.CreateClient();
         _httpClient.Timeout = TimeSpan.FromSeconds(30);
         _config = config;
         _db = db;
+        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
     }
 
     /// <summary>
     /// 获取授权 URL
     /// </summary>
-    public async Task<(string? url, string? error)> GetAuthorizationUrlAsync(string? redirectUrl)
+    public async Task<(string? url, string? error)> GetAuthorizationUrlAsync()
     {
         if (!_config.AuthSettings.OidcEnabled)
         {
@@ -57,15 +60,18 @@ public class OidcService
             var state = GenerateState();
             var codeVerifier = GenerateCodeVerifier();
             var codeChallenge = GenerateCodeChallenge(codeVerifier);
+            var callbackUrl = GetCallbackUrl();
 
             var authUrl = $"{config.AuthorizationEndpoint}?" +
                 $"client_id={Uri.EscapeDataString(_config.AuthSettings.OidcClientId)}&" +
                 $"response_type=code&" +
                 $"scope={Uri.EscapeDataString(_config.AuthSettings.OidcScopes)}&" +
-                $"redirect_uri={Uri.EscapeDataString(GetCallbackUrl())}&" +
+                $"redirect_uri={Uri.EscapeDataString(callbackUrl)}&" +
                 $"state={Uri.EscapeDataString(state)}&" +
                 $"code_challenge={Uri.EscapeDataString(codeChallenge)}&" +
                 $"code_challenge_method=S256";
+
+            Console.WriteLine($"[OIDC] Callback URL: {callbackUrl}");
 
             return (authUrl, null);
         }
@@ -242,12 +248,28 @@ public class OidcService
 
     private string GetCallbackUrl()
     {
-        var request = _config.SiteSettings.SiteDomain;
-        if (string.IsNullOrEmpty(request))
+        var domain = _config.SiteSettings.SiteDomain;
+        if (!string.IsNullOrEmpty(domain))
         {
-            return "/api/auth/oidc/callback";
+            // 如果配置的域名不包含 scheme，默认使用 https
+            var fullDomain = domain.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                             domain.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                ? domain
+                : $"https://{domain}";
+            return $"{fullDomain}/api/auth/oidc/callback";
         }
-        return $"{request}/api/auth/oidc/callback";
+
+        var context = _httpContextAccessor.HttpContext;
+        if (context != null)
+        {
+            var request = context.Request;
+            var scheme = request.Scheme;
+            var host = request.Host.Value;
+            var pathBase = request.PathBase.Value;
+            return $"{scheme}://{host}{pathBase}/api/auth/oidc/callback";
+        }
+
+        return $"/api/auth/oidc/callback";
     }
 
     private static string GenerateState()

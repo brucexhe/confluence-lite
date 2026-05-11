@@ -15,7 +15,8 @@ public static class UserRoutes
             LoginRequest request,
             UserService userService,
             WorkspaceService workspaceService,
-            TokenService tokenService) =>
+            TokenService tokenService,
+            HttpContext context) =>
         {
             if (request == null)
                 return Results.BadRequest("Invalid request");
@@ -26,11 +27,23 @@ public static class UserRoutes
 
             var workspaces = await workspaceService.GetUserWorkspacesAsync(user.Id);
 
+            var tokenValue = tokenService.GenerateToken(user.Id, user.Username);
+
+            // 设置 Cookie（根据环境动态设置 Secure 属性）
+            var isHttps = context.Request.IsHttps;
+            context.Response.Cookies.Append("Authorization", tokenValue, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isHttps,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddMinutes(1440)
+            });
+
             var response = new LoginResponse
             {
-                Token = tokenService.GenerateToken(user.Id, user.Username),
-                TokenType = "Bearer",
-                ExpiresIn = 1440,
+                // Token = null,
+                // TokenType = "Bearer",
+                // ExpiresIn = 1440,
                 User = user,
                 Workspaces = workspaces.Select(w => new WorkspaceSummaryDto
                 {
@@ -43,6 +56,12 @@ public static class UserRoutes
             };
 
             return Results.Ok(ApiResponse<LoginResponse>.Ok(response, "登录成功"));
+        });
+
+        group.MapPost("/logout", async (HttpContext context) =>
+        {
+            context.Response.Cookies.Delete("Authorization");
+            return Results.Ok(ApiResponse<bool>.Ok(true, "登出成功"));
         });
 
         group.MapPost("/register", async (

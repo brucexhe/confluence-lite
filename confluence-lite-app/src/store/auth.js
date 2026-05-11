@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { userApi } from '../api'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('auth_token') || null)
+  const token = ref(null)
   const getUserFromStorage = () => {
     try {
       return JSON.parse(localStorage.getItem('auth_user') || 'null')
@@ -20,14 +20,12 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const data = await userApi.login(username, password)
       if (data) {
-        token.value = data.token
         user.value = {
           id: data.user.id,
           name: data.user.displayName || data.user.username,
           username: data.user.username,
           role: data.user.isAdmin ? 'admin' : 'user'
         }
-        localStorage.setItem('auth_token', token.value)
         localStorage.setItem('auth_user', JSON.stringify(user.value))
         if (data.workspaces) {
           // 将所有空间 key 转换为大写
@@ -46,23 +44,25 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      await userApi.logout()
+    } catch {
+      // 忽略登出 API 错误
+    }
     token.value = null
     user.value = null
-    localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
     localStorage.removeItem('auth_spaces')
     router.push('/login')
   }
 
   function setFromSetup(setupData, displayName, spaceKey) {
-    token.value = setupData.token
     user.value = {
       id: setupData.userId,
       name: displayName,
       role: 'admin'
     }
-    localStorage.setItem('auth_token', token.value)
     localStorage.setItem('auth_user', JSON.stringify(user.value))
     localStorage.setItem('auth_spaces', JSON.stringify([
       { id: setupData.workspaceId, name: '', key: spaceKey?.toUpperCase() || '' }

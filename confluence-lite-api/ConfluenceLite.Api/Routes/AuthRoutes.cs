@@ -1,6 +1,8 @@
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Services;
+using ConfluenceLite.Api.Mappers;
 using ConfluenceLite.Api.Data;
+using System.Text.Json;
 
 namespace ConfluenceLite.Api.Routes;
 
@@ -32,6 +34,9 @@ public static class AuthRoutes
             WorkspaceService workspaceService) =>
         {
             var (userInfo, error) = await oidcService.HandleCallbackAsync(code, state);
+            
+            Console.WriteLine(userInfo);
+
             if (userInfo == null || error != null)
             {
                 return Results.Redirect($"/login?error={Uri.EscapeDataString(error ?? "OIDC 认证失败")}");
@@ -47,9 +52,19 @@ public static class AuthRoutes
 
             var token = tokenService.GenerateToken(user.Id, user.Username);
 
+            // 设置 Cookie（根据环境动态设置 Secure 属性）
+            var isHttps = context.Request.IsHttps;
+            context.Response.Cookies.Append("Authorization", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isHttps,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.Now.AddMinutes(1440)
+            });
+
             var response = new LoginResponse
             {
-                Token = token,
+                Token = null,
                 TokenType = "Bearer",
                 ExpiresIn = 1440,
                 User = user,
@@ -65,8 +80,10 @@ public static class AuthRoutes
 
             var redirectUrl = context.Request.Query["redirect_url"].FirstOrDefault() ?? "/";
 
-            // 返回 HTML 页面，将登录数据传递给前端
-            var html = $"""
+            // 返回 HTML 页面，将登录数据传递给前端（不包含 token）
+            var responseJson = JsonSerializer.Serialize(response, AppJsonContext.Default.LoginResponse);
+
+            var html = $$"""
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -75,10 +92,24 @@ public static class AuthRoutes
                 </head>
                 <body>
                     <script>
-                        // 存储登录数据到 localStorage
-                        localStorage.setItem('auth_login_response', {System.Text.Json.JsonSerializer.Serialize(response)});
+                        const data = {{responseJson}}; 
+                        // 存储用户信息到 localStorage
+                        const user = {
+                            id: data.User.Id,
+                            name: data.User.DisplayName || data.User.Username,
+                            username: data.User.Username,
+                            role: data.User.IsAdmin ? 'admin' : 'user'
+                        };
+                        console.log(user);
+                        localStorage.setItem('auth_user', JSON.stringify(user));
+                        // 存储空间列表到 localStorage，并将 key 转换为大写
+                        const workspaces = data.Workspaces.map(ws => ({
+                            ...ws,
+                            key: ws.key?.toUpperCase() || ''
+                        }));
+                        localStorage.setItem('auth_spaces', JSON.stringify(workspaces));
                         // 重定向到目标页面
-                        window.location.href = '{redirectUrl}';
+                        window.location.href = '/';
                     </script>
                 </body>
                 </html>

@@ -38,13 +38,6 @@ async function request(url, options = {}) {
     headers['Content-Type'] = 'application/json'
   }
 
-  if (auth) {
-    const token = localStorage.getItem('auth_token')
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`
-    }
-  }
-
   const config = { method, headers }
   if (body !== undefined) {
     config.body = isFormData ? body : JSON.stringify(body)

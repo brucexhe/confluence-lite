@@ -52,6 +52,11 @@ export const userApi = {
     })
   },
 
+  /** 登出 */
+  logout() {
+    return request('/api/user/logout', { method: 'POST' })
+  },
+
   /** 注册 */
   register(data) {
     return request('/api/user/register', {

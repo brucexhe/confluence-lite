@@ -284,11 +284,10 @@ const loadJobs = async () => {
         }
 
         // 加载统计数据
-        const statsData = await fetch('/api/system/jobs/stats', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-            }
-        }).then(res => res.json()).then(data => data.success ? data.data : null)
+        // Cookie 会自动发送，无需手动添加 Authorization header
+        const statsData = await fetch('/api/system/jobs/stats')
+            .then(res => res.json())
+            .then(data => data.success ? data.data : null)
 
         if (statsData) {
             stats.value = {

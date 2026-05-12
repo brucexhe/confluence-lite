@@ -213,11 +213,10 @@ const refreshStats = async () => {
         }
 
         // 加载缓存类型列表
-        const typesData = await fetch('/api/system/cache/types', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-            }
-        }).then(res => res.json()).then(data => data.success ? data.data : [])
+        // Cookie 会自动发送，无需手动添加 Authorization header
+        const typesData = await fetch('/api/system/cache/types')
+            .then(res => res.json())
+            .then(data => data.success ? data.data : [])
 
         if (typesData) {
             cacheTypes.value = typesData.map((type, index) => ({

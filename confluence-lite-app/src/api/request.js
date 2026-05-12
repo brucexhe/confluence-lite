@@ -48,7 +48,6 @@ async function request(url, options = {}) {
   // 处理 401 未授权 - 登录接口返回 401 表示用户名密码错误，不应跳转
   if (res.status === 401) {
     if (!url.includes('/login')) {
-      localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
       localStorage.removeItem('auth_spaces')
       // 使用 window.location 而不是 router 跳转，避免循环依赖

@@ -98,12 +98,10 @@ const loadPdf = async () => {
     notConfigured.value = false;
 
     try {
-        const token = localStorage.getItem('auth_token');
-        const headers = { 'Authorization': `Bearer ${token}` };
-
+        // Cookie 会自动发送，无需手动添加 Authorization header
         if (isPdfFile(props.filePath)) {
             // PDF 文件直接加载，无需转换
-            const response = await fetch(props.filePath, { headers });
+            const response = await fetch(props.filePath);
 
             if (!response.ok) {
                 throw new Error(`加载失败 (HTTP ${response.status})`);

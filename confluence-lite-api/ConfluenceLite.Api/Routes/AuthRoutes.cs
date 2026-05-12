@@ -81,7 +81,11 @@ public static class AuthRoutes
             var redirectUrl = context.Request.Query["redirect_url"].FirstOrDefault() ?? "/";
 
             // 返回 HTML 页面，将登录数据传递给前端（不包含 token）
-            var responseJson = JsonSerializer.Serialize(response, AppJsonContext.Default.LoginResponse);
+            var responseJson = JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                TypeInfoResolver = AppJsonContext.Default
+            });
 
             var html = $$"""
                 <!DOCTYPE html>
@@ -93,17 +97,11 @@ public static class AuthRoutes
                 <body>
                     <script>
                         const data = {{responseJson}}; 
-                        // 存储用户信息到 localStorage
-                        const user = {
-                            id: data.User.Id,
-                            name: data.User.DisplayName || data.User.Username,
-                            username: data.User.Username,
-                            role: data.User.IsAdmin ? 'admin' : 'user'
-                        };
-                        console.log(user);
-                        localStorage.setItem('auth_user', JSON.stringify(user));
+                        // 存储用户信息到 localStorage 
+                        console.log(data);
+                        localStorage.setItem('auth_user', JSON.stringify(data));
                         // 存储空间列表到 localStorage，并将 key 转换为大写
-                        const workspaces = data.Workspaces.map(ws => ({
+                        const workspaces = data.workspaces.map(ws => ({
                             ...ws,
                             key: ws.key?.toUpperCase() || ''
                         }));

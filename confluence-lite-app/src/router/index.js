@@ -233,19 +233,22 @@ router.beforeEach(async (to, from, next) => {
         return
     }
 
-    // Auth check
-    const isAuthenticated = localStorage.getItem('auth_token')
+    // Auth check - 需要验证 auth_user 是有效的 JSON 对象，而不是字符串 "null"
+  
+    const isAuthenticated = JSON.parse(localStorage.getItem('auth_user'))
 
     // Not logged in → login page (except public routes)
     // 检查 meta 是否存在以及 requiresAuth 属性
     if (to.meta && to.meta.requiresAuth && !isAuthenticated) {
         next({name: 'login'})
         return
-    }
+    } 
+ 
 
     // Logged in + on home/login → redirect to first space
     if ((to.name === 'login' || to.name === 'home') && isAuthenticated) {
         const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
+          
         if (spaces.length > 0) {
             next({path: `/${spaces[0].key.toUpperCase()}`})
         } else {
@@ -253,12 +256,17 @@ router.beforeEach(async (to, from, next) => {
             try {
                 const data = await workspaceApi.getMy()
                 if (data && data.length > 0) {
+                    // Update localStorage with fetched spaces
+                    localStorage.setItem('auth_spaces', JSON.stringify(
+                        data.map(ws => ({...ws, key: ws.key?.toUpperCase() || ''}))
+                    ))
                     next({path: `/${data[0].key.toUpperCase()}`})
                 } else {
                     next({name: 'login'})
                 }
             } catch {
-                next({name: 'login'})
+                // API error - request.js will handle 401 and redirect
+                return
             }
         }
         return

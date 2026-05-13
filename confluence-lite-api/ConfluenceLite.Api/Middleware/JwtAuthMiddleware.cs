@@ -109,6 +109,15 @@ public class JwtAuthMiddleware
 
         // 检查是否需要认证
         var path = context.Request.Path.Value ?? "";
+
+        // 跳过非 API 路径的认证检查（前端路由、静态文件等）
+        // 只有 /api/ 开头的路径才需要认证检查
+        if (!path.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+        {
+            await _next(context);
+            return;
+        }
+
         var isPublicPath = PublicPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase));
 
         if (!isPublicPath && !currentUser.IsAuthenticated)

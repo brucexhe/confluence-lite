@@ -343,17 +343,49 @@ public class ConfluenceXmlParser
             .Where(e => e.FullName.StartsWith("attachments/", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+        _logger.LogInformation("开始解析附件路径，找到 {Count} 个附件条目", attachmentEntries.Count);
+
         foreach (var entry in attachmentEntries)
         {
             // 规范化路径分隔符
             var normalizedPath = entry.FullName.Replace('\\', '/');
-            // Confluence 7.x 格式: attachments/{attId}/{pageId}/{version}
+            // Confluence 7.x 格式通常为: attachments/{pageId}/{attachmentId}/{version}
+            // 或者是 attachments/{attachmentId}
             var parts = normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length >= 3 && long.TryParse(parts[1], out var attachmentId))
+
+            if (parts.Length >= 3)
             {
-                result.AttachmentFiles[attachmentId] = entry.FullName;
+                // 常见的 attachments/{pageId}/{attachmentId}/{version} 结构
+                if (long.TryParse(parts[2], out var attachmentId))
+                {
+                    result.AttachmentFiles[attachmentId] = entry.FullName;
+                    _logger.LogDebug("映射附件 {AttachmentId} -> {Path}", attachmentId, entry.FullName);
+                }
+                else
+                {
+                    _logger.LogDebug("跳过附件路径（第三部分不是数字）: {Path}", entry.FullName);
+                }
+            }
+            else if (parts.Length == 2)
+            {
+                // 较旧或扁平化的 attachments/{attachmentId} 结构
+                if (long.TryParse(parts[1], out var attachmentId))
+                {
+                    result.AttachmentFiles[attachmentId] = entry.FullName;
+                    _logger.LogDebug("映射附件 {AttachmentId} -> {Path} (扁平结构)", attachmentId, entry.FullName);
+                }
+                else
+                {
+                    _logger.LogDebug("跳过附件路径（第二部分不是数字）: {Path}", entry.FullName);
+                }
+            }
+            else
+            {
+                _logger.LogDebug("跳过附件路径（格式不匹配）: {Path}", entry.FullName);
             }
         }
+
+        _logger.LogInformation("附件路径解析完成，成功映射 {Count} 个附件", result.AttachmentFiles.Count);
     }
 
     /// <summary>

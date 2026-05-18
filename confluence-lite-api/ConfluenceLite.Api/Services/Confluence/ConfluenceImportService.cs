@@ -1,12 +1,17 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Collections.Generic;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Models;
 using ConfluenceLite.Api.Models.Confluence;
 using ConfluenceLite.Api.Mappers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace ConfluenceLite.Api.Services.Confluence;
 
@@ -229,14 +234,14 @@ public class ConfluenceImportService
 
         try
         {
-            // 构建内容映射
+            var zipPath = Path.Combine(env.ContentRootPath, task.SourceFile.TrimStart('/'));
+
+            // 构建内容映射 (使用主体自身的 Id 作为 Key，以对应 Page.BodyContentId 和 Space.DescriptionId)
             var bodyContentMap = data.BodyContents
-                .Where(bc => bc.PageId.HasValue)
-                .ToDictionary(bc => bc.PageId!.Value, bc => bc.Body);
+                .ToDictionary(bc => bc.Id, bc => bc.Body);
 
             var spaceDescriptionMap = data.SpaceDescriptions
-                .Where(sd => sd.SpaceId.HasValue)
-                .ToDictionary(sd => sd.SpaceId!.Value, sd => sd.Body);
+                .ToDictionary(sd => sd.Id, sd => sd.Body);
 
             var progress = new ImportProgress
             {
@@ -267,12 +272,19 @@ public class ConfluenceImportService
                 progress.CurrentStep = "正在导入空间...";
                 await UpdateProgressAsync(db, task, progress);
 
-                var spaceCount = await ImportSpacesAsync(db, logger, data.Spaces, mapper, spaceDescriptionMap, options);
+                var spaceCount = await ImportSpacesAsync(db, logger, data.Spaces, mapper, spaceDescriptionMap, task.CreatedById, options);
                 result.EntityCounts["Spaces"] = spaceCount;
                 result.SuccessCount += spaceCount;
                 progress.ProcessedItems += spaceCount;
                 progress.EntityCounts["Spaces"] = spaceCount;
                 await UpdateProgressAsync(db, task, progress);
+            }
+
+            // 2. 预处理页面（过滤草稿并预注册 ID 映射，以便附件先导入）
+            var publishedPages = data.Pages.Where(p => p.ContentStatus == "current").ToList();
+            foreach (var p in publishedPages)
+            {
+                mapper.AddPageMapping(p.Id, p.Id);
             }
 
             // 3. 导入附件（需要在页面之前导入，以便构建 URL 映射）
@@ -283,7 +295,7 @@ public class ConfluenceImportService
 
                 var attachmentCount = await ImportAttachmentsAsync(db, env, logger,
                     data.Attachments,
-                    task.SourceFile,
+                    zipPath, // 使用任务 ZIP 路径
                     data.AttachmentFiles,
                     mapper,
                     attachmentUrlMap,
@@ -296,13 +308,13 @@ public class ConfluenceImportService
             }
 
             // 4. 导入页面（使用内容转换器）
-            if (options.ImportPages && data.Pages.Any())
+            if (options.ImportPages && publishedPages.Any())
             {
                 progress.CurrentStep = "正在导入页面...";
                 await UpdateProgressAsync(db, task, progress);
 
                 var pageCount = await ImportPagesAsync(db, logger,
-                    data.Pages,
+                    publishedPages, // 使用过滤后的页面列表
                     mapper,
                     bodyContentMap,
                     attachmentUrlMap,
@@ -348,29 +360,22 @@ public class ConfluenceImportService
         var count = 0;
         foreach (var user in users)
         {
-            try
-            {
-                // 检查用户是否已存在
-                var existingUser = await db.Db.Queryable<User>()
-                    .Where(u => u.Username == user.Name)
-                    .FirstAsync();
+            // 检查用户是否已存在
+            var existingUser = await db.Db.Queryable<User>()
+                .Where(u => u.Username == user.Name)
+                .FirstAsync();
 
-                if (existingUser == null)
-                {
-                    var newUser = mapper.MapUser(user);
-                    var newId = await db.Db.Insertable(newUser).ExecuteReturnIdentityAsync();
-                    mapper.AddUserMapping(user.Key, newId);
-                    count++;
-                }
-                else
-                {
-                    // 使用现有用户ID
-                    mapper.AddUserMapping(user.Key, existingUser.Id);
-                }
-            }
-            catch (Exception ex)
+            if (existingUser == null)
             {
-                logger.LogError(ex, "导入用户失败: {Username}", user.Name);
+                var newUser = mapper.MapUser(user);
+                var newId = await db.Db.Insertable(newUser).ExecuteReturnIdentityAsync();
+                mapper.AddUserMapping(user.Key, newId);
+                count++;
+            }
+            else
+            {
+                // 使用现有用户ID
+                mapper.AddUserMapping(user.Key, existingUser.Id);
             }
         }
 
@@ -389,49 +394,76 @@ public class ConfluenceImportService
         List<ConfluenceSpace> spaces,
         DataMappingService mapper,
         Dictionary<long, string> descriptionMap,
+        long ownerId,
         ImportOptions options)
     {
         var count = 0;
-        var ownerId = 1; // 默认管理员
 
         foreach (var space in spaces)
         {
-            try
+            var description = space.DescriptionId.HasValue &&
+                             descriptionMap.TryGetValue(space.DescriptionId.Value, out var desc)
+                ? desc
+                : null;
+
+            var workspace = mapper.MapSpace(space, ownerId, description);
+
+            // 检查是否覆盖
+            var existing = await db.Db.Queryable<Workspace>()
+                .Where(w => w.Key == space.Key)
+                .FirstAsync();
+
+            long newId;
+            if (existing != null)
             {
-                var description = space.DescriptionId.HasValue &&
-                                 descriptionMap.TryGetValue(space.DescriptionId.Value, out var desc)
-                    ? desc
-                    : null;
-
-                var workspace = mapper.MapSpace(space, ownerId, description);
-
-                // 检查是否覆盖
-                var existing = await db.Db.Queryable<Workspace>()
-                    .Where(w => w.Key == space.Key)
-                    .FirstAsync();
-
-                if (existing != null)
+                if (options.OverwriteExisting)
                 {
-                    if (options.OverwriteExisting)
-                    {
-                        workspace.Id = existing.Id;
-                        await db.Db.Updateable(workspace).ExecuteCommandAsync();
-                    }
-                    mapper.AddSpaceMapping(space.Id, existing.Id);
+                    workspace.Id = existing.Id;
+                    await db.Db.Updateable(workspace).ExecuteCommandAsync();
+                    newId = existing.Id;
+                    logger.LogInformation("覆盖工作空间: {Key}", space.Key);
                 }
                 else
                 {
-                    var newId = await db.Db.Insertable(workspace).ExecuteReturnIdentityAsync();
-                    mapper.AddSpaceMapping(space.Id, newId);
+                    newId = existing.Id;
+                    logger.LogInformation("跳过已存在的工作空间: {Key}", space.Key);
                 }
+            }
+            else
+            {
+                // 强制插入原始 ID，使用原始 SQL 以绕过 SqlSugar 的自增列限制
+                await db.Db.Ado.ExecuteCommandAsync(
+                    "INSERT INTO \"workspaces\" (\"id\", \"name\", \"key\", \"description\", \"ownerid\", \"status\", \"icon\", \"color\", \"homepageid\", \"ispersonal\", \"isdefault\", \"isdeleted\", \"createdat\", \"updatedat\") " +
+                    "VALUES (@Id::bigint, @Name, @Key, @Description, @OwnerId::bigint, @Status::integer, @Icon, @Color, @HomePageId::bigint, @IsPersonal::boolean, @IsDefault::boolean, @IsDeleted::boolean, @CreatedAt::timestamp, @UpdatedAt::timestamp)",
+                    new
+                    {
+                        workspace.Id,
+                        workspace.Name,
+                        workspace.Key,
+                        workspace.Description,
+                        workspace.OwnerId,
+                        workspace.Status,
+                        workspace.Icon,
+                        workspace.Color,
+                        workspace.HomePageId,
+                        workspace.IsPersonal,
+                        workspace.IsDefault,
+                        workspace.IsDeleted,
+                        workspace.CreatedAt,
+                        workspace.UpdatedAt
+                    });
+                newId = space.Id;
+            }
 
+            if (newId > 0)
+            {
+                mapper.AddSpaceMapping(space.Id, newId);
                 count++;
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "导入空间失败: {Key}", space.Key);
-            }
         }
+
+        // 导入完成后尝试更新序列，防止后续自增冲突（仅对 PostgreSQL 尝试）
+        try { await db.Db.Ado.ExecuteCommandAsync("SELECT setval('\"workspaces_id_seq\"', (SELECT MAX(id) FROM \"workspaces\"))"); } catch { }
 
         return count;
     }
@@ -450,8 +482,8 @@ public class ConfluenceImportService
     {
         var processedPages = new HashSet<long>();
 
-        // 首先导入所有没有父页面的页面（根页面）
-        var rootPages = pages.Where(p => !p.ParentId.HasValue).ToList();
+        // 首先导入所有没有父页面的页面（根页面，ParentId 为 null 或 0）
+        var rootPages = pages.Where(p => !p.ParentId.HasValue || p.ParentId == 0).ToList();
         return await ImportPagesInOrder(db, logger, rootPages, pages, mapper, contentMap, attachmentUrlMap, processedPages, options);
     }
 
@@ -461,7 +493,7 @@ public class ConfluenceImportService
     private async Task<int> ImportPagesInOrder(
         AppDbContext db,
         ILogger<ConfluenceImportService> logger,
-        List<ConfluencePage> currentPageList,
+        List<ConfluencePage> rootPages,
         List<ConfluencePage> allPages,
         DataMappingService mapper,
         Dictionary<long, string> contentMap,
@@ -471,66 +503,90 @@ public class ConfluenceImportService
     {
         var count = 0;
 
-        foreach (var page in currentPageList)
+        foreach (var page in rootPages)
         {
             if (processedPages.Contains(page.Id))
                 continue;
 
-            try
+            string? content = null;
+            if (page.BodyContentId.HasValue &&
+                contentMap.TryGetValue(page.BodyContentId.Value, out var bodyContent))
             {
-                string? content = null;
-                if (page.BodyContentId.HasValue &&
-                    contentMap.TryGetValue(page.BodyContentId.Value, out var bodyContent))
+                // 使用内容转换器转换 Confluence 内容
+                var converter = new ConfluenceContentConverter(
+                    attachmentUrlMap,
+                    mapper.GetPageIdMap());
+                content = converter.ConvertToHtml(bodyContent, page.Id);
+            }
+
+            var workspaceId = page.SpaceId.HasValue &&
+                              mapper.GetMappedSpaceId(page.SpaceId.Value) is long mappedSpaceId
+                ? mappedSpaceId
+                : 1;
+
+            var newPage = mapper.MapPage(page, workspaceId, content);
+
+            // 检查是否覆盖
+            var existing = await db.Db.Queryable<Page>()
+                .Where(p => p.Id == page.Id)
+                .FirstAsync();
+
+            long newPageId;
+            if (existing != null)
+            {
+                if (options.OverwriteExisting)
                 {
-                    // 使用内容转换器转换 Confluence 内容
-                    var converter = new ConfluenceContentConverter(
-                        attachmentUrlMap,
-                        mapper.GetPageIdMap());
-                    content = converter.ConvertToHtml(bodyContent, page.Id);
-                }
-
-                var workspaceId = page.SpaceId.HasValue &&
-                                  mapper.GetMappedSpaceId(page.SpaceId.Value) is long mappedSpaceId
-                    ? mappedSpaceId
-                    : 1;
-
-                var newPage = mapper.MapPage(page, workspaceId, content);
-
-                var existing = await db.Db.Queryable<Page>()
-                    .Where(p => p.Id == page.Id)
-                    .FirstAsync();
-
-                long newPageId;
-                if (existing != null)
-                {
-                    if (options.OverwriteExisting)
-                    {
-                        newPage.Id = existing.Id;
-                        await db.Db.Updateable(newPage).ExecuteCommandAsync();
-                    }
+                    newPage.Id = existing.Id;
+                    await db.Db.Updateable(newPage).ExecuteCommandAsync();
                     newPageId = existing.Id;
                 }
                 else
                 {
-                    newPageId = await db.Db.Insertable(newPage).ExecuteReturnIdentityAsync();
-                }
-
-                mapper.AddPageMapping(page.Id, newPageId);
-
-                processedPages.Add(page.Id);
-                count++;
-
-                // 导入子页面
-                var childPages = allPages.Where(p => p.ParentId == page.Id).ToList();
-                if (childPages.Any())
-                {
-                    count += await ImportPagesInOrder(db, logger, childPages, allPages, mapper, contentMap, attachmentUrlMap, processedPages, options);
+                    newPageId = existing.Id;
                 }
             }
-            catch (Exception ex)
+            else
             {
-                logger.LogError(ex, "导入页面失败: {Title}", page.Title);
+                // 强制插入原始 ID，使用原始 SQL 插入
+                await db.Db.Ado.ExecuteCommandAsync(
+                    "INSERT INTO \"pages\" (\"id\", \"title\", \"content\", \"status\", \"workspaceid\", \"creatorid\", \"parentid\", \"sortorder\", \"version\", \"lastmodifierid\", \"isdeleted\", \"createdat\", \"updatedat\") " +
+                    "VALUES (@Id::bigint, @Title, @Content, @Status::integer, @WorkspaceId::bigint, @CreatorId::bigint, @ParentId::bigint, @SortOrder::integer, @Version::integer, @LastModifierId::bigint, @IsDeleted::boolean, @CreatedAt::timestamp, @UpdatedAt::timestamp)",
+                    new
+                    {
+                        newPage.Id,
+                        newPage.Title,
+                        newPage.Content,
+                        newPage.Status,
+                        newPage.WorkspaceId,
+                        newPage.CreatorId,
+                        newPage.ParentId,
+                        newPage.SortOrder,
+                        newPage.Version,
+                        newPage.LastModifierId,
+                        newPage.IsDeleted,
+                        newPage.CreatedAt,
+                        newPage.UpdatedAt
+                    });
+                newPageId = page.Id;
             }
+
+            mapper.AddPageMapping(page.Id, newPageId);
+
+            processedPages.Add(page.Id);
+            count++;
+
+            // 递归导入子页面
+            var childPages = allPages.Where(p => p.ParentId == page.Id).ToList();
+            if (childPages.Any())
+            {
+                count += await ImportPagesInOrder(db, logger, childPages, allPages, mapper, contentMap, attachmentUrlMap, processedPages, options);
+            }
+        }
+
+        // 尝试更新序列
+        if (rootPages.Any(p => !p.ParentId.HasValue || p.ParentId == 0))
+        {
+            try { await db.Db.Ado.ExecuteCommandAsync("SELECT setval('\"pages_id_seq\"', (SELECT MAX(id) FROM \"pages\"))"); } catch { }
         }
 
         return count;
@@ -551,7 +607,14 @@ public class ConfluenceImportService
         ImportOptions options)
     {
         var count = 0;
+        var skippedNoPageId = 0;
+        var skippedNoFile = 0;
+        var skippedNoPageMapping = 0;
+        var skippedNoEntry = 0;
         var uploadsDir = Path.Combine(env.ContentRootPath, "wwwroot", "uploads", "attachments");
+
+        logger.LogInformation("开始导入附件，总数: {AttachmentCount}", attachments.Count);
+        logger.LogInformation("ZIP 中解析到的附件文件数: {FileCount}", attachmentFiles.Count);
 
         if (!Directory.Exists(uploadsDir))
         {
@@ -562,84 +625,123 @@ public class ConfluenceImportService
 
         foreach (var attachment in attachments)
         {
-            try
+            if (!attachment.PageId.HasValue)
             {
-                if (!attachment.PageId.HasValue || !attachmentFiles.ContainsKey(attachment.Id))
-                    continue;
+                skippedNoPageId++;
+                logger.LogWarning("附件 {AttachmentId} ({Title}) 被跳过: PageId 为空", attachment.Id, attachment.Title);
+                continue;
+            }
 
-                var pageId = mapper.GetMappedPageId(attachment.PageId.Value);
-                if (pageId == null)
-                    continue;
+            if (!attachmentFiles.ContainsKey(attachment.Id))
+            {
+                skippedNoFile++;
+                logger.LogWarning("附件 {AttachmentId} ({Title}) 被跳过: ZIP 中未找到对应文件", attachment.Id, attachment.Title);
+                continue;
+            }
 
-                var creatorId = mapper.MapUserKey(attachment.CreatorKey);
+            var pageId = mapper.GetMappedPageId(attachment.PageId.Value);
+            if (pageId == null)
+            {
+                skippedNoPageMapping++;
+                logger.LogWarning("附件 {AttachmentId} ({Title}) 被跳过: 所属页面 {PageId} 未被映射", attachment.Id, attachment.Title, attachment.PageId.Value);
+                continue;
+            }
 
-                // 从ZIP提取文件
-                var entryName = attachmentFiles[attachment.Id];
-                var entry = archive.GetEntry(entryName);
-                if (entry == null)
-                    continue;
+            var creatorId = mapper.MapUserKey(attachment.CreatorKey);
 
-                // 创建存储路径
-                var storagePath = Path.Combine("attachments", pageId.Value.ToString(), attachment.Id.ToString());
-                var fullPath = Path.Combine(uploadsDir, pageId.Value.ToString(), attachment.Id.ToString());
+            // 从ZIP提取文件
+            var entryName = attachmentFiles[attachment.Id];
+            var entry = archive.GetEntry(entryName);
+            if (entry == null)
+            {
+                skippedNoEntry++;
+                logger.LogWarning("附件 {AttachmentId} ({Title}) 被跳过: ZIP 条目 {EntryName} 不存在", attachment.Id, attachment.Title, entryName);
+                continue;
+            }
 
-                if (!Directory.Exists(fullPath))
+            // 创建存储路径
+            var storagePath = Path.Combine("attachments", pageId.Value.ToString(), attachment.Id.ToString());
+            var fullPath = Path.Combine(uploadsDir, pageId.Value.ToString(), attachment.Id.ToString());
+
+            if (!Directory.Exists(fullPath))
+            {
+                Directory.CreateDirectory(fullPath);
+            }
+
+            var filePath = Path.Combine(fullPath, SanitizeFileName(attachment.Title));
+            using (var stream = entry.Open())
+            using (var fileStream = File.Create(filePath))
+            {
+                await stream.CopyToAsync(fileStream);
+            }
+
+            // 计算文件哈希
+            var fileHash = await ComputeFileHashAsync(filePath);
+
+            var newAttachment = mapper.MapAttachment(
+                attachment,
+                pageId.Value,
+                creatorId,
+                Path.Combine(storagePath, SanitizeFileName(attachment.Title))
+            );
+
+            newAttachment.FileHash = fileHash;
+
+            var existing = await db.Db.Queryable<Attachment>()
+                .Where(a => a.FileName == attachment.Title && a.PageId == pageId.Value)
+                .FirstAsync();
+
+            long newId;
+            if (existing != null)
+            {
+                if (options.OverwriteExisting)
                 {
-                    Directory.CreateDirectory(fullPath);
+                    newAttachment.Id = existing.Id;
+                    newAttachment.CreatedAt = existing.CreatedAt;
+                    await db.Db.Updateable(newAttachment).ExecuteCommandAsync();
                 }
-
-                var filePath = Path.Combine(fullPath, SanitizeFileName(attachment.Title));
-                using (var stream = entry.Open())
-                using (var fileStream = File.Create(filePath))
-                {
-                    await stream.CopyToAsync(fileStream);
-                }
-
-                // 计算文件哈希
-                var fileHash = await ComputeFileHashAsync(filePath);
-
-                var newAttachment = mapper.MapAttachment(
-                    attachment,
-                    pageId.Value,
-                    creatorId,
-                    Path.Combine(storagePath, SanitizeFileName(attachment.Title))
-                );
-
-                newAttachment.FileHash = fileHash;
-
-                var existing = await db.Db.Queryable<Attachment>()
-                    .Where(a => a.FileName == attachment.Title && a.PageId == pageId.Value)
-                    .FirstAsync();
-
-                long newId;
-                if (existing != null)
-                {
-                    if (options.OverwriteExisting)
+                newId = existing.Id;
+            }
+            else
+            {
+                // 强制插入原始 ID
+                await db.Db.Ado.ExecuteCommandAsync(
+                    "INSERT INTO \"attachments\" (\"id\", \"filename\", \"filesize\", \"contenttype\", \"storagepath\", \"pageid\", \"creatorid\", \"version\", \"isdeleted\", \"createdat\", \"updatedat\", \"filehash\") " +
+                    "VALUES (@Id::bigint, @FileName, @FileSize::bigint, @ContentType, @StoragePath, @PageId::bigint, @CreatorId::bigint, @Version::integer, @IsDeleted::boolean, @CreatedAt::timestamp, @UpdatedAt::timestamp, @FileHash)",
+                    new
                     {
-                        newAttachment.Id = existing.Id;
-                        newAttachment.CreatedAt = existing.CreatedAt;
-                        await db.Db.Updateable(newAttachment).ExecuteCommandAsync();
-                    }
-                    newId = existing.Id;
-                }
-                else
-                {
-                    newId = await db.Db.Insertable(newAttachment).ExecuteReturnIdentityAsync();
-                }
-
-                mapper.AddAttachmentMapping(attachment.Id, newId);
-
-                // 添加到 URL 映射（用于内容转换）
-                var accessUrl = $"/{newAttachment.StoragePath}";
-                attachmentUrlMap[attachment.Id] = accessUrl;
-
-                count++;
+                        newAttachment.Id,
+                        newAttachment.FileName,
+                        newAttachment.FileSize,
+                        newAttachment.ContentType,
+                        newAttachment.StoragePath,
+                        newAttachment.PageId,
+                        newAttachment.CreatorId,
+                        newAttachment.Version,
+                        newAttachment.IsDeleted,
+                        newAttachment.CreatedAt,
+                        newAttachment.UpdatedAt,
+                        newAttachment.FileHash
+                    });
+                newId = attachment.Id;
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "导入附件失败: {Title}", attachment.Title);
-            }
+
+            mapper.AddAttachmentMapping(attachment.Id, newId);
+
+            // 添加到 URL 映射（用于内容转换）
+            // 静态文件通过 /uploads 路径访问，所以需要添加此前缀
+            var accessUrl = $"/uploads/{newAttachment.StoragePath.Replace("\\", "/")}";
+            attachmentUrlMap[attachment.Id] = accessUrl;
+
+            count++;
         }
+
+        logger.LogInformation("附件导入完成: 成功 {SuccessCount}, 跳过 - 无PageId: {NoPageId}, 无文件: {NoFile}, 无页面映射: {NoMapping}, 无ZIP条目: {NoEntry}",
+            count, skippedNoPageId, skippedNoFile, skippedNoPageMapping, skippedNoEntry);
+        logger.LogInformation("附件 URL 映射构建完成，共 {Count} 条", attachmentUrlMap.Count);
+
+        // 尝试更新序列
+        try { await db.Db.Ado.ExecuteCommandAsync("SELECT setval('\"attachments_id_seq\"', (SELECT MAX(id) FROM \"attachments\"))"); } catch { }
 
         return count;
     }
@@ -658,49 +760,58 @@ public class ConfluenceImportService
 
         foreach (var comment in comments)
         {
-            try
+            if (!comment.PageId.HasValue || comment.IsDeleted)
+                continue;
+
+            var pageId = mapper.GetMappedPageId(comment.PageId.Value);
+            if (pageId == null)
+                continue;
+
+            var newComment = mapper.MapComment(comment, pageId.Value);
+
+            // 检查重复
+            var existing = await db.Db.Queryable<PageComment>()
+                .Where(c => c.PageId == pageId.Value && c.Content == comment.Content)
+                .FirstAsync();
+
+            long newId;
+            if (existing != null)
             {
-                if (!comment.PageId.HasValue || comment.IsDeleted)
-                    continue;
-
-                var pageId = mapper.GetMappedPageId(comment.PageId.Value);
-                if (pageId == null)
-                    continue;
-
-                var newComment = mapper.MapComment(comment, pageId.Value);
-
-                // 这里简单的通过 PageId 和内容判断是否存在
-                var existing = await db.Db.Queryable<PageComment>()
-                    .Where(c => c.PageId == pageId.Value && c.Content == comment.Content)
-                    .FirstAsync();
-
-                long newId;
-                if (existing != null)
+                if (options.OverwriteExisting)
                 {
-                    if (options.OverwriteExisting)
+                    newComment.Id = existing.Id;
+                    await db.Db.Updateable(newComment).ExecuteCommandAsync();
+                }
+                newId = existing.Id;
+            }
+            else
+            {
+                // 强制插入原始 ID
+                await db.Db.Ado.ExecuteCommandAsync(
+                    "INSERT INTO \"page_comments\" (\"id\", \"content\", \"pageid\", \"userid\", \"createdat\", \"updatedat\") " +
+                    "VALUES (@Id::bigint, @Content, @PageId::bigint, @UserId::bigint, @CreatedAt::timestamp, @UpdatedAt::timestamp)",
+                    new
                     {
-                        newComment.Id = existing.Id;
-                        await db.Db.Updateable(newComment).ExecuteCommandAsync();
-                    }
-                    newId = existing.Id;
-                }
-                else
-                {
-                    newId = await db.Db.Insertable(newComment).ExecuteReturnIdentityAsync();
-                }
-
-                mapper.AddCommentMapping(comment.Id, newId);
-
-                count++;
+                        newComment.Id,
+                        newComment.Content,
+                        newComment.PageId,
+                        newComment.UserId,
+                        newComment.CreatedAt,
+                        newComment.UpdatedAt
+                    });
+                newId = comment.Id;
             }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "导入评论失败: {Id}", comment.Id);
-            }
+
+            mapper.AddCommentMapping(comment.Id, newId);
+            count++;
         }
+
+        // 尝试更新序列
+        try { await db.Db.Ado.ExecuteCommandAsync("SELECT setval('\"page_comments_id_seq\"', (SELECT MAX(id) FROM \"page_comments\"))"); } catch { }
 
         return count;
     }
+
 
     /// <summary>
     /// 更新导入进度

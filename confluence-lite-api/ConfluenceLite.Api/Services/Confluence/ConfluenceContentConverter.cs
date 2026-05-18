@@ -104,7 +104,15 @@ public class ConfluenceContentConverter
 
                 // 尝试获取附件 ID
                 long? attachmentId = null;
-                if (pageRef != null)
+
+                // 优先从 <ri:attachment> 获取 attachment-id
+                var attachmentIdAttr = attachment.Attribute(Ri + "attachment-id");
+                if (attachmentIdAttr != null && long.TryParse(attachmentIdAttr.Value, out var attId))
+                {
+                    attachmentId = attId;
+                }
+                // 备用：从 <ri:page> 获取 content-id
+                else if (pageRef != null)
                 {
                     var contentId = pageRef.Attribute(Ri + "content-id")?.Value;
                     if (long.TryParse(contentId, out var id))
@@ -158,6 +166,7 @@ public class ConfluenceContentConverter
         }
 
         return new XElement("img",
+            new XAttribute("class", "image"),
             new XAttribute("src", src),
             new XAttribute("alt", filename ?? ""),
             new XAttribute("loading", "lazy")

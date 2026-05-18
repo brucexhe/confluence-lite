@@ -138,6 +138,7 @@ public class SetupService
         {
             var adminUser = new User
             {
+                Id=1,
                 Username = request.AdminUsername,
                 Email = request.AdminEmail,
                 PasswordHash = PasswordService.HashPassword(request.AdminPassword),

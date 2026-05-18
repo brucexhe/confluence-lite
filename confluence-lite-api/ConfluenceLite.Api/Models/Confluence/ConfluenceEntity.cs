@@ -116,12 +116,12 @@ public class ConfluenceSpace : ConfluenceEntity
     /// <summary>
     /// 描述ID（需要从 SpaceDescription 获取）
     /// </summary>
-    public long? DescriptionId => GetLongProperty("description.id");
+    public long? DescriptionId => GetLongProperty("description.id") is var id && id > 0 ? id : null;
 
     /// <summary>
     /// 主页ID
     /// </summary>
-    public long? HomePageId => GetLongProperty("homePage.id");
+    public long? HomePageId => GetLongProperty("homePage.id") is var id && id > 0 ? id : null;
 
     /// <summary>
     /// 创建者用户键
@@ -187,17 +187,17 @@ public class ConfluencePage : ConfluenceEntity
     /// <summary>
     /// 所属空间ID
     /// </summary>
-    public long? SpaceId => GetLongProperty("space.id");
+    public long? SpaceId => GetLongProperty("space.id") is var id && id > 0 ? id : null;
 
     /// <summary>
     /// 父页面ID
     /// </summary>
-    public long? ParentId => GetLongProperty("parent.id");
+    public long? ParentId => GetLongProperty("parent.id") is var id && id > 0 ? id : null;
 
     /// <summary>
     /// 正文内容ID（需要从 BodyContent 获取）
     /// </summary>
-    public long? BodyContentId => GetLongProperty("bodyContents.id");
+    public long? BodyContentId => GetLongProperty("bodyContents.id") is var id && id > 0 ? id : null;
 }
 
 /// <summary>
@@ -254,7 +254,18 @@ public class ConfluenceAttachment : ConfluenceEntity
     /// <summary>
     /// 所属页面ID
     /// </summary>
-    public long? PageId => GetLongProperty("page.id");
+    public long? PageId
+    {
+        get
+        {
+            // 尝试多种可能的属性名称
+            if (GetLongProperty("page.id") is var id1 && id1 > 0) return id1;
+            if (GetLongProperty("container.id") is var id2 && id2 > 0) return id2;
+            if (GetLongProperty("content.id") is var id3 && id3 > 0) return id3;
+            if (GetLongProperty("containerContent.id") is var id4 && id4 > 0) return id4;
+            return null;
+        }
+    }
 
     /// <summary>
     /// 创建者用户键
@@ -290,7 +301,9 @@ public class ConfluenceComment : ConfluenceEntity
     /// <summary>
     /// 所属页面ID
     /// </summary>
-    public long? PageId => GetLongProperty("page.id");
+    public long? PageId => GetLongProperty("page.id") is var id && id > 0 ? id : 
+                           (GetLongProperty("container.id") is var cid && cid > 0 ? cid : 
+                           (GetLongProperty("content.id") is var coid && coid > 0 ? coid : null));
 
     /// <summary>
     /// 创建者用户键
@@ -331,7 +344,9 @@ public class ConfluenceBodyContent : ConfluenceEntity
     /// <summary>
     /// 所属页面ID
     /// </summary>
-    public long? PageId => GetLongProperty("page.id");
+    public long? PageId => GetLongProperty("page.id") is var id && id > 0 ? id : 
+                           (GetLongProperty("container.id") is var cid && cid > 0 ? cid : 
+                           (GetLongProperty("content.id") is var coid && coid > 0 ? coid : null));
 }
 
 /// <summary>
@@ -347,5 +362,6 @@ public class ConfluenceSpaceDescription : ConfluenceEntity
     /// <summary>
     /// 所属空间ID
     /// </summary>
-    public long? SpaceId => GetLongProperty("space.id");
+    public long? SpaceId => GetLongProperty("space.id") is var id && id > 0 ? id : 
+                            (GetLongProperty("content.id") is var coid && coid > 0 ? coid : null);
 }

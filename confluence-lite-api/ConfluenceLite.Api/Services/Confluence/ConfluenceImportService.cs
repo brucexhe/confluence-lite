@@ -166,7 +166,7 @@ public class ConfluenceImportService
             // 解析备份文件
             var data = await parser.ParseBackupAsync(task.SourceFile, async progress =>
             {
-                await UpdateProgressAsync(db, taskId, progress);
+                await UpdateProgressAsync(db, task, progress);
             });
 
             // 执行导入
@@ -176,6 +176,19 @@ public class ConfluenceImportService
             {
                 task.Status = "completed";
                 task.CompletedAt = DateTime.Now;
+
+                // 更新最终进度
+                var finalProgress = new ImportProgress
+                {
+                    TotalItems = data.Users.Count + data.Spaces.Count + data.Pages.Count +
+                                data.Attachments.Count + data.Comments.Count,
+                    ProcessedItems = result.SuccessCount,
+                    FailedItems = result.FailedCount,
+                    CurrentStep = "导入完成",
+                    EntityCounts = result.EntityCounts
+                };
+                task.Progress = JsonSerializer.Serialize(finalProgress, AppJsonContext.Default.ImportProgress);
+
                 _logger.LogInformation("导入完成: {TaskId}, 成功: {Success}, 失败: {Failed}",
                     taskId, result.SuccessCount, result.FailedCount);
             }
@@ -238,35 +251,35 @@ public class ConfluenceImportService
             if (options.ImportUsers && data.Users.Any())
             {
                 progress.CurrentStep = "正在导入用户...";
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
 
                 var userCount = await ImportUsersAsync(db, logger, data.Users, mapper);
                 result.EntityCounts["Users"] = userCount;
                 result.SuccessCount += userCount;
                 progress.ProcessedItems += userCount;
                 progress.EntityCounts["Users"] = userCount;
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
             }
 
             // 2. 导入空间
             if (options.ImportSpaces && data.Spaces.Any())
             {
                 progress.CurrentStep = "正在导入空间...";
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
 
                 var spaceCount = await ImportSpacesAsync(db, logger, data.Spaces, mapper, spaceDescriptionMap, options);
                 result.EntityCounts["Spaces"] = spaceCount;
                 result.SuccessCount += spaceCount;
                 progress.ProcessedItems += spaceCount;
                 progress.EntityCounts["Spaces"] = spaceCount;
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
             }
 
             // 3. 导入附件（需要在页面之前导入，以便构建 URL 映射）
             if (options.ImportAttachments && data.Attachments.Any())
             {
                 progress.CurrentStep = "正在导入附件...";
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
 
                 var attachmentCount = await ImportAttachmentsAsync(db, env, logger,
                     data.Attachments,
@@ -279,14 +292,14 @@ public class ConfluenceImportService
                 result.SuccessCount += attachmentCount;
                 progress.ProcessedItems += attachmentCount;
                 progress.EntityCounts["Attachments"] = attachmentCount;
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
             }
 
             // 4. 导入页面（使用内容转换器）
             if (options.ImportPages && data.Pages.Any())
             {
                 progress.CurrentStep = "正在导入页面...";
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
 
                 var pageCount = await ImportPagesAsync(db, logger,
                     data.Pages,
@@ -298,21 +311,21 @@ public class ConfluenceImportService
                 result.SuccessCount += pageCount;
                 progress.ProcessedItems += pageCount;
                 progress.EntityCounts["Pages"] = pageCount;
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
             }
 
             // 5. 导入评论
             if (options.ImportComments && data.Comments.Any())
             {
                 progress.CurrentStep = "正在导入评论...";
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
 
                 var commentCount = await ImportCommentsAsync(db, logger, data.Comments, mapper, options);
                 result.EntityCounts["Comments"] = commentCount;
                 result.SuccessCount += commentCount;
                 progress.ProcessedItems += commentCount;
                 progress.EntityCounts["Comments"] = commentCount;
-                await UpdateProgressAsync(db, task.Id, progress);
+                await UpdateProgressAsync(db, task, progress);
             }
 
             result.IsSuccess = true;
@@ -692,19 +705,20 @@ public class ConfluenceImportService
     /// <summary>
     /// 更新导入进度
     /// </summary>
-    private async Task UpdateProgressAsync(AppDbContext db, long taskId, ImportProgress progress)
+    private async Task UpdateProgressAsync(AppDbContext db, ImportTask task, ImportProgress progress)
     {
         try
         {
             var progressJson = JsonSerializer.Serialize(progress, AppJsonContext.Default.ImportProgress);
+            task.Progress = progressJson;
 
             await db.Db.Ado.ExecuteCommandAsync(
                 "UPDATE \"import_tasks\" SET \"progress\" = @progress::jsonb WHERE \"id\" = @id",
-                new { progress = progressJson, id = taskId });
+                new { progress = progressJson, id = task.Id });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "更新导入进度失败: {TaskId}", taskId);
+            _logger.LogError(ex, "更新导入进度失败: {TaskId}", task.Id);
         }
     }
 

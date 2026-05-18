@@ -100,9 +100,9 @@ public class ConfluenceXmlParser
 
         ParseAttachmentFiles(archive, result);
 
-        _logger.LogInformation("解析完成: {SpaceCount} 个空间, {PageCount} 个页面, {UserCount} 个用户, {AttachmentCount} 个附件, {CommentCount} 个评论",
+        _logger.LogInformation("解析完成: {SpaceCount} 个空间, {PageCount} 个页面, {UserCount} 个用户, {AttachmentCount} 个附件, {CommentCount} 个评论, {BodyCount} 个正文, {DescCount} 个描述",
             result.Spaces.Count, result.Pages.Count, result.Users.Count,
-            result.Attachments.Count, result.Comments.Count);
+            result.Attachments.Count, result.Comments.Count, result.BodyContents.Count, result.SpaceDescriptions.Count);
 
         return result;
     }
@@ -120,32 +120,55 @@ public class ConfluenceXmlParser
         };
 
         using var reader = XmlReader.Create(xmlStream, settings);
-        var currentElement = new StringBuilder();
-        var classAttribute = string.Empty;
-        var idAttribute = 0L;
         var totalCount = 0;
 
         while (await reader.ReadAsync())
         {
-            if (reader.NodeType == XmlNodeType.Element && reader.Name == "object")
+            // Confluence 7.x 实体通常是 <object class="...">
+            if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "object")
             {
-                classAttribute = reader.GetAttribute("class") ?? string.Empty;
-                var idStr = reader.GetAttribute("id");
-                long.TryParse(idStr, out idAttribute);
+                var classAttr = reader.GetAttribute("class");
 
-                currentElement.Clear();
-            }
-            else if (reader.NodeType == XmlNodeType.Text)
-            {
-                currentElement.Append(await reader.GetValueAsync());
-            }
-            else if (reader.NodeType == XmlNodeType.EndElement && reader.Name == "object")
-            {
-                var entity = CreateEntity(classAttribute, idAttribute, currentElement.ToString());
-                if (entity != null)
+                if (!string.IsNullOrEmpty(classAttr))
                 {
-                    AddEntityToResult(result, entity);
-                    totalCount++;
+                    try
+                    {
+                        // 使用 ReadSubtree 并使用 XElement 加载，这是最稳健的解析方式
+                        using var subReader = reader.ReadSubtree();
+                        var element = await XElement.LoadAsync(subReader, LoadOptions.None, default);
+
+                        // Confluence 7.19 ID 格式为子元素 <id name="id">52854786</id>
+                        // 兼容旧版本的属性格式 id="..."
+                        var idVal = element.Attribute("id")?.Value ?? element.Element("id")?.Value;
+
+                        if (!string.IsNullOrEmpty(idVal))
+                        {
+                            // 尝试转换为 long，如果是非数字 ID（如某些 User Key），转换失败则为 0，
+                            // 但 CreateEntityFromElement 内部会从属性中获取真正的 Key
+                            long.TryParse(idVal, out var idAttribute);
+
+                            var entity = CreateEntityFromElement(classAttr, idAttribute, element);
+                            if (entity != null)
+                            {
+                                AddEntityToResult(result, entity);
+                                totalCount++;
+
+                                if (totalCount % 500 == 0 && progressCallback != null)
+                                {
+                                    await progressCallback(new ImportProgress
+                                    {
+                                        TotalItems = totalCount,
+                                        ProcessedItems = totalCount,
+                                        CurrentStep = $"解析 entities.xml 中 (已处理 {totalCount} 个实体)..."
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "解析 XML 元素失败，Class: {Class}", classAttr);
+                    }
                 }
             }
         }
@@ -161,25 +184,28 @@ public class ConfluenceXmlParser
     }
 
     /// <summary>
-    /// 创建实体对象
+    /// 从 XElement 创建实体对象
     /// </summary>
-    private ConfluenceEntity? CreateEntity(string className, long id, string xmlContent)
+    private ConfluenceEntity? CreateEntityFromElement(string className, long id, XElement element)
     {
         if (string.IsNullOrEmpty(className) || id <= 0)
             return null;
 
-        var properties = ParseProperties(xmlContent);
+        var shortClassName = className.Contains('.') ? className.Split('.').Last() : className;
+        var properties = ParsePropertiesFromElement(element);
 
         ConfluenceEntity entity;
-        switch (className)
+        switch (shortClassName)
         {
             case "Space":
                 entity = new ConfluenceSpace { Id = id, Class = className };
                 break;
             case "Page":
+            case "BlogPost":
                 entity = new ConfluencePage { Id = id, Class = className };
                 break;
             case "User":
+            case "ConfluenceUser":
                 entity = new ConfluenceUser { Id = id, Class = className };
                 break;
             case "Attachment":
@@ -203,48 +229,75 @@ public class ConfluenceXmlParser
     }
 
     /// <summary>
-    /// 解析属性和集合
+    /// 从 XElement 解析属性
     /// </summary>
-    private Dictionary<string, object?> ParseProperties(string xmlContent)
+    private Dictionary<string, object?> ParsePropertiesFromElement(XElement element)
     {
         var properties = new Dictionary<string, object?>();
 
-        if (string.IsNullOrWhiteSpace(xmlContent))
-            return properties;
-
-        try
+        // 1. 解析 property 元素
+        foreach (var prop in element.Elements("property"))
         {
-            var doc = XDocument.Parse($"<root>{xmlContent}</root>");
-            var root = doc.Root;
+            var name = prop.Attribute("name")?.Value;
+            if (string.IsNullOrEmpty(name)) continue;
 
-            if (root == null)
-                return properties;
-
-            // 解析 property 元素
-            foreach (var prop in root.Elements("property"))
+            // Confluence 7.19 引用格式: <property name="space"><id name="id">123</id></property>
+            var idChild = prop.Element("id");
+            if (idChild != null)
             {
-                var name = prop.Attribute("name")?.Value;
-                var value = prop.Attribute("value")?.Value;
-
-                if (!string.IsNullOrEmpty(name))
-                {
-                    properties[name] = value;
-                }
+                var idName = idChild.Attribute("name")?.Value ?? "id";
+                var idVal = idChild.Value;
+                properties[$"{name}.{idName}"] = idVal;
+                properties[name] = idVal; // 同时也直接存储
             }
-
-            // 解析 collection 元素
-            foreach (var coll in root.Elements("collection"))
+            else
             {
-                var name = coll.Attribute("name")?.Value;
-                if (!string.IsNullOrEmpty(name))
+                // 兼容逻辑：检查子 element (旧版本引用类型)
+                var eleRef = prop.Element("element");
+                if (eleRef != null)
                 {
-                    properties[$"{name}.id"] = name; // 标记为集合引用
+                    var refIdStr = eleRef.Attribute("id")?.Value;
+                    if (long.TryParse(refIdStr, out var refId))
+                    {
+                        properties[$"{name}.id"] = refId;
+                        properties[name] = refId; 
+                    }
+                }
+                else
+                {
+                    // 尝试从 value 属性读取，否则读取节点文本（自动包含 CDATA）
+                    var valueAttr = prop.Attribute("value");
+                    properties[name] = valueAttr != null ? valueAttr.Value : prop.Value;
                 }
             }
         }
-        catch (Exception ex)
+
+        // 2. 解析 collection 元素
+        foreach (var coll in element.Elements("collection"))
         {
-            _logger.LogWarning(ex, "解析属性失败: {Message}", ex.Message);
+            var name = coll.Attribute("name")?.Value;
+            if (string.IsNullOrEmpty(name)) continue;
+
+            // Confluence 7.19 集合元素格式: <collection><element><id name="id">123</id></element></collection>
+            var firstElement = coll.Element("element");
+            if (firstElement != null)
+            {
+                var idChild = firstElement.Element("id");
+                if (idChild != null)
+                {
+                    var idName = idChild.Attribute("name")?.Value ?? "id";
+                    properties[$"{name}.{idName}"] = idChild.Value;
+                }
+                else
+                {
+                    // 兼容旧版本：<element id="123" />
+                    var refIdStr = firstElement.Attribute("id")?.Value;
+                    if (long.TryParse(refIdStr, out var refId))
+                    {
+                        properties[$"{name}.id"] = refId;
+                    }
+                }
+            }
         }
 
         return properties;
@@ -292,8 +345,10 @@ public class ConfluenceXmlParser
 
         foreach (var entry in attachmentEntries)
         {
+            // 规范化路径分隔符
+            var normalizedPath = entry.FullName.Replace('\\', '/');
             // Confluence 7.x 格式: attachments/{attId}/{pageId}/{version}
-            var parts = entry.FullName.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var parts = normalizedPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length >= 3 && long.TryParse(parts[1], out var attachmentId))
             {
                 result.AttachmentFiles[attachmentId] = entry.FullName;

@@ -197,12 +197,14 @@ const router = createRouter({
 let _installChecked = false
 
 async function checkInstalled() {
+    const site = useSiteInfo()
     if (_installChecked) {
-        const site = useSiteInfo()
         return {installed: site.installed.value, apiAvailable: true}
     }
-    _installChecked = true
     const result = await loadSiteInfo()
+    if (result.apiAvailable) {
+        _installChecked = true
+    }
     return result
 }
 

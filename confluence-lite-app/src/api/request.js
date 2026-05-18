@@ -72,7 +72,12 @@ async function request(url, options = {}) {
     throw new ApiError(json.message || '操作失败', res.status, json)
   }
 
-  // 非标准格式，直接返回
+  // 非标准格式且 HTTP 状态码非 2xx，抛出错误
+  if (!res.ok) {
+    throw new ApiError(json.message || `请求失败: HTTP ${res.status}`, res.status, json)
+  }
+
+  // 非标准格式且 HTTP 状态码为 2xx，直接返回
   return json
 }
 

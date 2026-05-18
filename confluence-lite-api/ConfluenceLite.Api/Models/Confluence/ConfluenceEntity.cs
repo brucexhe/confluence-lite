@@ -24,7 +24,29 @@ public class ConfluenceEntity
         if (Properties.TryGetValue(key, out var value))
         {
             if (value == null) return defaultValue;
-            return (T?)value;
+            if (value is T tValue) return tValue;
+
+            // 尝试将字符串转换为目标类型（如 long, int, bool）
+            try
+            {
+                var strValue = value.ToString();
+                if (string.IsNullOrEmpty(strValue)) return defaultValue;
+
+                if (typeof(T) == typeof(long) && long.TryParse(strValue, out var l)) return (T)(object)l;
+                if (typeof(T) == typeof(int) && int.TryParse(strValue, out var i)) return (T)(object)i;
+                if (typeof(T) == typeof(bool))
+                {
+                    if (bool.TryParse(strValue, out var b)) return (T)(object)b;
+                    if (strValue == "1" || strValue.Equals("true", StringComparison.OrdinalIgnoreCase)) return (T)(object)true;
+                    if (strValue == "0" || strValue.Equals("false", StringComparison.OrdinalIgnoreCase)) return (T)(object)false;
+                }
+                
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            catch
+            {
+                return defaultValue;
+            }
         }
         return defaultValue;
     }

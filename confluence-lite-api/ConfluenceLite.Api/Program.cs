@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using SqlSugar;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Models;
@@ -159,6 +160,18 @@ builder.Services.AddCors(options =>
 // ========== JWT 配置 ==========
 builder.Services.AddAuthentication()
     .AddJwtBearer();
+
+// ========== 配置 Kestrel 服务器限制 ==========
+builder.Services.Configure<KestrelServerOptions>(options =>
+{
+    options.Limits.MaxRequestBodySize = 1073741824; // 1GB (默认是 30MB)
+});
+
+// 如果使用 IIS，也需要配置
+builder.Services.Configure<IISServerOptions>(options =>
+{
+    options.MaxRequestBodySize = 1073741824; // 1GB
+});
 
 // ========== 应用构建 ==========
 var app = builder.Build();

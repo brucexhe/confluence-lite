@@ -61,9 +61,6 @@ public class DataMappingService
             UpdatedAt = source.LastModificationDate ?? DateTime.Now
         };
 
-        // 记录ID映射
-        _spaceIdMap[source.Id] = source.Id;
-
         return workspace;
     }
 
@@ -95,9 +92,6 @@ public class DataMappingService
             UpdatedAt = source.LastModificationDate ?? DateTime.Now
         };
 
-        // 记录ID映射
-        _pageIdMap[source.Id] = source.Id;
-
         return page;
     }
 
@@ -118,9 +112,6 @@ public class DataMappingService
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
-
-        // 记录用户键映射
-        _userKeyMap[source.Key] = user.Id;
 
         return user;
     }
@@ -145,9 +136,6 @@ public class DataMappingService
             UpdatedAt = DateTime.Now
         };
 
-        // 记录ID映射
-        _attachmentIdMap[source.Id] = source.Id;
-
         return attachment;
     }
 
@@ -168,9 +156,6 @@ public class DataMappingService
             UpdatedAt = source.LastModificationDate ?? DateTime.Now
         };
 
-        // 记录ID映射
-        _commentIdMap[source.Id] = source.Id;
-
         return comment;
     }
 
@@ -180,6 +165,38 @@ public class DataMappingService
     public void AddUserMapping(string confluenceKey, long systemUserId)
     {
         _userKeyMap[confluenceKey] = systemUserId;
+    }
+
+    /// <summary>
+    /// 添加空间映射
+    /// </summary>
+    public void AddSpaceMapping(long confluenceId, long systemId)
+    {
+        _spaceIdMap[confluenceId] = systemId;
+    }
+
+    /// <summary>
+    /// 添加页面映射
+    /// </summary>
+    public void AddPageMapping(long confluenceId, long systemId)
+    {
+        _pageIdMap[confluenceId] = systemId;
+    }
+
+    /// <summary>
+    /// 添加附件映射
+    /// </summary>
+    public void AddAttachmentMapping(long confluenceId, long systemId)
+    {
+        _attachmentIdMap[confluenceId] = systemId;
+    }
+
+    /// <summary>
+    /// 添加评论映射
+    /// </summary>
+    public void AddCommentMapping(long confluenceId, long systemId)
+    {
+        _commentIdMap[confluenceId] = systemId;
     }
 
     /// <summary>

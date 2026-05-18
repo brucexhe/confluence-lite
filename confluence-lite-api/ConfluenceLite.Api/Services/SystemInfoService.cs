@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Models;
@@ -150,12 +151,28 @@ public class SystemInfoService
     /// <summary>
     /// 获取构建时间
     /// </summary>
+    [UnconditionalSuppressMessage("SingleFile", "IL3000:Avoid accessing Assembly.Location", Justification = "We handle the empty location case for Native AOT.")]
     private string GetBuildTime(System.Reflection.Assembly assembly)
     {
         try
         {
-            var buildDate = System.IO.File.GetCreationTime(assembly.Location);
-            return buildDate.ToString("yyyy-MM-dd HH:mm:ss");
+            var filePath = assembly.Location;
+            if (string.IsNullOrEmpty(filePath))
+            {
+                filePath = Path.Combine(AppContext.BaseDirectory, System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + ".exe");
+                if (!File.Exists(filePath))
+                {
+                    filePath = Path.Combine(AppContext.BaseDirectory, System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + ".dll");
+                }
+            }
+
+            if (File.Exists(filePath))
+            {
+                var buildDate = System.IO.File.GetLastWriteTime(filePath);
+                return buildDate.ToString("yyyy-MM-dd HH:mm:ss");
+            }
+            
+            return "Unknown";
         }
         catch
         {

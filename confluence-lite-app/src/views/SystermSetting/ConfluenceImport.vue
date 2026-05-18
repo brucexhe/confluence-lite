@@ -42,13 +42,13 @@
           @remove="handleRemoveFile"
           accept=".zip"
           :max-count="1"
-          :disabled="importing"
+          :disabled="uploading || importing"
         >
           <p class="ant-upload-drag-icon">
             <Upload :size="48" />
           </p>
           <p class="ant-upload-text">点击或拖拽文件到此处上传</p>
-          <p class="ant-upload-hint">支持 .zip 格式，最大 100MB</p>
+          <p class="ant-upload-hint">支持 .zip 格式，最大 1GB</p>
         </a-upload-dragger>
       </div>
 
@@ -66,15 +66,26 @@
 
       <!-- 导入按钮 -->
       <div class="section">
-        <a-space>
+        <a-space direction="vertical" style="width: 100%">
           <a-button
             type="primary"
-            :loading="importing"
+            :loading="uploading"
             :disabled="uploadFileList.length === 0 || importOptions.types.length === 0"
             @click="startImport"
+            :style="{ width: '100%' }"
           >
-            开始导入
+            <template v-if="uploading">
+              正在上传... {{ uploadProgress }}%
+            </template>
+            <template v-else>
+              开始导入
+            </template>
           </a-button>
+          <a-progress
+            v-if="uploading"
+            :percent="uploadProgress"
+            :stroke-color="{ '0%': '#108ee9', '100%': '#87d068' }"
+          />
         </a-space>
       </div>
 
@@ -216,7 +227,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Upload, AlertCircle, Loader2 } from 'lucide-vue-next'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { systemSettingApi } from '@/api'
 
 const importOptions = ref({
@@ -225,6 +236,8 @@ const importOptions = ref({
 })
 
 const uploadFileList = ref([])
+const uploading = ref(false)
+const uploadProgress = ref(0)
 const importing = ref(false)
 const currentImportTask = ref(null)
 const importTasks = ref([])
@@ -270,12 +283,21 @@ const handleBeforeUpload = (file) => {
     return false
   }
 
-  const isLt100M = file.size / 1024 / 1024 < 100
-  if (!isLt100M) {
-    message.error('备份文件大小不能超过 100MB')
+  const isLt1G = file.size / 1024 / 1024 / 1024 < 1
+  if (!isLt1G) {
+    message.error('备份文件大小不能超过 1GB')
     return false
   }
 
+  // 手动将文件添加到文件列表中
+  uploadFileList.value = [{
+    uid: file.uid || String(Date.now()),
+    name: file.name,
+    status: 'done',
+    originFileObj: file
+  }]
+
+  // 返回 false 阻止自动上传
   return false
 }
 
@@ -296,7 +318,7 @@ const startImport = async () => {
 
   if (importOptions.value.overwriteExisting) {
     const confirmed = await new Promise((resolve) => {
-      const modal = message.confirm({
+      Modal.confirm({
         title: '确认覆盖现有数据',
         content: '启用覆盖后，已存在的空间、页面和用户数据将被覆盖，此操作不可撤销。确定要继续吗？',
         okText: '确定覆盖',
@@ -311,7 +333,8 @@ const startImport = async () => {
     if (!confirmed) return
   }
 
-  importing.value = true
+  uploading.value = true
+  uploadProgress.value = 0
 
   try {
     const file = uploadFileList.value[0].originFileObj
@@ -324,11 +347,14 @@ const startImport = async () => {
       overwriteExisting: importOptions.value.overwriteExisting
     }
 
-    const response = await systemSettingApi.importFromConfluence(file, options)
+    const response = await systemSettingApi.importFromConfluence(file, options, (progress) => {
+      uploadProgress.value = progress
+    })
 
     if (response) {
       message.success('导入任务已创建')
       currentImportTask.value = response
+      importing.value = true
       startPolling(response.id)
       await loadImportTasks()
     }
@@ -336,7 +362,8 @@ const startImport = async () => {
     console.error('导入失败:', error)
     message.error('导入失败: ' + (error.message || '未知错误'))
   } finally {
-    importing.value = false
+    uploading.value = false
+    uploadProgress.value = 0
   }
 }
 

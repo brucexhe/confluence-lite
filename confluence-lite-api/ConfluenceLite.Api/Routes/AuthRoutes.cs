@@ -64,7 +64,7 @@ public static class AuthRoutes
 
             var response = new LoginResponse
             {
-                Token = null,
+                Token = "",
                 TokenType = "Bearer",
                 ExpiresIn = 1440,
                 User = user,

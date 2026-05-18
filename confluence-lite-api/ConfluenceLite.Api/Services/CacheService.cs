@@ -24,7 +24,7 @@ public class CacheService
         return Task.FromResult(new CacheStatsDto
         {
             KeyCount = _stats.KeyCount,
-            MemoryUsed = _stats.MemoryUsed,
+            MemoryUsed = 0,
             MemoryTotal = 100 * 1024 * 1024, // 100MB 默认限制
             HitRate = _stats.GetHitRate()
         });
@@ -138,12 +138,10 @@ public class CacheService
 internal class CacheStats
 {
     private int _keyCount;
-    private long _memoryUsed;
     private long _totalHits;
     private long _totalMisses;
 
     public int KeyCount => _keyCount;
-    public long MemoryUsed => _memoryUsed;
 
     public void IncrementKey() => Interlocked.Increment(ref _keyCount);
     public void DecrementKey() => Interlocked.Decrement(ref _keyCount);

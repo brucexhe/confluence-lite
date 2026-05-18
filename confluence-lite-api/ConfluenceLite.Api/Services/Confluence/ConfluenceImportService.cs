@@ -5,6 +5,8 @@ using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Models;
 using ConfluenceLite.Api.Models.Confluence;
+using ConfluenceLite.Api.Mappers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ConfluenceLite.Api.Services.Confluence;
 
@@ -17,17 +19,20 @@ public class ConfluenceImportService
     private readonly ConfluenceXmlParser _parser;
     private readonly IHostEnvironment _env;
     private readonly ILogger<ConfluenceImportService> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public ConfluenceImportService(
         AppDbContext db,
         ConfluenceXmlParser parser,
         IHostEnvironment env,
-        ILogger<ConfluenceImportService> logger)
+        ILogger<ConfluenceImportService> logger,
+        IServiceScopeFactory scopeFactory)
     {
         _db = db;
         _parser = parser;
         _env = env;
         _logger = logger;
+        _scopeFactory = scopeFactory;
     }
 
     /// <summary>
@@ -38,41 +43,91 @@ public class ConfluenceImportService
         ImportOptions options,
         long userId)
     {
-        // 验证备份文件
-        var (isValid, error, version) = await _parser.ValidateBackupAsync(zipFilePath);
-        if (!isValid)
+        try
         {
-            return (null, error);
+            _logger.LogInformation("StartImportAsync 开始: {File}", zipFilePath);
+
+            // 快速验证：只检查文件是否存在和扩展名
+            if (!File.Exists(zipFilePath))
+            {
+                return (null, "文件不存在");
+            }
+
+            if (!zipFilePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                return (null, "仅支持 .zip 格式的备份文件");
+            }
+
+            _logger.LogInformation("文件验证通过，创建导入任务");
+
+            // 创建导入任务（先不验证内容，让后台任务去做）
+            var optionsJson = JsonSerializer.Serialize(options, AppJsonContext.Default.ImportOptions);
+            var taskName = $"Confluence Import ({DateTime.Now:yyyy-MM-dd HH:mm:ss})";
+
+            _logger.LogInformation("正在保存导入任务到数据库...");
+
+            // 使用 SQL 插入以正确处理 PostgreSQL 的 jsonb 类型
+            var taskIdList = await _db.Db.Ado.SqlQueryAsync<long>(
+                "INSERT INTO \"import_tasks\" (\"name\", \"sourcefile\", \"status\", \"options\", \"createdat\", \"createdbyid\") " +
+                "VALUES (@name, @sourcefile, @status, @options::jsonb, @createdat, @createdbyid) " +
+                "RETURNING \"id\"",
+                new
+                {
+                    name = taskName,
+                    sourcefile = zipFilePath,
+                    status = "pending",
+                    options = optionsJson,
+                    createdat = DateTime.Now,
+                    createdbyid = userId
+                });
+
+            var taskId = taskIdList.FirstOrDefault();
+            _logger.LogInformation("导入任务已保存，ID: {TaskId}", taskId);
+
+            var task = new ImportTask
+            {
+                Id = taskId,
+                Name = taskName,
+                SourceFile = zipFilePath,
+                Status = "pending",
+                Options = optionsJson,
+                CreatedById = userId,
+                CreatedAt = DateTime.Now
+            };
+
+            // 在后台执行导入（包含验证和解析）
+            _ = Task.Run(async () =>
+            {
+                using var scope = _scopeFactory.CreateScope();
+                try
+                {
+                    await ExecuteImportAsync(scope, taskId);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "后台导入任务执行失败: {TaskId}", taskId);
+                }
+            });
+
+            _logger.LogInformation("StartImportAsync 完成，返回任务: {TaskId}", taskId);
+            return (task, null);
         }
-
-        _logger.LogInformation("开始导入 Confluence 备份: {File}, Version: {Version}", zipFilePath, version);
-
-        // 创建导入任务
-        var task = new ImportTask
+        catch (Exception ex)
         {
-            Name = $"Confluence Import ({DateTime.Now:yyyy-MM-dd HH:mm:ss})",
-            SourceFile = zipFilePath,
-            Status = "pending",
-            Options = JsonSerializer.Serialize(options),
-            CreatedById = userId,
-            CreatedAt = DateTime.Now
-        };
-
-        var taskId = await _db.Db.Insertable(task).ExecuteReturnIdentityAsync();
-        task.Id = taskId;
-
-        // 在后台执行导入
-        _ = Task.Run(() => ExecuteImportAsync(taskId));
-
-        return (task, null);
+            _logger.LogError(ex, "StartImportAsync 发生异常");
+            return (null, ex.Message);
+        }
     }
 
     /// <summary>
     /// 执行导入（后台任务）
     /// </summary>
-    private async Task ExecuteImportAsync(long taskId)
+    private async Task ExecuteImportAsync(IServiceScope scope, long taskId)
     {
-        var task = await _db.Db.Queryable<ImportTask>()
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var parser = scope.ServiceProvider.GetRequiredService<ConfluenceXmlParser>();
+
+        var task = await db.Db.Queryable<ImportTask>()
             .Where(t => t.Id == taskId)
             .FirstAsync();
 
@@ -86,19 +141,36 @@ public class ConfluenceImportService
         {
             // 更新状态为处理中
             task.Status = "processing";
-            await _db.Db.Updateable(task).UpdateColumns(t => t.Status).ExecuteCommandAsync();
+            await db.Db.Updateable(task).UpdateColumns(t => t.Status).ExecuteCommandAsync();
+
+            // 先验证备份文件（在后台线程中，不会阻塞请求）
+            _logger.LogInformation("任务 {TaskId} 开始验证备份文件: {File}", taskId, task.SourceFile);
+            var (isValid, error, version) = await parser.ValidateBackupAsync(task.SourceFile);
+            if (!isValid)
+            {
+                _logger.LogError("任务 {TaskId} 备份文件验证失败: {Error}", taskId, error);
+                task.Status = "failed";
+                task.ErrorMessage = error;
+                task.CompletedAt = DateTime.Now;
+                await db.Db.Updateable(task).ExecuteCommandAsync();
+                return;
+            }
+
+            _logger.LogInformation("任务 {TaskId} 备份文件验证成功，版本: {Version}", taskId, version);
 
             // 解析导入选项
-            var options = JsonSerializer.Deserialize<ImportOptions>(task.Options ?? "{}") ?? new ImportOptions();
+            var options = string.IsNullOrEmpty(task.Options)
+                ? new ImportOptions()
+                : JsonSerializer.Deserialize(task.Options, AppJsonContext.Default.ImportOptions) ?? new ImportOptions();
 
             // 解析备份文件
-            var data = await _parser.ParseBackupAsync(task.SourceFile, progress =>
+            var data = await parser.ParseBackupAsync(task.SourceFile, async progress =>
             {
-                UpdateProgressAsync(taskId, progress).Wait();
+                await UpdateProgressAsync(db, taskId, progress);
             });
 
             // 执行导入
-            var result = await ImportDataAsync(data, options, task);
+            var result = await ImportDataAsync(db, _env, _logger, data, options, task);
 
             if (result.IsSuccess)
             {
@@ -116,7 +188,7 @@ public class ConfluenceImportService
                     taskId, result.ErrorMessage);
             }
 
-            await _db.Db.Updateable(task).ExecuteCommandAsync();
+            await db.Db.Updateable(task).ExecuteCommandAsync();
         }
         catch (Exception ex)
         {
@@ -124,7 +196,7 @@ public class ConfluenceImportService
             task.Status = "failed";
             task.ErrorMessage = ex.Message;
             task.CompletedAt = DateTime.Now;
-            await _db.Db.Updateable(task).ExecuteCommandAsync();
+            await db.Db.Updateable(task).ExecuteCommandAsync();
         }
     }
 
@@ -132,6 +204,9 @@ public class ConfluenceImportService
     /// 按依赖顺序导入各类型数据
     /// </summary>
     private async Task<ImportResult> ImportDataAsync(
+        AppDbContext db,
+        IHostEnvironment env,
+        ILogger<ConfluenceImportService> logger,
         ConfluenceBackupData data,
         ImportOptions options,
         ImportTask task)
@@ -163,79 +238,81 @@ public class ConfluenceImportService
             if (options.ImportUsers && data.Users.Any())
             {
                 progress.CurrentStep = "正在导入用户...";
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
 
-                var userCount = await ImportUsersAsync(data.Users, mapper);
+                var userCount = await ImportUsersAsync(db, logger, data.Users, mapper);
                 result.EntityCounts["Users"] = userCount;
                 result.SuccessCount += userCount;
                 progress.ProcessedItems += userCount;
                 progress.EntityCounts["Users"] = userCount;
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
             }
 
             // 2. 导入空间
             if (options.ImportSpaces && data.Spaces.Any())
             {
                 progress.CurrentStep = "正在导入空间...";
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
 
-                var spaceCount = await ImportSpacesAsync(data.Spaces, mapper, spaceDescriptionMap);
+                var spaceCount = await ImportSpacesAsync(db, logger, data.Spaces, mapper, spaceDescriptionMap, options);
                 result.EntityCounts["Spaces"] = spaceCount;
                 result.SuccessCount += spaceCount;
                 progress.ProcessedItems += spaceCount;
                 progress.EntityCounts["Spaces"] = spaceCount;
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
             }
 
             // 3. 导入附件（需要在页面之前导入，以便构建 URL 映射）
             if (options.ImportAttachments && data.Attachments.Any())
             {
                 progress.CurrentStep = "正在导入附件...";
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
 
-                var attachmentCount = await ImportAttachmentsAsync(
+                var attachmentCount = await ImportAttachmentsAsync(db, env, logger,
                     data.Attachments,
                     task.SourceFile,
                     data.AttachmentFiles,
                     mapper,
-                    attachmentUrlMap);
+                    attachmentUrlMap,
+                    options);
                 result.EntityCounts["Attachments"] = attachmentCount;
                 result.SuccessCount += attachmentCount;
                 progress.ProcessedItems += attachmentCount;
                 progress.EntityCounts["Attachments"] = attachmentCount;
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
             }
 
             // 4. 导入页面（使用内容转换器）
             if (options.ImportPages && data.Pages.Any())
             {
                 progress.CurrentStep = "正在导入页面...";
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
 
-                var pageCount = await ImportPagesAsync(
+                var pageCount = await ImportPagesAsync(db, logger,
                     data.Pages,
                     mapper,
                     bodyContentMap,
-                    attachmentUrlMap);
+                    attachmentUrlMap,
+                    options);
                 result.EntityCounts["Pages"] = pageCount;
                 result.SuccessCount += pageCount;
                 progress.ProcessedItems += pageCount;
                 progress.EntityCounts["Pages"] = pageCount;
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
             }
 
             // 5. 导入评论
             if (options.ImportComments && data.Comments.Any())
             {
                 progress.CurrentStep = "正在导入评论...";
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
 
-                var commentCount = await ImportCommentsAsync(data.Comments, mapper);
+                var commentCount = await ImportCommentsAsync(db, logger, data.Comments, mapper, options);
                 result.EntityCounts["Comments"] = commentCount;
                 result.SuccessCount += commentCount;
                 progress.ProcessedItems += commentCount;
                 progress.EntityCounts["Comments"] = commentCount;
-                await UpdateProgressAsync(task.Id, progress);
+                await UpdateProgressAsync(db, task.Id, progress);
             }
 
             result.IsSuccess = true;
@@ -243,7 +320,7 @@ public class ConfluenceImportService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "导入数据失败");
+            logger.LogError(ex, "导入数据失败");
             result.IsSuccess = false;
             result.ErrorMessage = ex.Message;
             return result;
@@ -253,7 +330,7 @@ public class ConfluenceImportService
     /// <summary>
     /// 导入用户
     /// </summary>
-    private async Task<int> ImportUsersAsync(List<ConfluenceUser> users, DataMappingService mapper)
+    private async Task<int> ImportUsersAsync(AppDbContext db, ILogger<ConfluenceImportService> logger, List<ConfluenceUser> users, DataMappingService mapper)
     {
         var count = 0;
         foreach (var user in users)
@@ -261,14 +338,14 @@ public class ConfluenceImportService
             try
             {
                 // 检查用户是否已存在
-                var existingUser = await _db.Db.Queryable<User>()
+                var existingUser = await db.Db.Queryable<User>()
                     .Where(u => u.Username == user.Name)
                     .FirstAsync();
 
                 if (existingUser == null)
                 {
                     var newUser = mapper.MapUser(user);
-                    var newId = await _db.Db.Insertable(newUser).ExecuteReturnIdentityAsync();
+                    var newId = await db.Db.Insertable(newUser).ExecuteReturnIdentityAsync();
                     mapper.AddUserMapping(user.Key, newId);
                     count++;
                 }
@@ -280,7 +357,7 @@ public class ConfluenceImportService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "导入用户失败: {Username}", user.Name);
+                logger.LogError(ex, "导入用户失败: {Username}", user.Name);
             }
         }
 
@@ -294,9 +371,12 @@ public class ConfluenceImportService
     /// 导入空间
     /// </summary>
     private async Task<int> ImportSpacesAsync(
+        AppDbContext db,
+        ILogger<ConfluenceImportService> logger,
         List<ConfluenceSpace> spaces,
         DataMappingService mapper,
-        Dictionary<long, string> descriptionMap)
+        Dictionary<long, string> descriptionMap,
+        ImportOptions options)
     {
         var count = 0;
         var ownerId = 1; // 默认管理员
@@ -313,25 +393,30 @@ public class ConfluenceImportService
                 var workspace = mapper.MapSpace(space, ownerId, description);
 
                 // 检查是否覆盖
-                var existing = await _db.Db.Queryable<Workspace>()
+                var existing = await db.Db.Queryable<Workspace>()
                     .Where(w => w.Key == space.Key)
                     .FirstAsync();
 
                 if (existing != null)
                 {
-                    workspace.Id = existing.Id;
-                    await _db.Db.Updateable(workspace).ExecuteCommandAsync();
+                    if (options.OverwriteExisting)
+                    {
+                        workspace.Id = existing.Id;
+                        await db.Db.Updateable(workspace).ExecuteCommandAsync();
+                    }
+                    mapper.AddSpaceMapping(space.Id, existing.Id);
                 }
                 else
                 {
-                    await _db.Db.Insertable(workspace).ExecuteCommandAsync();
+                    var newId = await db.Db.Insertable(workspace).ExecuteReturnIdentityAsync();
+                    mapper.AddSpaceMapping(space.Id, newId);
                 }
 
                 count++;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "导入空间失败: {Key}", space.Key);
+                logger.LogError(ex, "导入空间失败: {Key}", space.Key);
             }
         }
 
@@ -342,28 +427,34 @@ public class ConfluenceImportService
     /// 导入页面
     /// </summary>
     private async Task<int> ImportPagesAsync(
+        AppDbContext db,
+        ILogger<ConfluenceImportService> logger,
         List<ConfluencePage> pages,
         DataMappingService mapper,
         Dictionary<long, string> contentMap,
-        Dictionary<long, string> attachmentUrlMap)
+        Dictionary<long, string> attachmentUrlMap,
+        ImportOptions options)
     {
         var processedPages = new HashSet<long>();
 
         // 首先导入所有没有父页面的页面（根页面）
         var rootPages = pages.Where(p => !p.ParentId.HasValue).ToList();
-        return await ImportPagesInOrder(rootPages, pages, mapper, contentMap, attachmentUrlMap, processedPages);
+        return await ImportPagesInOrder(db, logger, rootPages, pages, mapper, contentMap, attachmentUrlMap, processedPages, options);
     }
 
     /// <summary>
     /// 按层级顺序导入页面
     /// </summary>
     private async Task<int> ImportPagesInOrder(
+        AppDbContext db,
+        ILogger<ConfluenceImportService> logger,
         List<ConfluencePage> currentPageList,
         List<ConfluencePage> allPages,
         DataMappingService mapper,
         Dictionary<long, string> contentMap,
         Dictionary<long, string> attachmentUrlMap,
-        HashSet<long> processedPages)
+        HashSet<long> processedPages,
+        ImportOptions options)
     {
         var count = 0;
 
@@ -392,18 +483,26 @@ public class ConfluenceImportService
 
                 var newPage = mapper.MapPage(page, workspaceId, content);
 
-                var existing = await _db.Db.Queryable<Page>()
+                var existing = await db.Db.Queryable<Page>()
                     .Where(p => p.Id == page.Id)
                     .FirstAsync();
 
+                long newPageId;
                 if (existing != null)
                 {
-                    await _db.Db.Updateable(newPage).ExecuteCommandAsync();
+                    if (options.OverwriteExisting)
+                    {
+                        newPage.Id = existing.Id;
+                        await db.Db.Updateable(newPage).ExecuteCommandAsync();
+                    }
+                    newPageId = existing.Id;
                 }
                 else
                 {
-                    await _db.Db.Insertable(newPage).ExecuteCommandAsync();
+                    newPageId = await db.Db.Insertable(newPage).ExecuteReturnIdentityAsync();
                 }
+
+                mapper.AddPageMapping(page.Id, newPageId);
 
                 processedPages.Add(page.Id);
                 count++;
@@ -412,12 +511,12 @@ public class ConfluenceImportService
                 var childPages = allPages.Where(p => p.ParentId == page.Id).ToList();
                 if (childPages.Any())
                 {
-                    count += await ImportPagesInOrder(childPages, allPages, mapper, contentMap, attachmentUrlMap, processedPages);
+                    count += await ImportPagesInOrder(db, logger, childPages, allPages, mapper, contentMap, attachmentUrlMap, processedPages, options);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "导入页面失败: {Title}", page.Title);
+                logger.LogError(ex, "导入页面失败: {Title}", page.Title);
             }
         }
 
@@ -428,14 +527,18 @@ public class ConfluenceImportService
     /// 导入附件
     /// </summary>
     private async Task<int> ImportAttachmentsAsync(
+        AppDbContext db,
+        IHostEnvironment env,
+        ILogger<ConfluenceImportService> logger,
         List<ConfluenceAttachment> attachments,
         string zipFilePath,
         Dictionary<long, string> attachmentFiles,
         DataMappingService mapper,
-        Dictionary<long, string> attachmentUrlMap)
+        Dictionary<long, string> attachmentUrlMap,
+        ImportOptions options)
     {
         var count = 0;
-        var uploadsDir = Path.Combine(_env.ContentRootPath, "wwwroot", "uploads", "attachments");
+        var uploadsDir = Path.Combine(env.ContentRootPath, "wwwroot", "uploads", "attachments");
 
         if (!Directory.Exists(uploadsDir))
         {
@@ -464,8 +567,8 @@ public class ConfluenceImportService
                     continue;
 
                 // 创建存储路径
-                var storagePath = Path.Combine("attachments", pageId.ToString(), attachment.Id.ToString());
-                var fullPath = Path.Combine(uploadsDir, pageId.ToString(), attachment.Id.ToString());
+                var storagePath = Path.Combine("attachments", pageId.Value.ToString(), attachment.Id.ToString());
+                var fullPath = Path.Combine(uploadsDir, pageId.Value.ToString(), attachment.Id.ToString());
 
                 if (!Directory.Exists(fullPath))
                 {
@@ -491,19 +594,27 @@ public class ConfluenceImportService
 
                 newAttachment.FileHash = fileHash;
 
-                var existing = await _db.Db.Queryable<Attachment>()
-                    .Where(a => a.Id == attachment.Id)
+                var existing = await db.Db.Queryable<Attachment>()
+                    .Where(a => a.FileName == attachment.Title && a.PageId == pageId.Value)
                     .FirstAsync();
 
+                long newId;
                 if (existing != null)
                 {
-                    newAttachment.CreatedAt = existing.CreatedAt;
-                    await _db.Db.Updateable(newAttachment).ExecuteCommandAsync();
+                    if (options.OverwriteExisting)
+                    {
+                        newAttachment.Id = existing.Id;
+                        newAttachment.CreatedAt = existing.CreatedAt;
+                        await db.Db.Updateable(newAttachment).ExecuteCommandAsync();
+                    }
+                    newId = existing.Id;
                 }
                 else
                 {
-                    await _db.Db.Insertable(newAttachment).ExecuteCommandAsync();
+                    newId = await db.Db.Insertable(newAttachment).ExecuteReturnIdentityAsync();
                 }
+
+                mapper.AddAttachmentMapping(attachment.Id, newId);
 
                 // 添加到 URL 映射（用于内容转换）
                 var accessUrl = $"/{newAttachment.StoragePath}";
@@ -513,7 +624,7 @@ public class ConfluenceImportService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "导入附件失败: {Title}", attachment.Title);
+                logger.LogError(ex, "导入附件失败: {Title}", attachment.Title);
             }
         }
 
@@ -523,7 +634,12 @@ public class ConfluenceImportService
     /// <summary>
     /// 导入评论
     /// </summary>
-    private async Task<int> ImportCommentsAsync(List<ConfluenceComment> comments, DataMappingService mapper)
+    private async Task<int> ImportCommentsAsync(
+        AppDbContext db,
+        ILogger<ConfluenceImportService> logger,
+        List<ConfluenceComment> comments,
+        DataMappingService mapper,
+        ImportOptions options)
     {
         var count = 0;
 
@@ -540,24 +656,33 @@ public class ConfluenceImportService
 
                 var newComment = mapper.MapComment(comment, pageId.Value);
 
-                var existing = await _db.Db.Queryable<PageComment>()
-                    .Where(c => c.Id == comment.Id)
+                // 这里简单的通过 PageId 和内容判断是否存在
+                var existing = await db.Db.Queryable<PageComment>()
+                    .Where(c => c.PageId == pageId.Value && c.Content == comment.Content)
                     .FirstAsync();
 
+                long newId;
                 if (existing != null)
                 {
-                    await _db.Db.Updateable(newComment).ExecuteCommandAsync();
+                    if (options.OverwriteExisting)
+                    {
+                        newComment.Id = existing.Id;
+                        await db.Db.Updateable(newComment).ExecuteCommandAsync();
+                    }
+                    newId = existing.Id;
                 }
                 else
                 {
-                    await _db.Db.Insertable(newComment).ExecuteCommandAsync();
+                    newId = await db.Db.Insertable(newComment).ExecuteReturnIdentityAsync();
                 }
+
+                mapper.AddCommentMapping(comment.Id, newId);
 
                 count++;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "导入评论失败: {Id}", comment.Id);
+                logger.LogError(ex, "导入评论失败: {Id}", comment.Id);
             }
         }
 
@@ -567,19 +692,15 @@ public class ConfluenceImportService
     /// <summary>
     /// 更新导入进度
     /// </summary>
-    private async Task UpdateProgressAsync(long taskId, ImportProgress progress)
+    private async Task UpdateProgressAsync(AppDbContext db, long taskId, ImportProgress progress)
     {
         try
         {
-            var task = await _db.Db.Queryable<ImportTask>()
-                .Where(t => t.Id == taskId)
-                .FirstAsync();
+            var progressJson = JsonSerializer.Serialize(progress, AppJsonContext.Default.ImportProgress);
 
-            if (task != null)
-            {
-                task.Progress = JsonSerializer.Serialize(progress);
-                await _db.Db.Updateable(task).ExecuteCommandAsync();
-            }
+            await db.Db.Ado.ExecuteCommandAsync(
+                "UPDATE \"import_tasks\" SET \"progress\" = @progress::jsonb WHERE \"id\" = @id",
+                new { progress = progressJson, id = taskId });
         }
         catch (Exception ex)
         {

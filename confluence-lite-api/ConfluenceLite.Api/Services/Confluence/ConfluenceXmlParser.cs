@@ -70,11 +70,12 @@ public class ConfluenceXmlParser
     /// <summary>
     /// 从 ZIP 中提取并解析所有数据（Confluence 7.x）
     /// </summary>
-    public async Task<ConfluenceBackupData> ParseBackupAsync(string zipPath, Action<ImportProgress>? progressCallback = null)
+    public async Task<ConfluenceBackupData> ParseBackupAsync(string zipPath, Func<ImportProgress, Task>? progressCallback = null)
     {
         var result = new ConfluenceBackupData();
         var progress = new ImportProgress { CurrentStep = "正在打开备份文件..." };
-        progressCallback?.Invoke(progress);
+        if (progressCallback != null)
+            await progressCallback(progress);
 
         using var archive = ZipFile.OpenRead(zipPath);
 
@@ -84,7 +85,8 @@ public class ConfluenceXmlParser
             throw new InvalidOperationException("备份文件中缺少 entities.xml");
 
         progress.CurrentStep = "正在解析 entities.xml...";
-        progressCallback?.Invoke(progress);
+        if (progressCallback != null)
+            await progressCallback(progress);
 
         using (var entitiesStream = entitiesEntry.Open())
         {
@@ -93,7 +95,8 @@ public class ConfluenceXmlParser
 
         // 解析附件路径
         progress.CurrentStep = "正在扫描附件文件...";
-        progressCallback?.Invoke(progress);
+        if (progressCallback != null)
+            await progressCallback(progress);
 
         ParseAttachmentFiles(archive, result);
 
@@ -107,7 +110,7 @@ public class ConfluenceXmlParser
     /// <summary>
     /// 解析 entities.xml 文件
     /// </summary>
-    private async Task ParseEntitiesAsync(Stream xmlStream, ConfluenceBackupData result, Action<ImportProgress>? progressCallback)
+    private async Task ParseEntitiesAsync(Stream xmlStream, ConfluenceBackupData result, Func<ImportProgress, Task>? progressCallback)
     {
         var settings = new XmlReaderSettings
         {
@@ -153,7 +156,8 @@ public class ConfluenceXmlParser
             ProcessedItems = totalCount,
             CurrentStep = "解析完成"
         };
-        progressCallback?.Invoke(progress);
+        if (progressCallback != null)
+            await progressCallback(progress);
     }
 
     /// <summary>

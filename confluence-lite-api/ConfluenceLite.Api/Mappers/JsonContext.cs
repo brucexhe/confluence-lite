@@ -154,6 +154,8 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(ApiResponse<List<ImportTaskDto>>))]
 [JsonSerializable(typeof(ApiResponse<PagedResponse<ImportTaskDto>>))]
 [JsonSerializable(typeof(PagedResponse<ImportTaskDto>))]
+[JsonSerializable(typeof(ConfluenceLite.Api.Models.ImportOptions))]
+[JsonSerializable(typeof(ConfluenceLite.Api.Models.ImportProgress))]
 // Audit Log
 [JsonSerializable(typeof(AuditLogEntry))]
 [JsonSerializable(typeof(AuditChangeDetails))]

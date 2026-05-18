@@ -741,45 +741,75 @@ public static class SystemRoutes
             IFormFile file,
             [FromForm] ImportOptionsRequest options,
             Services.Confluence.ConfluenceImportService importService,
-            IHostEnvironment env) =>
+            IHostEnvironment env,
+            ILogger<Program> logger) =>
         {
-            var currentUser = context.Items["CurrentUser"] as CurrentUser;
-
-            // 验证文件类型
-            if (file == null || file.Length == 0)
-                return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail("请选择文件"));
-
-            if (!file.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail("仅支持 .zip 格式的备份文件"));
-
-            // 保存上传文件
-            var tempDir = Path.Combine(env.ContentRootPath, "data", "temp");
-            if (!Directory.Exists(tempDir))
-                Directory.CreateDirectory(tempDir);
-
-            var tempPath = Path.Combine(tempDir, $"{Guid.NewGuid()}.zip");
-            using (var stream = File.Create(tempPath))
+            try
             {
-                await file.CopyToAsync(stream);
+                logger.LogInformation("收到 Confluence 导入请求，文件名: {FileName}", file?.FileName ?? "null");
+
+                var currentUser = context.Items["CurrentUser"] as CurrentUser;
+
+                // 验证文件类型
+                if (file == null || file.Length == 0)
+                {
+                    logger.LogWarning("文件验证失败: 文件为空");
+                    return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail("请选择文件"));
+                }
+
+                if (!file.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.LogWarning("文件验证失败: 不是 ZIP 文件");
+                    return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail("仅支持 .zip 格式的备份文件"));
+                }
+
+                logger.LogInformation("文件验证通过，大小: {FileSize} bytes", file.Length);
+
+                // 保存上传文件
+                var tempDir = Path.Combine(env.ContentRootPath, "data", "temp");
+                if (!Directory.Exists(tempDir))
+                    Directory.CreateDirectory(tempDir);
+
+                var tempPath = Path.Combine(tempDir, $"{Guid.NewGuid()}.zip");
+                logger.LogInformation("正在保存文件到: {TempPath}", tempPath);
+
+                using (var fileStream = File.Create(tempPath))
+                {
+                    await file.OpenReadStream().CopyToAsync(fileStream);
+                }
+
+                logger.LogInformation("文件已保存，开始创建导入任务");
+
+                var importOptions = new Models.ImportOptions
+                {
+                    ImportUsers = options.ImportUsers,
+                    ImportSpaces = options.ImportSpaces,
+                    ImportPages = options.ImportPages,
+                    ImportAttachments = options.ImportAttachments,
+                    ImportComments = options.ImportComments,
+                    OverwriteExisting = options.OverwriteExisting
+                };
+
+                logger.LogInformation("导入选项: {@Options}", importOptions);
+
+                var (task, error) = await importService.StartImportAsync(tempPath, importOptions, currentUser?.UserId ?? 0);
+
+                if (error != null)
+                {
+                    logger.LogError("导入任务创建失败: {Error}", error);
+                    return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail(error));
+                }
+
+                logger.LogInformation("导入任务创建成功: {TaskId}", task!.Id);
+
+                var dto = MapToImportTaskDto(task);
+                return Results.Ok(ApiResponse<ImportTaskDto>.Ok(dto, "导入任务已创建"));
             }
-
-            var importOptions = new Models.ImportOptions
+            catch (Exception ex)
             {
-                ImportUsers = options.ImportUsers,
-                ImportSpaces = options.ImportSpaces,
-                ImportPages = options.ImportPages,
-                ImportAttachments = options.ImportAttachments,
-                ImportComments = options.ImportComments,
-                OverwriteExisting = options.OverwriteExisting
-            };
-
-            var (task, error) = await importService.StartImportAsync(tempPath, importOptions, currentUser?.UserId ?? 0);
-
-            if (error != null)
-                return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail(error));
-
-            var dto = MapToImportTaskDto(task!);
-            return Results.Ok(ApiResponse<ImportTaskDto>.Ok(dto, "导入任务已创建"));
+                logger.LogError(ex, "Confluence 导入请求处理失败");
+                return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail($"处理失败: {ex.Message}"));
+            }
         }).DisableAntiforgery();
 
         // 获取导入任务状态
@@ -1114,7 +1144,7 @@ public static class SystemRoutes
         ImportProgressDto? progressDto = null;
         if (!string.IsNullOrEmpty(task.Progress))
         {
-            var progress = System.Text.Json.JsonSerializer.Deserialize<Models.ImportProgress>(task.Progress);
+            var progress = System.Text.Json.JsonSerializer.Deserialize(task.Progress, AppJsonContext.Default.ImportProgress);
             if (progress != null)
             {
                 progressDto = new ImportProgressDto

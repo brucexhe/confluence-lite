@@ -448,22 +448,59 @@ export const systemSettingApi = {
   },
 
   /** 从 Confluence 导入 - 上传备份文件并开始导入 */
-  importFromConfluence(file, options) {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('importUsers', options.importUsers)
-    formData.append('importSpaces', options.importSpaces)
-    formData.append('ImportPages', options.importPages)
-    formData.append('ImportAttachments', options.importAttachments)
-    formData.append('ImportComments', options.importComments)
-    formData.append('overwriteExisting', options.overwriteExisting)
+  importFromConfluence(file, options, onProgress) {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('ImportUsers', options.importUsers ?? false)
+      formData.append('ImportSpaces', options.importSpaces)
+      formData.append('ImportPages', options.importPages)
+      formData.append('ImportAttachments', options.importAttachments)
+      formData.append('ImportComments', options.importComments)
+      formData.append('OverwriteExisting', options.overwriteExisting)
 
-    return request('/api/system/backup/import-confluence', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data'
+      const xhr = new XMLHttpRequest()
+
+      // 上传进度
+      if (onProgress) {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            onProgress(Math.round((e.loaded / e.total) * 100))
+          }
+        })
       }
+
+      // 请求完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          try {
+            const json = JSON.parse(xhr.responseText)
+            if (json.success) {
+              resolve(json.data)
+            } else {
+              reject(new Error(json.message || '操作失败'))
+            }
+          } catch (e) {
+            reject(new Error('响应解析失败'))
+          }
+        } else if (xhr.status === 401) {
+          localStorage.removeItem('auth_user')
+          localStorage.removeItem('auth_spaces')
+          window.location.href = '/login'
+          reject(new Error('未授权，请重新登录'))
+        } else {
+          reject(new Error(`请求失败: HTTP ${xhr.status}`))
+        }
+      })
+
+      // 请求错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('网络错误'))
+      })
+
+      // 发送请求
+      xhr.open('POST', '/api/system/backup/import-confluence')
+      xhr.send(formData)
     })
   },
 

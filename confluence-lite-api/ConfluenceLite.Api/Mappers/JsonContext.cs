@@ -145,6 +145,15 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(RestoreBackupRequest))]
 [JsonSerializable(typeof(ApiResponse<BackupDto>))]
 [JsonSerializable(typeof(ApiResponse<List<BackupDto>>))]
+// Confluence Import
+[JsonSerializable(typeof(ImportTaskDto))]
+[JsonSerializable(typeof(List<ImportTaskDto>))]
+[JsonSerializable(typeof(ImportProgressDto))]
+[JsonSerializable(typeof(ImportOptionsRequest))]
+[JsonSerializable(typeof(ApiResponse<ImportTaskDto>))]
+[JsonSerializable(typeof(ApiResponse<List<ImportTaskDto>>))]
+[JsonSerializable(typeof(ApiResponse<PagedResponse<ImportTaskDto>>))]
+[JsonSerializable(typeof(PagedResponse<ImportTaskDto>))]
 // Audit Log
 [JsonSerializable(typeof(AuditLogEntry))]
 [JsonSerializable(typeof(AuditChangeDetails))]

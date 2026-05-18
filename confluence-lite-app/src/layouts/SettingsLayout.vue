@@ -64,6 +64,9 @@
                         <router-link to="/settings/backup" class="nav-item" :class="{ active: route.path === '/settings/backup' }">
                             备份与还原
                         </router-link>
+                        <router-link to="/settings/confluence-import" class="nav-item" :class="{ active: route.path === '/settings/confluence-import' }">
+                            从 Confluence 导入
+                        </router-link>
                         <router-link to="/settings/jobs" class="nav-item" :class="{ active: route.path === '/settings/jobs' }">
                             作业管理
                         </router-link>

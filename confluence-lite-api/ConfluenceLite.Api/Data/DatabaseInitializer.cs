@@ -25,6 +25,7 @@ public static class DatabaseInitializer
         CreateContentTables(db);
         CreateCollaborationTables(db);
         CreateSearchActivityTables(db);
+        CreateSystemManagementTables(db);
 
         Console.WriteLine("[Database] All tables initialized successfully");
     }
@@ -499,5 +500,64 @@ public static class DatabaseInitializer
         {
             Console.WriteLine($"[Database] Unique constraint {constraintName} warning: {ex.Message}");
         }
+    }
+
+    private static void CreateSystemManagementTables(ISqlSugarClient db)
+    {
+        db.Ado.ExecuteCommand(@"
+            CREATE TABLE IF NOT EXISTS ""scheduled_jobs"" (
+                ""id"" BIGSERIAL PRIMARY KEY,
+                ""name"" VARCHAR(200) NOT NULL,
+                ""jobtype"" VARCHAR(50) NOT NULL,
+                ""cronexpression"" VARCHAR(100) NOT NULL,
+                ""parameters"" JSONB,
+                ""isenabled"" BOOLEAN NOT NULL DEFAULT TRUE,
+                ""lastrunat"" TIMESTAMP,
+                ""nextrunat"" TIMESTAMP,
+                ""createdat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc'),
+                ""updatedat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc')
+            )");
+
+        db.Ado.ExecuteCommand(@"
+            CREATE TABLE IF NOT EXISTS ""job_executions"" (
+                ""id"" BIGSERIAL PRIMARY KEY,
+                ""jobid"" BIGINT NOT NULL,
+                ""startedat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc'),
+                ""completedat"" TIMESTAMP,
+                ""status"" VARCHAR(50) NOT NULL,
+                ""errormessage"" TEXT,
+                ""output"" JSONB
+            )");
+        CreateIndexIfNotExists(db, "ix_je_job", "job_executions", "jobid, startedat DESC");
+
+        db.Ado.ExecuteCommand(@"
+            CREATE TABLE IF NOT EXISTS ""system_backups"" (
+                ""id"" BIGSERIAL PRIMARY KEY,
+                ""name"" VARCHAR(200) NOT NULL,
+                ""description"" VARCHAR(500),
+                ""type"" VARCHAR(50) NOT NULL,
+                ""filepath"" VARCHAR(500) NOT NULL,
+                ""filesize"" BIGINT NOT NULL DEFAULT 0,
+                ""status"" VARCHAR(50) NOT NULL,
+                ""errormessage"" TEXT,
+                ""createdat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc')
+            )");
+        CreateIndexIfNotExists(db, "ix_sb_created", "system_backups", "createdat DESC");
+
+        db.Ado.ExecuteCommand(@"
+            CREATE TABLE IF NOT EXISTS ""import_tasks"" (
+                ""id"" BIGSERIAL PRIMARY KEY,
+                ""name"" VARCHAR(200) NOT NULL,
+                ""sourcefile"" VARCHAR(500) NOT NULL,
+                ""status"" VARCHAR(50) NOT NULL DEFAULT 'pending',
+                ""options"" JSONB,
+                ""progress"" JSONB,
+                ""errormessage"" TEXT,
+                ""createdat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc'),
+                ""completedat"" TIMESTAMP,
+                ""createdbyid"" BIGINT NOT NULL
+            )");
+        CreateIndexIfNotExists(db, "ix_it_created", "import_tasks", "createdat DESC");
+        CreateIndexIfNotExists(db, "ix_it_status", "import_tasks", "status");
     }
 }

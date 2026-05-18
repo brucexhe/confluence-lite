@@ -161,3 +161,137 @@ button {
 .ant-tree .ant-tree-switcher{
   width: auto!important;
 }
+
+/* Confluence 宏样式 */
+.confluence-macro {
+  margin: 16px 0;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.confluence-macro .macro-header {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.confluence-macro .macro-body {
+  padding: 12px;
+}
+
+.confluence-macro .macro-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Info 宏 */
+.info-macro {
+  background-color: #deebff;
+  border-color: #deebff;
+}
+
+.info-macro .macro-header {
+  color: #0052cc;
+}
+
+/* Note 宏 */
+.note-macro {
+  background-color: #ffffcc;
+  border-color: #ffffcc;
+}
+
+.note-macro .macro-header {
+  color: #6b6b00;
+}
+
+/* Warning 宏 */
+.warning-macro {
+  background-color: #fffee6;
+  border-color: #ffeee6;
+}
+
+.warning-macro .macro-header {
+  color: #ff991f;
+}
+
+/* Tip 宏 */
+.tip-macro {
+  background-color: #e3fcef;
+  border-color: #e3fcef;
+}
+
+.tip-macro .macro-header {
+  color: #006644;
+}
+
+/* Panel 宏 */
+.panel-macro {
+  background-color: #f4f5f7;
+  border: 1px solid #dfe1e6;
+}
+
+.panel-macro .panel-title {
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid #dfe1e6;
+  background-color: #ebecf0;
+}
+
+.panel-macro .panel-content {
+  padding: 12px;
+}
+
+/* Expand 宏 */
+.expand-macro {
+  border: 1px solid var(--color-border);
+}
+
+.expand-macro .expand-title {
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  background-color: var(--color-bg-tertiary);
+}
+
+.expand-macro .expand-title:hover {
+  background-color: var(--color-border);
+}
+
+.expand-macro .expand-content {
+  padding: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* 内部链接 */
+.internal-link {
+  color: #0052cc;
+  text-decoration: none;
+}
+
+.internal-link:hover {
+  text-decoration: underline;
+}
+
+/* 损坏的图片占位符 */
+.broken-image {
+  display: inline-block;
+  padding: 4px 8px;
+  background-color: #f4f5f7;
+  border: 1px solid #dfe1e6;
+  border-radius: 3px;
+  color: #6b778c;
+  font-size: 12px;
+}
+
+/* 子页面列表占位符 */
+.children-macro-placeholder {
+  padding: 16px;
+  text-align: center;
+  background-color: #f4f5f7;
+  border: 1px dashed #dfe1e6;
+  border-radius: 4px;
+  margin: 16px 0;
+}

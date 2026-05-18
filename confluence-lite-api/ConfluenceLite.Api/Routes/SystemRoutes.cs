@@ -6,6 +6,7 @@ using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Mappers;
 using ConfluenceLite.Api.Services;
 using ConfluenceLite.Api.Middleware;
+using ConfluenceLite.Api.Models;
 
 namespace ConfluenceLite.Api.Routes;
 
@@ -732,6 +733,96 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<bool>.Ok(true, "备份已删除"));
         });
 
+        // ========== Confluence 导入 ==========
+
+        // 上传备份文件并开始导入
+        group.MapPost("/backup/import-confluence", async (
+            HttpContext context,
+            IFormFile file,
+            [FromForm] ImportOptionsRequest options,
+            Services.Confluence.ConfluenceImportService importService,
+            IHostEnvironment env) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+
+            // 验证文件类型
+            if (file == null || file.Length == 0)
+                return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail("请选择文件"));
+
+            if (!file.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail("仅支持 .zip 格式的备份文件"));
+
+            // 保存上传文件
+            var tempDir = Path.Combine(env.ContentRootPath, "data", "temp");
+            if (!Directory.Exists(tempDir))
+                Directory.CreateDirectory(tempDir);
+
+            var tempPath = Path.Combine(tempDir, $"{Guid.NewGuid()}.zip");
+            using (var stream = File.Create(tempPath))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var importOptions = new Models.ImportOptions
+            {
+                ImportUsers = options.ImportUsers,
+                ImportSpaces = options.ImportSpaces,
+                ImportPages = options.ImportPages,
+                ImportAttachments = options.ImportAttachments,
+                ImportComments = options.ImportComments,
+                OverwriteExisting = options.OverwriteExisting
+            };
+
+            var (task, error) = await importService.StartImportAsync(tempPath, importOptions, currentUser?.UserId ?? 0);
+
+            if (error != null)
+                return Results.BadRequest(ApiResponse<ImportTaskDto>.Fail(error));
+
+            var dto = MapToImportTaskDto(task!);
+            return Results.Ok(ApiResponse<ImportTaskDto>.Ok(dto, "导入任务已创建"));
+        }).DisableAntiforgery();
+
+        // 获取导入任务状态
+        group.MapGet("/backup/import-status/{id}", async (
+            long id,
+            AppDbContext db) =>
+        {
+            var task = await db.Db.Queryable<Models.ImportTask>()
+                .Where(t => t.Id == id)
+                .FirstAsync();
+
+            if (task == null)
+                return Results.NotFound(ApiResponse<ImportTaskDto>.Fail("任务不存在"));
+
+            var dto = MapToImportTaskDto(task);
+            return Results.Ok(ApiResponse<ImportTaskDto>.Ok(dto));
+        });
+
+        // 获取导入任务列表
+        group.MapGet("/backup/import-list", async (
+            AppDbContext db,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20) =>
+        {
+            var totalCount = await db.Db.Queryable<Models.ImportTask>()
+                .CountAsync();
+
+            var tasks = await db.Db.Queryable<Models.ImportTask>()
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var dtos = tasks.Select(MapToImportTaskDto).ToList();
+            return Results.Ok(ApiResponse<PagedResponse<ImportTaskDto>>.Ok(new PagedResponse<ImportTaskDto>
+            {
+                Items = dtos,
+                Total = totalCount,
+                Page = page,
+                PageSize = pageSize
+            }));
+        });
+
         // ========== 公开端点（无需认证） ==========
 
         app.MapGet("/api/siteinfo", (AppConfiguration appConfig, SetupService setupService) =>
@@ -1013,5 +1104,41 @@ public static class SystemRoutes
 
         var options = new JsonSerializerOptions { WriteIndented = true };
         File.WriteAllText(configPath, root.ToJsonString(options));
+    }
+
+    /// <summary>
+    /// 映射导入任务到DTO
+    /// </summary>
+    private static ImportTaskDto MapToImportTaskDto(Models.ImportTask task)
+    {
+        ImportProgressDto? progressDto = null;
+        if (!string.IsNullOrEmpty(task.Progress))
+        {
+            var progress = System.Text.Json.JsonSerializer.Deserialize<Models.ImportProgress>(task.Progress);
+            if (progress != null)
+            {
+                progressDto = new ImportProgressDto
+                {
+                    TotalItems = progress.TotalItems,
+                    ProcessedItems = progress.ProcessedItems,
+                    FailedItems = progress.FailedItems,
+                    ProgressPercent = progress.ProgressPercent,
+                    CurrentStep = progress.CurrentStep,
+                    EntityCounts = progress.EntityCounts
+                };
+            }
+        }
+
+        return new ImportTaskDto
+        {
+            Id = task.Id,
+            Name = task.Name,
+            Status = task.Status,
+            Progress = progressDto,
+            ErrorMessage = task.ErrorMessage,
+            CreatedAt = task.CreatedAt,
+            CompletedAt = task.CompletedAt,
+            CreatedById = task.CreatedById
+        };
     }
 }

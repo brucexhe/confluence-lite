@@ -125,6 +125,8 @@ builder.Services.AddMemoryCache();
 builder.Services.AddScoped<CacheService>();
 builder.Services.AddScoped<JobSchedulerService>();
 builder.Services.AddScoped<BackupService>();
+builder.Services.AddScoped<ConfluenceLite.Api.Services.Confluence.ConfluenceXmlParser>();
+builder.Services.AddScoped<ConfluenceLite.Api.Services.Confluence.ConfluenceImportService>();
 
 // ========== 审计日志服务 ==========
 builder.Services.Configure<AuditLogOptions>(

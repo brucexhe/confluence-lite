@@ -170,6 +170,11 @@ const router = createRouter({
                     component: () => import('../views/SystermSetting/Backup.vue')
                 },
                 {
+                    path: 'confluence-import',
+                    name: 'settings-confluence-import',
+                    component: () => import('../views/SystermSetting/ConfluenceImport.vue')
+                },
+                {
                     path: 'jobs',
                     name: 'settings-jobs',
                     component: () => import('../views/SystermSetting/Jobs.vue')

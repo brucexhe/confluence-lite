@@ -86,7 +86,8 @@ public class AppDbContext
             typeof(UserFavorite),
             typeof(ScheduledJob),
             typeof(JobExecution),
-            typeof(SystemBackup)
+            typeof(SystemBackup),
+            typeof(ImportTask)
         );
     }
 
@@ -219,4 +220,9 @@ public class AppDbContext
     /// 获取系统备份表的SimpleClient
     /// </summary>
     public SimpleClient<SystemBackup> SystemBackups => new(_db);
+
+    /// <summary>
+    /// 获取导入任务表的SimpleClient
+    /// </summary>
+    public SimpleClient<ImportTask> ImportTasks => new(_db);
 }

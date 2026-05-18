@@ -447,6 +447,46 @@ export const systemSettingApi = {
     return request(`/api/system/backup/${id}/restore`, { method: 'POST', body: data })
   },
 
+  /** 从 Confluence 导入 - 上传备份文件并开始导入 */
+  importFromConfluence(file, options) {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('importUsers', options.importUsers)
+    formData.append('importSpaces', options.importSpaces)
+    formData.append('ImportPages', options.importPages)
+    formData.append('ImportAttachments', options.importAttachments)
+    formData.append('ImportComments', options.importComments)
+    formData.append('overwriteExisting', options.overwriteExisting)
+
+    return request('/api/system/backup/import-confluence', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+  },
+
+  /** 获取 Confluence 导入任务状态 */
+  getConfluenceImportStatus(id) {
+    return request(`/api/system/backup/import-status/${id}`)
+  },
+
+  /** 获取 Confluence 导入任务列表 */
+  getConfluenceImportList(page = 1, pageSize = 20) {
+    return request(`/api/system/backup/import-list?page=${page}&pageSize=${pageSize}`)
+  },
+
+  /** 删除 Confluence 导入任务 */
+  deleteConfluenceImportTask(id) {
+    return request(`/api/system/backup/import/${id}`, { method: 'DELETE' })
+  },
+
+  /** 删除缓存键 */
+  deleteCacheKey(type, key) {
+    return request(`/api/system/cache/${type}/keys/${key}`, { method: 'DELETE' })
+  },
+
   /** 获取定时任务列表 */
   getJobs() {
     return request('/api/system/jobs')

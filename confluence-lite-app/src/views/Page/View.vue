@@ -104,6 +104,13 @@
             :filePath="officeFilePath"
             :fileName="officeFileName"
         />
+
+        <!-- 视频预览组件 -->
+        <VideoPreview
+            v-model:open="videoPreviewOpen"
+            :src="videoSrc"
+            :fileName="videoFileName"
+        />
     </div>
 </template>
 
@@ -115,6 +122,7 @@ import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import PageAttachments from "../../components/PageAttachments.vue";
 import ImagePreview from "../../components/ImagePreview.vue";
 import OfficePreview from "../../components/OfficePreview.vue";
+import VideoPreview from "../../components/VideoPreview.vue";
 import { pageApi, attachmentApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { usePageTreeStore } from "../../store/pageTree";
@@ -312,6 +320,26 @@ function initOfficePreview() {
     });
 }
 
+// 为 v-html 渲染内容中的视频链接添加预览事件
+function initVideoPreview() {
+    nextTick(() => {
+        const el = contentRef.value;
+        if (!el) return;
+        el.querySelectorAll('a.video').forEach(link => {
+            const href = link.getAttribute('href') || '';
+            if (link.dataset.hasVideoPreview) return;
+            link.dataset.hasVideoPreview = 'true';
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                videoSrc.value = href;
+                videoFileName.value = link.textContent?.trim() || href.split('/').pop() || 'Video';
+                videoPreviewOpen.value = true;
+            });
+        });
+    });
+}
+
 // 表格排序
 function initTableSort() {
     nextTick(() => {
@@ -373,6 +401,7 @@ watch(pageContent, () => {
     highlightCode();
     initImagePreview();
     initOfficePreview();
+    initVideoPreview();
 });
 
 onMounted(() => {
@@ -430,6 +459,10 @@ const currentImageIndex = ref(0);
 const officePreviewOpen = ref(false);
 const officeFilePath = ref('');
 const officeFileName = ref('');
+// 视频预览
+const videoPreviewOpen = ref(false);
+const videoSrc = ref('');
+const videoFileName = ref('');
 </script>
 
 <style scoped>

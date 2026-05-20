@@ -282,6 +282,7 @@ public class ConfluenceImportService
 
             // 2. 预处理页面（过滤草稿并预注册 ID 映射，以便附件先导入）
             var publishedPages = data.Pages.Where(p => p.ContentStatus == "current").ToList();
+            var draftCount = data.Pages.Count - publishedPages.Count;
             foreach (var p in publishedPages)
             {
                 mapper.AddPageMapping(p.Id, p.Id);
@@ -321,9 +322,22 @@ public class ConfluenceImportService
                     options);
                 result.EntityCounts["Pages"] = pageCount;
                 result.SuccessCount += pageCount;
-                progress.ProcessedItems += pageCount;
-                progress.EntityCounts["Pages"] = pageCount;
+                progress.ProcessedItems += pageCount + draftCount; // 包含跳过的草稿
+                progress.EntityCounts["Pages"] = pageCount + draftCount; // 包含草稿数量，便于前端统计
                 await UpdateProgressAsync(db, task, progress);
+            }
+            else if (options.ImportPages)
+            {
+                // 即使没有发布页面，也要统计草稿数量
+                progress.ProcessedItems += draftCount;
+                progress.EntityCounts["Pages"] = draftCount;
+            }
+
+            // 记录草稿数量（如果有）
+            if (draftCount > 0)
+            {
+                result.EntityCounts["DraftPages"] = draftCount;
+                logger.LogInformation("跳过 {DraftCount} 个草稿页面", draftCount);
             }
 
             // 5. 导入评论
@@ -678,6 +692,12 @@ public class ConfluenceImportService
             // 计算文件哈希
             var fileHash = await ComputeFileHashAsync(filePath);
 
+            // 获取实际文件大小
+            var actualFileSize = new FileInfo(filePath).Length;
+
+            // 根据文件扩展名推断 ContentType
+            var contentType = GetContentTypeFromFile(attachment.Title);
+
             var newAttachment = mapper.MapAttachment(
                 attachment,
                 pageId.Value,
@@ -685,7 +705,10 @@ public class ConfluenceImportService
                 Path.Combine(storagePath, SanitizeFileName(attachment.Title))
             );
 
+            // 覆盖从 XML 获取的值，使用实际的文件信息
             newAttachment.FileHash = fileHash;
+            newAttachment.FileSize = actualFileSize;
+            newAttachment.ContentType = contentType;
 
             var existing = await db.Db.Queryable<Attachment>()
                 .Where(a => a.FileName == attachment.Title && a.PageId == pageId.Value)
@@ -851,6 +874,68 @@ public class ConfluenceImportService
     {
         var invalidChars = Path.GetInvalidFileNameChars();
         return string.Join("_", fileName.Split(invalidChars));
+    }
+
+    /// <summary>
+    /// 根据文件扩展名获取 MIME 类型
+    /// </summary>
+    private static string GetContentTypeFromFile(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+
+        return extension switch
+        {
+            // 图片
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".svg" => "image/svg+xml",
+            ".webp" => "image/webp",
+            ".ico" => "image/x-icon",
+
+            // 文档
+            ".pdf" => "application/pdf",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".xls" => "application/vnd.ms-excel",
+            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".ppt" => "application/vnd.ms-powerpoint",
+            ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+
+            // 文本
+            ".txt" => "text/plain",
+            ".html" or ".htm" => "text/html",
+            ".css" => "text/css",
+            ".js" => "application/javascript",
+            ".json" => "application/json",
+            ".xml" => "application/xml",
+            ".md" => "text/markdown",
+
+            // 压缩
+            ".zip" => "application/zip",
+            ".rar" => "application/vnd.rar",
+            ".7z" => "application/x-7z-compressed",
+            ".tar" => "application/x-tar",
+            ".gz" => "application/gzip",
+
+            // 视频
+            ".mp4" => "video/mp4",
+            ".avi" => "video/x-msvideo",
+            ".mov" => "video/quicktime",
+            ".wmv" => "video/x-ms-wmv",
+            ".flv" => "video/x-flv",
+            ".webm" => "video/webm",
+
+            // 音频
+            ".mp3" => "audio/mpeg",
+            ".wav" => "audio/wav",
+            ".ogg" => "audio/ogg",
+            ".m4a" => "audio/mp4",
+
+            // 默认
+            _ => "application/octet-stream"
+        };
     }
 }
 

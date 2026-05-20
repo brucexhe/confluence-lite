@@ -103,6 +103,12 @@ public class UpdateUserRequest
     public string? DisplayName { get; set; }
 
     /// <summary>
+    /// 头像URL
+    /// </summary>
+    [StringLength(500)]
+    public string? AvatarUrl { get; set; }
+
+    /// <summary>
     /// 用户状态: 0-禁用, 1-正常
     /// </summary>
     public int? Status { get; set; }
@@ -136,6 +142,7 @@ public class UserDto
     public string Username { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? DisplayName { get; set; }
+    public string? AvatarUrl { get; set; }
     public int Status { get; set; }
     public bool IsAdmin { get; set; }
     public DateTime CreatedAt { get; set; }

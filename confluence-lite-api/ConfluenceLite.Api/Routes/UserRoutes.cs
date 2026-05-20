@@ -129,5 +129,20 @@ public static class UserRoutes
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "用户删除成功"));
         });
+
+        group.MapGet("/me", async (
+            HttpContext context,
+            UserService userService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            var user = await userService.GetUserByIdAsync(currentUser.UserId);
+            if (user == null)
+                return Results.NotFound(ApiResponse<UserDto>.Fail("用户不存在"));
+
+            return Results.Ok(ApiResponse<UserDto>.Ok(user, "获取用户信息成功"));
+        });
     }
 }

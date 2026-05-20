@@ -159,6 +159,11 @@ public class UserService
             user.Status = request.Status.Value;
         }
 
+        if (request.AvatarUrl != null)
+        {
+            user.AvatarUrl = request.AvatarUrl;
+        }
+
         user.UpdatedAt = DateTime.Now;
 
         await _db.Users.UpdateAsync(user);
@@ -213,6 +218,7 @@ public class UserService
             Username = user.Username,
             Email = user.Email,
             DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl,
             Status = user.Status,
             IsAdmin = user.IsAdmin,
             CreatedAt = user.CreatedAt,

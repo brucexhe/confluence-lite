@@ -73,6 +73,18 @@ const router = createRouter({
             component: MainLayout
         },
         {
+            path: '/profile',
+            name: 'profile',
+            component: MainLayout,
+            meta: {requiresAuth: true},
+            children: [
+                {
+                    path: '',
+                    component: () => import('../views/User/Profile.vue')
+                }
+            ]
+        },
+        {
             path: '/:spaceKey',
             component: MainLayout,
             meta: {requiresAuth: true},

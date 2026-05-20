@@ -281,10 +281,15 @@ public class ConfluenceImportService
             }
 
             // 2. 预处理页面（过滤草稿并预注册 ID 映射，以便附件先导入）
+            // 注意：跳过根页面（空间首页），因为它们不会被导入
             var publishedPages = data.Pages.Where(p => p.ContentStatus == "current").ToList();
             var draftCount = data.Pages.Count - publishedPages.Count;
             foreach (var p in publishedPages)
             {
+                // 如果是根页面，不注册映射，确保下级寻找父页面时得到 null
+                if (!p.ParentId.HasValue || p.ParentId == 0)
+                    continue;
+
                 mapper.AddPageMapping(p.Id, p.Id);
             }
 
@@ -496,9 +501,34 @@ public class ConfluenceImportService
     {
         var processedPages = new HashSet<long>();
 
-        // 首先导入所有没有父页面的页面（根页面，ParentId 为 null 或 0）
-        var rootPages = pages.Where(p => !p.ParentId.HasValue || p.ParentId == 0).ToList();
-        return await ImportPagesInOrder(db, logger, rootPages, pages, mapper, contentMap, attachmentUrlMap, processedPages, options);
+        // 识别 Confluence 的根页面（通常是空间首页，ParentId 为 null 或 0）
+        var confluenceRootPages = pages.Where(p => !p.ParentId.HasValue || p.ParentId == 0).ToList();
+        
+        // 标记空间首页为已处理，不导入空间首页
+        foreach (var rp in confluenceRootPages)
+        {
+            processedPages.Add(rp.Id);
+        }
+
+        // 获取根页面的直接子页面，它们在我们的系统中将作为一级页面（ParentId 为 null）
+        var startPages = pages.Where(p => p.ParentId.HasValue && confluenceRootPages.Any(rp => rp.Id == p.ParentId.Value)).ToList();
+        
+        // 显式将这些页面的父级设为 null，以符合“下级文章的 parentid 应该设置为 null”的要求
+        // 这也避免了 MappingService 在查找映射时因为找不到已跳过的空间首页而记录警告
+        foreach (var p in startPages)
+        {
+            p.Properties["parent.id"] = null;
+        }
+
+        var count = await ImportPagesInOrder(db, logger, startPages, pages, mapper, contentMap, attachmentUrlMap, processedPages, options);
+
+        // 导入完成后更新序列
+        if (count > 0)
+        {
+            try { await db.Db.Ado.ExecuteCommandAsync("SELECT setval('\"pages_id_seq\"', (SELECT MAX(id) FROM \"pages\"))"); } catch { }
+        }
+
+        return count;
     }
 
     /// <summary>
@@ -595,12 +625,6 @@ public class ConfluenceImportService
             {
                 count += await ImportPagesInOrder(db, logger, childPages, allPages, mapper, contentMap, attachmentUrlMap, processedPages, options);
             }
-        }
-
-        // 尝试更新序列
-        if (rootPages.Any(p => !p.ParentId.HasValue || p.ParentId == 0))
-        {
-            try { await db.Db.Ado.ExecuteCommandAsync("SELECT setval('\"pages_id_seq\"', (SELECT MAX(id) FROM \"pages\"))"); } catch { }
         }
 
         return count;

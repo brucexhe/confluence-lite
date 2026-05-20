@@ -110,7 +110,7 @@ public class PageService
         var pages = await _db.Db.Queryable<Page>()
             .Where(p => p.WorkspaceId == workspaceId)
             .OrderBy(p => p.SortOrder)
-            .OrderBy(p => p.Id)
+            .OrderBy(p => p.Title)
             .ToListAsync();
 
         var pageDict = new Dictionary<long, PageTreeNodeDto>();

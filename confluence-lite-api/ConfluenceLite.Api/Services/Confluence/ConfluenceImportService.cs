@@ -74,7 +74,7 @@ public class ConfluenceImportService
             // 使用 SQL 插入以正确处理 PostgreSQL 的 jsonb 类型
             var taskIdList = await _db.Db.Ado.SqlQueryAsync<long>(
                 "INSERT INTO \"import_tasks\" (\"name\", \"sourcefile\", \"status\", \"options\", \"createdat\", \"createdbyid\") " +
-                "VALUES (@name, @sourcefile, @status, @options::jsonb, @createdat, @createdbyid) " +
+                "VALUES (@name, @sourcefile, @status, @options, @createdat, @createdbyid) " +
                 "RETURNING \"id\"",
                 new
                 {
@@ -214,7 +214,10 @@ public class ConfluenceImportService
             task.Status = "failed";
             task.ErrorMessage = ex.Message;
             task.CompletedAt = DateTime.Now;
-            await db.Db.Updateable(task).ExecuteCommandAsync();
+            // 仅更新状态和错误信息，避免触发 Options/Progress 等 jsonb 字段的类型转换错误
+            await db.Db.Updateable(task)
+                .UpdateColumns(t => new { t.Status, t.ErrorMessage, t.CompletedAt })
+                .ExecuteCommandAsync();
         }
     }
 
@@ -234,7 +237,10 @@ public class ConfluenceImportService
 
         try
         {
-            var zipPath = Path.Combine(env.ContentRootPath, task.SourceFile.TrimStart('/'));
+            // 根据路径类型决定是否拼接 ContentRootPath
+            var zipPath = Path.IsPathRooted(task.SourceFile) 
+                ? task.SourceFile 
+                : Path.Combine(env.ContentRootPath, task.SourceFile.TrimStart('/'));
 
             // 构建内容映射 (使用主体自身的 Id 作为 Key，以对应 Page.BodyContentId 和 Space.DescriptionId)
             var bodyContentMap = data.BodyContents
@@ -871,7 +877,7 @@ public class ConfluenceImportService
             task.Progress = progressJson;
 
             await db.Db.Ado.ExecuteCommandAsync(
-                "UPDATE \"import_tasks\" SET \"progress\" = @progress::jsonb WHERE \"id\" = @id",
+                "UPDATE \"import_tasks\" SET \"progress\" = @progress WHERE \"id\" = @id",
                 new { progress = progressJson, id = task.Id });
         }
         catch (Exception ex)

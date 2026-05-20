@@ -36,13 +36,13 @@ public class ImportTask
     /// <summary>
     /// 导入选项（JSON格式）
     /// </summary>
-    [SugarColumn(ColumnDataType = "json")]
+    [SugarColumn(ColumnDataType = "text")]
     public string? Options { get; set; }
 
     /// <summary>
     /// 进度信息（JSON格式）
     /// </summary>
-    [SugarColumn(ColumnDataType = "json")]
+    [SugarColumn(ColumnDataType = "text")]
     public string? Progress { get; set; }
 
     /// <summary>

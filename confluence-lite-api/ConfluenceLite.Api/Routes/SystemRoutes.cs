@@ -111,6 +111,7 @@ public static class SystemRoutes
         group.MapPut("/site-config", async (
             SiteConfigDto dto,
             AppConfiguration appConfig,
+            AppDbContext db,
             IHostEnvironment env,
             IAuditLogService auditService,
             HttpContext context) =>
@@ -138,6 +139,26 @@ public static class SystemRoutes
             appConfig.SiteSettings.AllowRegistration = dto.AllowRegistration;
 
             SaveSiteSettingsConfig(env, dto);
+
+            // 更新数据库中的默认空间
+            if (!string.IsNullOrEmpty(dto.DefaultHomePage) && dto.DefaultHomePage.StartsWith("space:"))
+            {
+                var spaceIdStr = dto.DefaultHomePage.Substring("space:".Length);
+                if (long.TryParse(spaceIdStr, out long spaceId))
+                {
+                    // 先取消之前的默认状态
+                    await db.Db.Updateable<Workspace>()
+                        .SetColumns(w => w.IsDefault == false)
+                        .Where(w => w.IsDefault == true)
+                        .ExecuteCommandAsync();
+
+                    // 设置新的默认空间
+                    await db.Db.Updateable<Workspace>()
+                        .SetColumns(w => w.IsDefault == true)
+                        .Where(w => w.Id == spaceId)
+                        .ExecuteCommandAsync();
+                }
+            }
 
             // 记录审计日志
             await auditService.EnqueueChangeAsync(context, "site", oldValue, dto);

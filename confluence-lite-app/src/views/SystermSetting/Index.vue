@@ -80,18 +80,18 @@
                     <div class="form-hint">新用户的默认界面语言</div>
                 </a-form-item>
 
-                <!-- 默认首页 -->
-                <a-form-item label="默认首页" name="defaultHomePage">
+                <!-- 默认空 -->
+                <a-form-item label="默认空间" name="defaultHomePage">
                     <a-select
                         v-model:value="formState.defaultHomePage"
-                        placeholder="选择默认首页"
+                        placeholder="选择默认空"
                         style="max-width: 400px"
                         :options="homePageOptions"
                         :field-names="{ label: 'name', value: 'id' }"
                         show-search
                         :filter-option="filterHomePage"
                     ></a-select>
-                    <div class="form-hint">用户登录后默认显示的页面</div>
+                    <div class="form-hint">用户登录后默认显示的空间</div>
                 </a-form-item>
 
                 <!-- 时区设置 -->

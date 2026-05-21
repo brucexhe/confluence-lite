@@ -111,42 +111,23 @@ public class PageService
             .Where(p => p.WorkspaceId == workspaceId)
             .OrderBy(p => p.SortOrder)
             .OrderBy(p => p.Title)
-            .Select(p=>p.Id,p.Title,p.ParentId,p.SortOrder)
+            .Select(p=>new PageTreeNodeDto{Id=p.Id,Title=p.Title,ParentId=p.ParentId,SortOrder=p.SortOrder})
             .ToListAsync();
 
-        var pageDict = new Dictionary<long, PageTreeNodeDto>();
+        var pageDict = pages.ToDictionary(p => p.Id);
         var rootPages = new List<PageTreeNodeDto>();
 
-        foreach (var page in pages)
+        foreach (var node in pages)
         {
-            var node = new PageTreeNodeDto
+            node.Children ??= new List<PageTreeNodeDto>();
+            if (node.ParentId.HasValue && pageDict.TryGetValue(node.ParentId.Value, out var parentNode))
             {
-                Id = page.Id,
-                Title = page.Title,
-                ParentId = page.ParentId,
-                SortOrder = page.SortOrder, 
-                Children = new List<PageTreeNodeDto>()
-            };
-
-            pageDict[page.Id] = node;
-
-            if (page.ParentId == null)
+                parentNode.Children ??= new List<PageTreeNodeDto>();
+                parentNode.Children.Add(node);
+            }
+            else
             {
                 rootPages.Add(node);
-            }
-        }
-
-        foreach (var page in pages)
-        {
-            if (page.ParentId.HasValue && pageDict.TryGetValue(page.ParentId.Value, out var parentNode))
-            {
-                if (pageDict.TryGetValue(page.Id, out var childNode))
-                {
-                    if (!parentNode.Children!.Contains(childNode))
-                    {
-                        parentNode.Children.Add(childNode);
-                    }
-                }
             }
         }
 

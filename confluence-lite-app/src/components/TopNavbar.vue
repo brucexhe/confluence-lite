@@ -98,8 +98,8 @@
                         </a-menu>
                     </template>
                 </a-dropdown>
-                <a href="#" class="nav-link">Recent</a>
-                <a href="#" class="nav-link">People</a>
+                <a href="/recent" class="nav-link">Recent</a>
+                <a href="/people" class="nav-link">People</a>
             </nav>
         </div>
         <div class="nav-right">

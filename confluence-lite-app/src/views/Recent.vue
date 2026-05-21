@@ -6,7 +6,7 @@
     </div>
 
     <div class="content">
-      <a-card :bordered="false" class="recent-card">
+      <div :bordered="false" class="recent-card">
         <a-list
           :loading="loading"
           item-layout="horizontal"
@@ -45,7 +45,7 @@
             </div>
           </template>
         </a-list>
-      </a-card>
+      </div>
     </div>
   </div>
 </template>
@@ -108,8 +108,7 @@ onMounted(() => {
 
 <style scoped>
 .recent-page {
-  padding: 40px;
-  max-width: 1000px;
+  padding: 40px 2rem; 
   margin: 0 auto;
 }
 
@@ -130,13 +129,12 @@ onMounted(() => {
 }
 
 .recent-card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: #fff; 
 }
 
 .recent-item {
-  padding: 16px 24px !important;
+  font-size: 14px;
+  padding: 10px 5px !important;
   cursor: pointer;
   transition: background-color 0.2s;
   border-bottom: 1px solid #f4f5f7 !important;
@@ -153,7 +151,7 @@ onMounted(() => {
 }
 
 .page-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #0052cc;
 }

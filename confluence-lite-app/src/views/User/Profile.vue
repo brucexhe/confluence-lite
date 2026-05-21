@@ -15,10 +15,7 @@
                                 <!-- 左侧头像 -->
                                 <div class="avatar-section">
                                     <div class="avatar-wrapper">
-                                        <img v-if="userForm.avatarUrl" :src="userForm.avatarUrl" class="avatar-img" />
-                                        <div v-else class="avatar-placeholder">
-                                            <User :size="48" />
-                                        </div>
+                                        <UserAvatar :user="userForm" :size="120" shape="square" class="avatar-img" />
                                         <div class="avatar-overlay" @click="triggerAvatarUpload">
                                             <Camera :size="20" />
                                             <span>更换头像</span>
@@ -178,6 +175,7 @@ import { message } from "ant-design-vue";
 import { User, Mail, Lock, Key, Camera, Smile, Upload } from "lucide-vue-next";
 import { userApi, uploadApi } from "@/api";
 import { useAuthStore } from "@/store/auth";
+import UserAvatar from "@/components/UserAvatar.vue";
 
 const authStore = useAuthStore();
 const activeTab = ref("basic");

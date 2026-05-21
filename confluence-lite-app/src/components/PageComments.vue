@@ -21,7 +21,7 @@
 
         <!-- Add Comment Form -->
         <div class="add-comment">
-            <a-avatar class="user-avatar">{{ userInitial }}</a-avatar>
+            <UserAvatar :user="authStore.user" :size="32" />
             <div class="comment-input-wrapper">
                 <a-textarea
                     v-model:value="newComment"
@@ -44,9 +44,7 @@
         <a-spin v-if="loading" style="display:block;padding:2rem 0;text-align:center;" />
         <div v-else class="comments-list">
             <div v-for="comment in sortedComments" :key="comment.id" class="comment-item">
-                <a-avatar class="comment-avatar" :style="{ backgroundColor: avatarColor(userName(comment.user)) }">
-                    {{ userName(comment.user).charAt(0).toUpperCase() }}
-                </a-avatar>
+                <UserAvatar :user="comment.user" :size="32" class="comment-avatar" />
                 <div class="comment-content-wrapper">
                     <div class="comment-meta">
                         <span class="comment-author">{{ userName(comment.user) }}</span>
@@ -64,9 +62,7 @@
                     <!-- Replies -->
                     <div class="comment-replies" v-if="comment.replies && comment.replies.length > 0">
                         <div v-for="reply in comment.replies" :key="reply.id" class="reply-item">
-                            <a-avatar class="reply-avatar" :style="{ backgroundColor: avatarColor(userName(reply.user)), fontSize: '12px' }">
-                                {{ userName(reply.user).charAt(0).toUpperCase() }}
-                            </a-avatar>
+                            <UserAvatar :user="reply.user" :size="24" class="reply-avatar" />
                             <div class="reply-content-wrapper">
                                 <div class="reply-meta">
                                     <span class="reply-author">{{ userName(reply.user) }}</span>
@@ -119,12 +115,12 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { MessageSquare as CommentIcon, ChevronDown as DownIcon } from 'lucide-vue-next';
 import { commentApi } from '../api';
+import { useAuthStore } from '../store/auth';
+import UserAvatar from './UserAvatar.vue';
+
+const authStore = useAuthStore();
 
 const props = defineProps({
-    userInitial: {
-        type: String,
-        default: 'U'
-    },
     pageId: {
         type: [String, Number],
         required: true
@@ -136,15 +132,8 @@ const newComment = ref('');
 const sortOrder = ref('newest');
 const comments = ref([]);
 
-// Avatar colors
-const avatarColors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'];
 function userName(user) {
     return user?.displayName || user?.username || 'Unknown';
-}
-function avatarColor(name) {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
 function formatTime(dateStr) {

@@ -41,27 +41,14 @@
             <h1 class="page-title bold">{{ pageTitle }}</h1>
 
             <div class="page-meta">
-                <a-avatar
-                    style="
-                        background-color: #3b82f6;
-                        margin-right: 12px;
-                        width: 20px;
-                        height: 20px;
-                        line-height: 20px;
-                        font-size: 12px;
-                    "
-                >
-                    {{ pageCreatorInitial }}
-                </a-avatar>
-                <span class="author">{{ pageCreatorName }}</span>
-                <span class="bullet">•</span>
+                <span>由&nbsp;{{ pageCreatorName }}&nbsp;创建于&nbsp;</span>
                 <span class="date">{{ pageUpdatedTime }}</span>
             </div>
 
             <div class="page-content" ref="contentRef" v-html="pageContent"></div>
 
             <!-- Comments Section -->
-            <PageComments :userInitial="userInitial" :pageId="pageId" />
+            <PageComments :pageId="pageId" />
         </div>
 
         <!-- Version History Drawer -->
@@ -99,6 +86,7 @@ import { useRoute, useRouter } from "vue-router";
 import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import PageAttachments from "../../components/PageAttachments.vue";
+import UserAvatar from "../../components/UserAvatar.vue";
 import ImagePreview from "../../components/ImagePreview.vue";
 import OfficePreview from "../../components/OfficePreview.vue";
 import VideoPreview from "../../components/VideoPreview.vue";
@@ -128,15 +116,11 @@ const pageTreeStore = usePageTreeStore();
 const pageId = computed(() => route.params.id);
 const contentRef = ref(null);
 
-const userInitial = computed(() => {
-    return authStore.user?.name?.charAt(0)?.toUpperCase() || "U";
-});
-
 // 页面数据
 const pageTitle = ref("");
 const pageContent = ref("");
+const pageCreator = ref(null);
 const pageCreatorName = ref("");
-const pageCreatorInitial = ref("U");
 const pageUpdatedTime = ref("");
 
 // 面包屑空间名
@@ -185,8 +169,8 @@ const loadPageData = async () => {
         if (data) {
             pageTitle.value = data.title || "";
             pageContent.value = data.content || "";
+            pageCreator.value = data.creator;
             pageCreatorName.value = data.creator?.displayName || data.creator?.username || "Unknown";
-            pageCreatorInitial.value = pageCreatorName.value.charAt(0).toUpperCase();
             pageUpdatedTime.value = formatTime(data.updatedAt);
             nextTick(() => highlightCode());
         }

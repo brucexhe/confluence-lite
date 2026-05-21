@@ -35,15 +35,10 @@
                             <template #renderItem="{ item }">
                                 <a-list-item class="activity-item">
                                     <template #avatar>
-                                        <a-avatar
+                                        <UserAvatar
+                                            :user="item.user"
                                             :size="24"
-                                            :style="{
-                                                backgroundColor: getUserColor(item.user?.id),
-                                                fontSize: '12px',
-                                            }"
-                                        >
-                                            {{ getUserInitial(item.user) }}
-                                        </a-avatar>
+                                        />
                                     </template>
                                     <template #default>
                                         <div class="activity-content">
@@ -108,6 +103,7 @@ import { ref, computed, onMounted, inject, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { FileText } from "lucide-vue-next";
 import { activityApi } from "@/api";
+import UserAvatar from "@/components/UserAvatar.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -162,30 +158,6 @@ watch(
     { immediate: true },
 );
 
-// 用户颜色池
-const userColors = [
-    "#3b82f6",
-    "#8b5cf6",
-    "#ec4899",
-    "#f59e0b",
-    "#10b981",
-    "#06b6d4",
-    "#6366f1",
-    "#14b8a6",
-    "#f97316",
-    "#84cc16",
-];
-
-function getUserColor(userId) {
-    if (!userId) return "#6b778c";
-    return userColors[userId % userColors.length];
-}
-
-function getUserInitial(user) {
-    if (!user) return "?";
-    const name = user.displayName || user.username;
-    return name?.charAt(0)?.toUpperCase() || "?";
-}
 
 function formatTime(dateStr) {
     if (!dateStr) return "";

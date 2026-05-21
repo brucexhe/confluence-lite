@@ -41,7 +41,7 @@
             >
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'avatar'">
-                        <a-avatar>{{ record.name?.charAt(0)?.toUpperCase() || 'U' }}</a-avatar>
+                        <UserAvatar :user="record" />
                     </template>
                     <template v-else-if="column.key === 'roles'">
                         <a-tag v-for="role in record.roles" :key="role" :color="getRoleColor(role)">
@@ -142,6 +142,7 @@ import { message } from 'ant-design-vue'
 import { Plus } from 'lucide-vue-next'
 import { userApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const loading = ref(false)
 const submitting = ref(false)

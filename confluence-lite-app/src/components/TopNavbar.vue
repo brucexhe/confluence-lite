@@ -3,7 +3,7 @@
         <div class="nav-left">
             <img v-if="siteLogo" class="logo" :src="siteLogo" alt="" @click="navigateTo('/')" style="cursor: pointer" />
             <div v-else class="logo" @click="navigateTo('/')" style="cursor: pointer"></div>
-            <a class="nav-title" href="/" style="cursor: pointer;color: #fff">{{ siteName }}</a>
+            <a class="nav-title" href="/" style="cursor: pointer; color: #fff">{{ siteName }}</a>
             <nav class="nav-links">
                 <a-dropdown :trigger="['click']" placement="bottomLeft">
                     <a class="nav-link dropdown-link" @click.prevent>
@@ -58,7 +58,7 @@
                                             width: '32px',
                                             height: '32px',
                                             borderRadius: '3px',
-                                            objectFit: 'cover'
+                                            objectFit: 'cover',
                                         }"
                                     />
                                     <div
@@ -73,17 +73,14 @@
                                             justifyContent: 'center',
                                             color: '#fff',
                                             fontWeight: 600,
-                                            fontSize: '14px'
+                                            fontSize: '14px',
                                         }"
-                                    >{{ getSpaceInitial(space) }}</div>
+                                    >
+                                        {{ getSpaceInitial(space) }}
+                                    </div>
                                     <div>
                                         <div
-                                            style="
-                                                font-weight: 500;
-                                                color: #172b4d;
-                                                font-size: 14px;
-                                                line-height: 1.2;
-                                            "
+                                            style="font-weight: 500; color: #172b4d; font-size: 14px; line-height: 1.2"
                                         >
                                             {{ space.name || space.key }}
                                         </div>
@@ -96,9 +93,7 @@
                             </a-menu-item>
                             <a-menu-divider v-if="spaces.length > 0" />
                             <a-menu-item key="view-all" style="padding: 4px 16px" @click="navigateTo('/spaces')">
-                                <span style="color: #0052cc; font-size: 14px; font-weight: 500">
-                                    View all spaces
-                                </span>
+                                <span style="color: #0052cc; font-size: 14px; font-weight: 500">View all spaces</span>
                             </a-menu-item>
                         </a-menu>
                     </template>
@@ -113,37 +108,29 @@
             </div>
             <button class="create-btn" @click="handleCreate">Create</button>
             <a-dropdown :trigger="['click']">
-                <a-avatar
-                    style="
-                        background-color: #ffffff;
-                        color: #0049b0;
-                        cursor: pointer;
-                        width: 28px;
-                        height: 28px;
-                        line-height: 28px;
-                        font-size: 14px;
-                    "
+                <UserAvatar
+                    :user="authStore.user"
+                    :size="28"
+                    style="cursor: pointer"
                     @click.prevent
-                >
-                    {{ userInitials }}
-                </a-avatar>
+                />
                 <template #overlay>
-                    <a-menu style="min-width: 120px; padding: 4px 0;">
+                    <a-menu style="min-width: 120px; padding: 4px 0">
                         <a-menu-item @click="navigateTo('/spaces')">
-                            <span style="font-size: 14px; color: #172b4d;">空间列表</span>
+                            <span style="font-size: 14px; color: #172b4d">空间列表</span>
                         </a-menu-item>
                         <a-menu-item @click="navigateTo('/recent')">
-                            <span style="font-size: 14px; color: #172b4d;">最近浏览</span>
+                            <span style="font-size: 14px; color: #172b4d">最近浏览</span>
                         </a-menu-item>
                         <a-menu-item @click="navigateTo('/profile')">
-                            <span style="font-size: 14px; color: #172b4d;">用户信息</span>
+                            <span style="font-size: 14px; color: #172b4d">用户信息</span>
                         </a-menu-item>
                         <a-menu-item @click="navigateTo('/settings')">
-                            <span style="font-size: 14px; color: #172b4d;">系统设置</span>
+                            <span style="font-size: 14px; color: #172b4d">系统设置</span>
                         </a-menu-item>
                         <a-menu-divider />
                         <a-menu-item @click="handleLogout">
-                            <span style="font-size: 14px; color: #ef4444;">退出登录</span>
+                            <span style="font-size: 14px; color: #ef4444">退出登录</span>
                         </a-menu-item>
                     </a-menu>
                 </template>
@@ -153,11 +140,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '../store/auth';
-import { useSiteInfo } from '../store/site';
-import { getSpaceColorById, getSpaceInitial } from '../utils/workspace';
+import { computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore } from "../store/auth";
+import { useSiteInfo } from "../store/site";
+import { getSpaceColorById, getSpaceInitial } from "../utils/workspace";
+import UserAvatar from "./UserAvatar.vue";
 
 function isImageUrl(icon) {
     if (!icon) return false;
@@ -171,26 +159,20 @@ const { siteName, siteLogo } = useSiteInfo();
 
 // 空间列表（从 localStorage 读取）
 const spaces = computed(() => {
-    return JSON.parse(localStorage.getItem('auth_spaces') || '[]')
-})
+    return JSON.parse(localStorage.getItem("auth_spaces") || "[]");
+});
 
 function navigateToSpace(key) {
-    const upperKey = key.toUpperCase()
-    const currentKey = route.params.spaceKey?.toUpperCase()
+    const upperKey = key.toUpperCase();
+    const currentKey = route.params.spaceKey?.toUpperCase();
 
     // 如果是同一个空间，不处理
-    if (upperKey === currentKey) return
+    if (upperKey === currentKey) return;
 
     // 导航到空间首页
-    router.push(`/${upperKey}`)
+    router.push(`/${upperKey}`);
 }
 
-const userInitials = computed(() => {
-    if (authStore.user && authStore.user.name) {
-        return authStore.user.name.charAt(0).toUpperCase();
-    }
-    return "U";
-});
 
 const handleLogout = () => {
     authStore.logout();
@@ -202,16 +184,16 @@ const navigateTo = (path) => {
 
 const handleCreate = () => {
     // 从路由获取当前空间 key
-    const key = route.params.spaceKey
+    const key = route.params.spaceKey;
     if (key) {
-        const currentId = route.params.id
-        const query = currentId ? { parentId: currentId } : {}
-        router.push({ path: `/${key}/page/new`, query })
+        const currentId = route.params.id;
+        const query = currentId ? { parentId: currentId } : {};
+        router.push({ path: `/${key}/page/new`, query });
     } else {
         // 如果没有空间 key，跳转到第一个空间
-        const spacesList = spaces.value
+        const spacesList = spaces.value;
         if (spacesList.length > 0) {
-            router.push({ path: `/${spacesList[0].key}/page/new` })
+            router.push({ path: `/${spacesList[0].key}/page/new` });
         }
     }
 };
@@ -270,6 +252,7 @@ const handleCreate = () => {
     padding: 0.25rem 0.5rem;
     border-radius: 3px;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .nav-link.dropdown-link {

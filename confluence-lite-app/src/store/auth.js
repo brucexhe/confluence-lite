@@ -24,6 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
           id: data.user.id,
           name: data.user.displayName || data.user.username,
           username: data.user.username,
+          avatarUrl: data.user.avatarUrl,
           role: data.user.isAdmin ? 'admin' : 'user'
         }
         localStorage.setItem('auth_user', JSON.stringify(user.value))

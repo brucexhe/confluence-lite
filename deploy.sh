@@ -8,7 +8,7 @@ cp -r dist/* ../release/wwwroot/
 cd ..
 
 #build api
-wsl /root/.dotnet/dotnet publish -r linux-x64 -c Release --self-contained true -p:PublishSingleFile=true -o ./release
+wsl "//root/.dotnet/dotnet" publish -r linux-x64 -c Release --self-contained true -p:PublishSingleFile=true -o ./release
 
 wsl rm -rf ./release/ConfluenceLite.Api.dbg
 wsl rm -rf ./release/appsettings.Development.json

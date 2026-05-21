@@ -13,7 +13,6 @@
                 class="settings-form"
                 @finish="handleSubmit"
             >
-
                 <!-- 站点名称 -->
                 <a-form-item label="站点名称" name="siteName" :rules="[{ required: true, message: '请输入站点名称' }]">
                     <a-input
@@ -31,12 +30,8 @@
                             <img :src="formState.siteLogo" alt="站点LOGO" />
                             <div class="logo-preview-overlay">
                                 <a-space>
-                                    <a-button type="primary" size="small" @click="triggerUpload">
-                                        更换
-                                    </a-button>
-                                    <a-button danger size="small" @click="removeLogo">
-                                        删除
-                                    </a-button>
+                                    <a-button type="primary" size="small" @click="triggerUpload">更换</a-button>
+                                    <a-button danger size="small" @click="removeLogo">删除</a-button>
                                 </a-space>
                             </div>
                         </div>
@@ -64,7 +59,6 @@
                     />
                     <div class="form-hint">用于 SEO 和站点说明</div>
                 </a-form-item>
- 
 
                 <!-- 域名 -->
                 <a-form-item label="站点域名" name="siteDomain">
@@ -124,11 +118,9 @@
                 </a-form-item>
 
                 <!-- 提交按钮 -->
-                <a-form-item  style="margin-left: 100px">
+                <a-form-item style="margin-left: 100px">
                     <a-space>
-                        <a-button type="primary" html-type="submit" :loading="saving">
-                            保存设置
-                        </a-button>
+                        <a-button type="primary" html-type="submit" :loading="saving">保存设置</a-button>
                         <a-button @click="handleReset">重置</a-button>
                     </a-space>
                 </a-form-item>
@@ -138,197 +130,182 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { message } from 'ant-design-vue'
-import { Plus } from 'lucide-vue-next'
-import { systemSettingApi, workspaceApi, pageApi, attachmentApi, uploadApi } from '@/api'
+import { ref, onMounted, computed } from "vue";
+import { message } from "ant-design-vue";
+import { Plus } from "lucide-vue-next";
+import { systemSettingApi, workspaceApi, pageApi, attachmentApi, uploadApi } from "@/api";
 
-const loading = ref(false)
-const saving = ref(false)
-const fileInputRef = ref()
-const uploadingLogo = ref(false)
+const loading = ref(false);
+const saving = ref(false);
+const fileInputRef = ref();
+const uploadingLogo = ref(false);
 
 // 表单数据
 const formState = ref({
-    siteName: '',
-    siteDescription: '',
+    siteName: "",
+    siteDescription: "",
     siteTags: [],
-    siteDomain: '',
-    siteLogo: '',
-    defaultLanguage: 'zh-CN',
+    siteDomain: "",
+    siteLogo: "",
+    defaultLanguage: "zh-CN",
     defaultHomePage: null,
-    timezone: 'Asia/Shanghai',
-    allowRegistration: true
-})
+    timezone: "Asia/Shanghai",
+    allowRegistration: true,
+});
 
 // 标签选项
 const tagOptions = ref([
-    { label: '文档', value: 'documentation' },
-    { label: '知识库', value: 'knowledge' },
-    { label: '团队', value: 'team' },
-    { label: '产品', value: 'product' },
-    { label: '技术', value: 'technical' },
-    { label: 'API', value: 'api' }
-])
+    { label: "文档", value: "documentation" },
+    { label: "知识库", value: "knowledge" },
+    { label: "团队", value: "team" },
+    { label: "产品", value: "product" },
+    { label: "技术", value: "technical" },
+    { label: "API", value: "api" },
+]);
 
 // 语言选项
 const languageOptions = ref([
-    { label: '简体中文', value: 'zh-CN' },
-    { label: '繁體中文', value: 'zh-TW' },
-    { label: 'English', value: 'en-US' },
-    { label: '日本語', value: 'ja-JP' },
-    { label: '한국어', value: 'ko-KR' }
-])
+    { label: "简体中文", value: "zh-CN" },
+    { label: "繁體中文", value: "zh-TW" },
+    { label: "English", value: "en-US" },
+    { label: "日本語", value: "ja-JP" },
+    { label: "한국어", value: "ko-KR" },
+]);
 
 // 首页选项（从工作空间和页面加载）
-const homePageOptions = ref([])
+const homePageOptions = ref([]);
 
 // 时区选项
 const timezoneOptions = ref([
-    { label: '(GMT+08:00) 北京/上海/香港/台北', value: 'Asia/Shanghai' },
-    { label: '(GMT+09:00) 东京/首尔', value: 'Asia/Tokyo' },
-    { label: '(GMT+00:00) 伦敦/都柏林', value: 'Europe/London' },
-    { label: '(GMT-05:00) 纽约/波士顿', value: 'America/New_York' },
-    { label: '(GMT-08:00) 太平洋时间 (洛杉矶)', value: 'America/Los_Angeles' },
-    { label: '(GMT+10:00) 悉尼/墨尔本', value: 'Australia/Sydney' }
-])
+    { label: "(GMT+08:00) 北京/上海/香港/台北", value: "Asia/Shanghai" },
+    { label: "(GMT+09:00) 东京/首尔", value: "Asia/Tokyo" },
+    { label: "(GMT+00:00) 伦敦/都柏林", value: "Europe/London" },
+    { label: "(GMT-05:00) 纽约/波士顿", value: "America/New_York" },
+    { label: "(GMT-08:00) 太平洋时间 (洛杉矶)", value: "America/Los_Angeles" },
+    { label: "(GMT+10:00) 悉尼/墨尔本", value: "Australia/Sydney" },
+]);
 
 // 加载配置
 const loadConfig = async () => {
-    loading.value = true
+    loading.value = true;
     try {
-        const data = await systemSettingApi.getSiteConfig()
+        const data = await systemSettingApi.getSiteConfig();
         if (data) {
             formState.value = {
                 ...formState.value,
                 ...data,
-                siteTags: data.siteTags || []
-            }
+                siteTags: data.siteTags || [],
+            };
         }
     } catch (error) {
-        console.error('加载配置失败:', error)
+        console.error("加载配置失败:", error);
     } finally {
-        loading.value = false
+        loading.value = false;
     }
-}
+};
 
 // 加载首页选项
 const loadHomePageOptions = async () => {
     try {
-        const spaces = await workspaceApi.getMy()
-        const options = []
+        const spaces = await workspaceApi.getMy();
+        const options = [];
 
         for (const space of spaces) {
             // 添加空间首页
             options.push({
                 id: `space:${space.id}`,
                 name: `📁 ${space.name} (${space.key})`,
-                type: 'space'
-            })
+                type: "space",
+            });
 
             // 加载空间的页面树
-            try {
-                const pages = await pageApi.getTree(space.id)
-                if (pages && pages.length > 0) {
-                    pages.forEach(page => {
-                        options.push({
-                            id: `page:${page.id}`,
-                            name: `  📄 ${page.title}`,
-                            type: 'page',
-                            spaceKey: space.key
-                        })
-                    })
-                }
-            } catch (e) {
-                console.warn(`加载空间 ${space.key} 的页面失败:`, e)
-            }
         }
 
-        homePageOptions.value = options
+        homePageOptions.value = options;
     } catch (error) {
-        console.error('加载首页选项失败:', error)
+        console.error("加载首页选项失败:", error);
     }
-}
+};
 
 // 搜索首页
 const filterHomePage = (input, option) => {
-    return option.name.toLowerCase().includes(input.toLowerCase())
-}
+    return option.name.toLowerCase().includes(input.toLowerCase());
+};
 
 // 搜索时区
 const filterTimezone = (input, option) => {
-    return option.label.toLowerCase().includes(input.toLowerCase())
-}
+    return option.label.toLowerCase().includes(input.toLowerCase());
+};
 
 // 提交表单
 const handleSubmit = async () => {
-    saving.value = true
+    saving.value = true;
     try {
-        await systemSettingApi.updateSiteConfig(formState.value)
-        message.success('设置保存成功')
+        await systemSettingApi.updateSiteConfig(formState.value);
+        message.success("设置保存成功");
     } catch (error) {
-        console.error('保存设置失败:', error)
-        message.error('保存设置失败，请稍后重试')
+        console.error("保存设置失败:", error);
+        message.error("保存设置失败，请稍后重试");
     } finally {
-        saving.value = false
+        saving.value = false;
     }
-}
+};
 
 // 重置表单
 const handleReset = () => {
-    loadConfig()
-    message.info('已重置为服务器配置')
-}
+    loadConfig();
+    message.info("已重置为服务器配置");
+};
 
 // 触发文件选择
 const triggerUpload = () => {
-    fileInputRef.value?.click()
-}
+    fileInputRef.value?.click();
+};
 
 // 处理文件选择
 const handleFileChange = async (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
     // 验证文件类型
-    if (!file.type.startsWith('image/')) {
-        message.error('请选择图片文件')
-        return
+    if (!file.type.startsWith("image/")) {
+        message.error("请选择图片文件");
+        return;
     }
 
     // 验证文件大小（2MB）
     if (file.size > 2 * 1024 * 1024) {
-        message.error('图片大小不能超过2MB')
-        return
+        message.error("图片大小不能超过2MB");
+        return;
     }
 
-    uploadingLogo.value = true
+    uploadingLogo.value = true;
     try {
-        const result = await uploadApi.upload(file)
-        formState.value.siteLogo = result
-        message.success('LOGO上传成功')
+        const result = await uploadApi.upload(file);
+        formState.value.siteLogo = result;
+        message.success("LOGO上传成功");
     } catch (error) {
-        console.error('上传LOGO失败:', error)
-        message.error('上传LOGO失败，请稍后重试')
+        console.error("上传LOGO失败:", error);
+        message.error("上传LOGO失败，请稍后重试");
     } finally {
-        uploadingLogo.value = false
+        uploadingLogo.value = false;
         // 清空文件输入
         if (fileInputRef.value) {
-            fileInputRef.value.value = ''
+            fileInputRef.value.value = "";
         }
     }
-}
+};
 
 // 删除LOGO
 const removeLogo = () => {
-    formState.value.siteLogo = ''
-    message.info('已删除LOGO')
-}
+    formState.value.siteLogo = "";
+    message.info("已删除LOGO");
+};
 
 onMounted(() => {
-    loadConfig()
-    loadHomePageOptions()
-})
+    loadConfig();
+    loadHomePageOptions();
+});
 </script>
 
 <style scoped>

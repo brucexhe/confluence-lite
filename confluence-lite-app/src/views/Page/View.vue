@@ -65,26 +65,13 @@
         </div>
 
         <!-- Version History Drawer -->
-        <PageVersionHistory
-            v-model:open="historyVisible"
-            :pageId="pageId"
-            @restored="loadPageData"
-        />
+        <PageVersionHistory v-model:open="historyVisible" :pageId="pageId" @restored="loadPageData" />
 
         <!-- Attachments Drawer -->
-        <PageAttachments
-            v-model:open="attachmentsVisible"
-            :pageId="pageId"
-            @changed="loadAttachmentCount"
-        />
+        <PageAttachments v-model:open="attachmentsVisible" :pageId="pageId" @changed="loadAttachmentCount" />
 
         <!-- View Source Modal -->
-        <a-modal
-            v-model:open="sourceVisible"
-            title="View Source"
-            :width="800"
-            :footer="null"
-        >
+        <a-modal v-model:open="sourceVisible" title="View Source" :width="800" :footer="null">
             <div class="source-viewer">
                 <pre><code>{{ pageContent }}</code></pre>
             </div>
@@ -99,18 +86,10 @@
         />
 
         <!-- Office 文件预览组件 -->
-        <OfficePreview
-            v-model:open="officePreviewOpen"
-            :filePath="officeFilePath"
-            :fileName="officeFileName"
-        />
+        <OfficePreview v-model:open="officePreviewOpen" :filePath="officeFilePath" :fileName="officeFileName" />
 
         <!-- 视频预览组件 -->
-        <VideoPreview
-            v-model:open="videoPreviewOpen"
-            :src="videoSrc"
-            :fileName="videoFileName"
-        />
+        <VideoPreview v-model:open="videoPreviewOpen" :src="videoSrc" :fileName="videoFileName" />
     </div>
 </template>
 
@@ -131,14 +110,14 @@ import "prismjs/themes/prism.css";
 import "prismjs/plugins/line-numbers/prism-line-numbers.css";
 import "prismjs/plugins/line-numbers/prism-line-numbers.js";
 import "prismjs/components/prism-csharp";
-import "prismjs/components/prism-go"; 
+import "prismjs/components/prism-go";
 import "prismjs/components/prism-java";
 import "prismjs/components/prism-python";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-sql";
 import "prismjs/components/prism-bash";
 import "prismjs/components/prism-yaml";
-import "prismjs/components/prism-json"; 
+import "prismjs/components/prism-json";
 
 // 从 MainLayout 注入 setNotFound 方法
 const setNotFound = inject("setNotFound");
@@ -150,7 +129,7 @@ const pageId = computed(() => route.params.id);
 const contentRef = ref(null);
 
 const userInitial = computed(() => {
-    return authStore.user?.name?.charAt(0)?.toUpperCase() || 'U';
+    return authStore.user?.name?.charAt(0)?.toUpperCase() || "U";
 });
 
 // 页面数据
@@ -162,42 +141,42 @@ const pageUpdatedTime = ref("");
 
 // 面包屑空间名
 const spaceName = computed(() => {
-    const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
-    const key = route.params.spaceKey
-    const space = spaces.find(s => s.key === key)
-    return space?.name || key || ''
+    const spaces = JSON.parse(localStorage.getItem("auth_spaces") || "[]");
+    const key = route.params.spaceKey;
+    const space = spaces.find((s) => s.key === key);
+    return space?.name || key || "";
 });
 
 // 面包屑：从页面树中提取父级链
 const pageTreeMap = computed(() => {
-    const map = new Map()
-    const treeData = pageTreeStore.currentTreeData
+    const map = new Map();
+    const treeData = pageTreeStore.currentTreeData;
     function walk(nodes, parentId = null) {
         for (const node of nodes) {
-            map.set(node.id, { ...node, parentId })
-            if (node.children?.length) walk(node.children, node.id)
+            map.set(node.id, { ...node, parentId });
+            if (node.children?.length) walk(node.children, node.id);
         }
     }
-    walk(treeData || [])
-    return map
-})
+    walk(treeData || []);
+    return map;
+});
 
 const parentCrumbs = computed(() => {
-    const id = Number(pageId.value)
-    const crumbs = []
-    let currentId = id
-    const visited = new Set()
+    const id = Number(pageId.value);
+    const crumbs = [];
+    let currentId = id;
+    const visited = new Set();
     while (currentId) {
-        const node = pageTreeMap.value.get(currentId)
-        if (!node || visited.has(currentId)) break
-        visited.add(currentId)
+        const node = pageTreeMap.value.get(currentId);
+        if (!node || visited.has(currentId)) break;
+        visited.add(currentId);
         if (node.id !== id) {
-            crumbs.unshift({ id: node.id, title: node.title })
+            crumbs.unshift({ id: node.id, title: node.title });
         }
-        currentId = node.parentId
+        currentId = node.parentId;
     }
-    return crumbs
-})
+    return crumbs;
+});
 
 // 加载页面数据
 const loadPageData = async () => {
@@ -230,18 +209,18 @@ const loadAttachmentCount = async () => {
 };
 
 function formatTime(dateStr) {
-    if (!dateStr) return '';
+    if (!dateStr) return "";
     const date = new Date(dateStr);
     const now = new Date();
     const diff = now - date;
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return '刚刚';
+    if (minutes < 1) return "刚刚";
     if (minutes < 60) return `${minutes} 分钟前`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours} 小时前`;
     const days = Math.floor(hours / 24);
     if (days < 30) return `${days} 天前`;
-    return date.toLocaleDateString('zh-CN');
+    return date.toLocaleDateString("zh-CN");
 }
 
 // 为代码块添加行号 class 并执行语法高亮
@@ -249,20 +228,22 @@ function highlightCode() {
     nextTick(() => {
         const el = contentRef.value;
         if (!el) return;
-        el.querySelectorAll('pre[class*="language-"]').forEach(pre => {
-            pre.classList.add('line-numbers');
-            if (!pre.querySelector('.code-copy-btn')) {
-                const btn = document.createElement('button');
-                btn.className = 'code-copy-btn';
-                btn.textContent = 'Copy';
+        el.querySelectorAll('pre[class*="language-"]').forEach((pre) => {
+            pre.classList.add("line-numbers");
+            if (!pre.querySelector(".code-copy-btn")) {
+                const btn = document.createElement("button");
+                btn.className = "code-copy-btn";
+                btn.textContent = "Copy";
                 btn.onclick = () => {
-                    const code = pre.querySelector('code');
-                    navigator.clipboard.writeText(code?.textContent || pre.textContent || '').then(() => {
-                        btn.textContent = 'Copied!';
-                        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+                    const code = pre.querySelector("code");
+                    navigator.clipboard.writeText(code?.textContent || pre.textContent || "").then(() => {
+                        btn.textContent = "Copied!";
+                        setTimeout(() => {
+                            btn.textContent = "Copy";
+                        }, 2000);
                     });
                 };
-                pre.style.position = 'relative';
+                pre.style.position = "relative";
                 pre.appendChild(btn);
             }
         });
@@ -277,21 +258,21 @@ function initImagePreview() {
         if (!el) return;
 
         // 获取所有图片 URL 列表
-        pageImages.value = Array.from(el.querySelectorAll('img')).map(img => img.src);
+        pageImages.value = Array.from(el.querySelectorAll("img")).map((img) => img.src);
 
         // 为每张图片添加点击事件
-        el.querySelectorAll('img').forEach((img, index) => {
-            img.style.cursor = 'pointer';
+        el.querySelectorAll("img").forEach((img, index) => {
+            img.style.cursor = "pointer";
 
             if (!img.dataset.hasPreviewListener) {
-                img.addEventListener('click', (e) => {
+                img.addEventListener("click", (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     currentImageSrc.value = img.src;
                     currentImageIndex.value = index;
                     imagePreviewOpen.value = true;
                 });
-                img.dataset.hasPreviewListener = 'true';
+                img.dataset.hasPreviewListener = "true";
             }
         });
     });
@@ -302,18 +283,18 @@ function initOfficePreview() {
     nextTick(() => {
         const el = contentRef.value;
         if (!el) return;
-        const officeExtensions = ['.docx', '.xlsx', '.pptx', '.pdf'];
-        el.querySelectorAll('a.file').forEach(link => {
-            const href = link.getAttribute('href') || '';
-            const isOffice = officeExtensions.some(ext => href.toLowerCase().endsWith(ext));
+        const officeExtensions = [".docx", ".xlsx", ".pptx", ".pdf"];
+        el.querySelectorAll("a.file").forEach((link) => {
+            const href = link.getAttribute("href") || "";
+            const isOffice = officeExtensions.some((ext) => href.toLowerCase().endsWith(ext));
             if (!isOffice) return;
             if (link.dataset.hasOfficePreview) return;
-            link.dataset.hasOfficePreview = 'true';
-            link.addEventListener('click', (e) => {
+            link.dataset.hasOfficePreview = "true";
+            link.addEventListener("click", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 officeFilePath.value = href;
-                officeFileName.value = link.textContent?.trim() || href.split('/').pop() || 'Document';
+                officeFileName.value = link.textContent?.trim() || href.split("/").pop() || "Document";
                 officePreviewOpen.value = true;
             });
         });
@@ -325,15 +306,15 @@ function initVideoPreview() {
     nextTick(() => {
         const el = contentRef.value;
         if (!el) return;
-        el.querySelectorAll('a.video').forEach(link => {
-            const href = link.getAttribute('href') || '';
+        el.querySelectorAll("a.video").forEach((link) => {
+            const href = link.getAttribute("href") || "";
             if (link.dataset.hasVideoPreview) return;
-            link.dataset.hasVideoPreview = 'true';
-            link.addEventListener('click', (e) => {
+            link.dataset.hasVideoPreview = "true";
+            link.addEventListener("click", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 videoSrc.value = href;
-                videoFileName.value = link.textContent?.trim() || href.split('/').pop() || 'Video';
+                videoFileName.value = link.textContent?.trim() || href.split("/").pop() || "Video";
                 videoPreviewOpen.value = true;
             });
         });
@@ -345,51 +326,52 @@ function initTableSort() {
     nextTick(() => {
         const el = contentRef.value;
         if (!el) return;
-        el.querySelectorAll('table').forEach(table => {
+        el.querySelectorAll("table").forEach((table) => {
             // 确保 thead/tbody 结构存在
-            let thead = table.querySelector('thead');
-            let tbody = table.querySelector('tbody');
+            let thead = table.querySelector("thead");
+            let tbody = table.querySelector("tbody");
             if (!thead && !tbody) {
                 // TinyMCE 默认插入的表格没有 thead/tbody，首行全是 <td>
-                const rows = Array.from(table.querySelectorAll('tr'));
+                const rows = Array.from(table.querySelectorAll("tr"));
                 if (rows.length < 2) return;
-                thead = document.createElement('thead');
-                tbody = document.createElement('tbody');
+                thead = document.createElement("thead");
+                tbody = document.createElement("tbody");
                 // 首行 td 转为 th
-                rows[0].querySelectorAll('td').forEach(td => {
-                    const th = document.createElement('th');
+                rows[0].querySelectorAll("td").forEach((td) => {
+                    const th = document.createElement("th");
                     th.innerHTML = td.innerHTML;
                     td.replaceWith(th);
                 });
                 thead.appendChild(rows[0]);
-                rows.slice(1).forEach(r => tbody.appendChild(r));
+                rows.slice(1).forEach((r) => tbody.appendChild(r));
                 table.appendChild(thead);
                 table.appendChild(tbody);
             }
-            if (!thead) thead = table.querySelector('thead');
-            if (!tbody) tbody = table.querySelector('tbody');
+            if (!thead) thead = table.querySelector("thead");
+            if (!tbody) tbody = table.querySelector("tbody");
             if (!thead || !tbody) return;
 
-            const ths = thead.querySelectorAll('th');
+            const ths = thead.querySelectorAll("th");
             if (ths.length === 0) return;
             ths.forEach((th, colIndex) => {
-                th.setAttribute('data-sortable', '');
-                th.classList.remove('sort-asc', 'sort-desc');
-                th.addEventListener('click', () => {
-                    const rows = Array.from(tbody.querySelectorAll('tr'));
-                    const isAsc = th.classList.contains('sort-asc');
-                    ths.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+                th.setAttribute("data-sortable", "");
+                th.classList.remove("sort-asc", "sort-desc");
+                th.addEventListener("click", () => {
+                    const rows = Array.from(tbody.querySelectorAll("tr"));
+                    const isAsc = th.classList.contains("sort-asc");
+                    ths.forEach((h) => h.classList.remove("sort-asc", "sort-desc"));
                     rows.sort((a, b) => {
-                        const aText = a.children[colIndex]?.textContent?.trim() || '';
-                        const bText = b.children[colIndex]?.textContent?.trim() || '';
-                        const aNum = Number(aText), bNum = Number(bText);
+                        const aText = a.children[colIndex]?.textContent?.trim() || "";
+                        const bText = b.children[colIndex]?.textContent?.trim() || "";
+                        const aNum = Number(aText),
+                            bNum = Number(bText);
                         if (!isNaN(aNum) && !isNaN(bNum)) {
                             return isAsc ? bNum - aNum : aNum - bNum;
                         }
                         return isAsc ? bText.localeCompare(aText) : aText.localeCompare(bText);
                     });
-                    rows.forEach(r => tbody.appendChild(r));
-                    th.classList.add(isAsc ? 'sort-desc' : 'sort-asc');
+                    rows.forEach((r) => tbody.appendChild(r));
+                    th.classList.add(isAsc ? "sort-desc" : "sort-asc");
                 });
             });
         });
@@ -419,14 +401,14 @@ const enterEditMode = () => {
 };
 
 const handleDelete = async () => {
-    if (!confirm('确定要删除此页面吗？')) return;
+    if (!confirm("确定要删除此页面吗？")) return;
     try {
         await pageApi.remove(pageId.value);
         // Invalidate cache so the tree reflects the deletion
-        const spaces = JSON.parse(localStorage.getItem('auth_spaces') || '[]')
-        const space = spaces.find(s => s.key === route.params.spaceKey)
+        const spaces = JSON.parse(localStorage.getItem("auth_spaces") || "[]");
+        const space = spaces.find((s) => s.key === route.params.spaceKey);
         if (space?.id) {
-            pageTreeStore.invalidateWorkspace(space.id)
+            pageTreeStore.invalidateWorkspace(space.id);
         }
         router.push(`/${route.params.spaceKey}`);
     } catch (e) {
@@ -434,13 +416,19 @@ const handleDelete = async () => {
     }
 };
 
-const handleShare = () => console.log('Share clicked - TODO');
-const handleViewHistory = () => { historyVisible.value = true };
-const handleViewSource = () => { sourceVisible.value = true };
-const handleViewAttachments = () => { attachmentsVisible.value = true };
-const handleExportPdf = () => console.log('Export PDF clicked - TODO');
-const handleWatch = () => console.log('Watch Page clicked - TODO');
-const handleMove = () => console.log('Move Page clicked - TODO');
+const handleShare = () => console.log("Share clicked - TODO");
+const handleViewHistory = () => {
+    historyVisible.value = true;
+};
+const handleViewSource = () => {
+    sourceVisible.value = true;
+};
+const handleViewAttachments = () => {
+    attachmentsVisible.value = true;
+};
+const handleExportPdf = () => console.log("Export PDF clicked - TODO");
+const handleWatch = () => console.log("Watch Page clicked - TODO");
+const handleMove = () => console.log("Move Page clicked - TODO");
 
 // 版本历史
 const historyVisible = ref(false);
@@ -452,17 +440,17 @@ const sourceVisible = ref(false);
 const attachmentCount = ref(0);
 // 图片预览
 const imagePreviewOpen = ref(false);
-const currentImageSrc = ref('');
+const currentImageSrc = ref("");
 const pageImages = ref([]);
 const currentImageIndex = ref(0);
 // Office 文件预览
 const officePreviewOpen = ref(false);
-const officeFilePath = ref('');
-const officeFileName = ref('');
+const officeFilePath = ref("");
+const officeFileName = ref("");
 // 视频预览
 const videoPreviewOpen = ref(false);
-const videoSrc = ref('');
-const videoFileName = ref('');
+const videoSrc = ref("");
+const videoFileName = ref("");
 </script>
 
 <style scoped>
@@ -515,7 +503,7 @@ const videoFileName = ref('');
     color: #172b4d !important;
 }
 
-.page-view { 
+.page-view {
     padding: 0px 40px 0;
     animation: fadeIn 0.3s ease-in-out;
 }
@@ -555,6 +543,10 @@ const videoFileName = ref('');
 
 .date {
     color: #6b778c;
+}
+:deep(.page-content img) {
+    max-width: 100%;
+    height: auto;
 }
 
 :deep(.page-content .lead-text) {
@@ -611,7 +603,7 @@ const videoFileName = ref('');
     font-size: inherit;
     color: inherit;
 }
-:deep(.page-content pre[class*="language-"]) { 
+:deep(.page-content pre[class*="language-"]) {
     padding-left: 3.8em;
 }
 :deep(.page-content pre[class*="language-"] .line-numbers-rows) {
@@ -621,7 +613,7 @@ const videoFileName = ref('');
     position: absolute;
     top: 4px;
     right: 4px;
-    background: rgba(255,255,255,0.85);
+    background: rgba(255, 255, 255, 0.85);
     border: 1px solid #dfe1e6;
     border-radius: 3px;
     padding: 2px 8px;
@@ -670,7 +662,7 @@ const videoFileName = ref('');
     background: #f4f5f7 center right no-repeat;
     color: #172b4d;
     font-weight: 600;
-    
+
     cursor: pointer;
     padding-right: 24px;
 }
@@ -730,7 +722,7 @@ const videoFileName = ref('');
 
 .source-viewer pre {
     margin: 0;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     font-size: 13px;
     line-height: 1.5;
     color: #172b4d;

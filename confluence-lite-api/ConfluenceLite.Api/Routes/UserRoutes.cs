@@ -1,6 +1,6 @@
 using ConfluenceLite.Api.DTOs;
-using ConfluenceLite.Api.Services;
 using ConfluenceLite.Api.Middleware;
+using ConfluenceLite.Api.Services;
 
 namespace ConfluenceLite.Api.Routes;
 

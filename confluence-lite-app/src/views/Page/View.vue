@@ -90,7 +90,7 @@ import UserAvatar from "../../components/UserAvatar.vue";
 import ImagePreview from "../../components/ImagePreview.vue";
 import OfficePreview from "../../components/OfficePreview.vue";
 import VideoPreview from "../../components/VideoPreview.vue";
-import { pageApi, attachmentApi } from "../../api";
+import { pageApi, attachmentApi, recentApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { usePageTreeStore } from "../../store/pageTree";
 import Prism from "prismjs";
@@ -162,8 +162,19 @@ const parentCrumbs = computed(() => {
     return crumbs;
 });
 
+// 重置页面数据
+const resetPageData = () => {
+    pageTitle.value = "";
+    pageContent.value = "";
+    pageCreator.value = null;
+    pageCreatorName.value = "";
+    pageUpdatedTime.value = "";
+    attachmentCount.value = 0;
+};
+
 // 加载页面数据
 const loadPageData = async () => {
+    resetPageData();
     try {
         const data = await pageApi.getById(pageId.value);
         if (data) {
@@ -173,6 +184,8 @@ const loadPageData = async () => {
             pageCreatorName.value = data.creator?.displayName || data.creator?.username || "Unknown";
             pageUpdatedTime.value = formatTime(data.updatedAt);
             nextTick(() => highlightCode());
+            // 异步记录最近访问
+            recentApi.add(pageId.value).catch(err => console.error("记录最近访问失败:", err));
         }
     } catch (e) {
         console.error("加载页面失败:", e);

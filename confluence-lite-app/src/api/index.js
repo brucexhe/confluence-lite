@@ -583,3 +583,17 @@ export const searchApi = {
     return request(`/api/search?q=${encodeURIComponent(q)}`)
   }
 }
+
+// ========== 最近访问 ==========
+
+export const recentApi = {
+  /** 获取最近访问列表 */
+  getList() {
+    return request('/api/recent')
+  },
+
+  /** 记录访问 */
+  add(pageId) {
+    return request(`/api/recent/${pageId}`, { method: 'POST' })
+  }
+}

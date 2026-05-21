@@ -26,6 +26,7 @@ public static class DatabaseInitializer
         CreateCollaborationTables(db);
         CreateSearchActivityTables(db);
         CreateSystemManagementTables(db);
+        CreateRecentTables(db);
 
         Console.WriteLine("[Database] All tables initialized successfully");
     }
@@ -572,5 +573,18 @@ public static class DatabaseInitializer
             )");
         CreateIndexIfNotExists(db, "ix_it_created", "import_tasks", "createdat DESC");
         CreateIndexIfNotExists(db, "ix_it_status", "import_tasks", "status");
+    }
+
+    private static void CreateRecentTables(ISqlSugarClient db)
+    {
+        db.Ado.ExecuteCommand(@"
+            CREATE TABLE IF NOT EXISTS ""recents"" (
+                ""id"" BIGSERIAL PRIMARY KEY,
+                ""userid"" BIGINT NOT NULL,
+                ""pageid"" BIGINT NOT NULL,
+                ""visitedat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc'),
+                CONSTRAINT uq_recent_user_page UNIQUE (""userid"", ""pageid"")
+            )");
+        CreateIndexIfNotExists(db, "ix_recent_user_date", "recents", "userid, visitedat DESC");
     }
 }

@@ -87,7 +87,8 @@ public class AppDbContext
             typeof(ScheduledJob),
             typeof(JobExecution),
             typeof(SystemBackup),
-            typeof(ImportTask)
+            typeof(ImportTask),
+            typeof(Recent)
         );
     }
 
@@ -225,4 +226,9 @@ public class AppDbContext
     /// 获取导入任务表的SimpleClient
     /// </summary>
     public SimpleClient<ImportTask> ImportTasks => new(_db);
+
+    /// <summary>
+    /// 获取最近访问表的SimpleClient
+    /// </summary>
+    public SimpleClient<Recent> Recents => new(_db);
 }

@@ -171,6 +171,9 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(List<SearchSuggestionDto>))]
 [JsonSerializable(typeof(SearchResultDto))]
 [JsonSerializable(typeof(List<SearchResultDto>))]
+[JsonSerializable(typeof(ApiResponse<List<RecentDto>>))]
+[JsonSerializable(typeof(RecentDto))]
+[JsonSerializable(typeof(List<RecentDto>))]
 [JsonSerializable(typeof(ApiResponse<List<SearchSuggestionDto>>))]
 [JsonSerializable(typeof(ApiResponse<List<SearchResultDto>>))]
 public partial class AppJsonContext : JsonSerializerContext

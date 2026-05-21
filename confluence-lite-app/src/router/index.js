@@ -97,6 +97,18 @@ const router = createRouter({
             ]
         },
         {
+            path: '/recent',
+            name: 'recent',
+            component: MainLayout,
+            meta: {requiresAuth: true},
+            children: [
+                {
+                    path: '',
+                    component: () => import('../views/Recent.vue')
+                }
+            ]
+        },
+        {
             path: '/:spaceKey',
             component: MainLayout,
             meta: {requiresAuth: true},

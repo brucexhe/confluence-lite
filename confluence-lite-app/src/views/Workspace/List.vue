@@ -174,6 +174,14 @@
                         showCount
                     />
                 </a-form-item>
+                <a-form-item label="Space key">
+                    <a-input
+                        v-model:value="editSpace.key"
+                        disabled
+                        style="width: 200px"
+                    />
+                    <div class="form-hint">Space keys cannot be changed</div>
+                </a-form-item>
                 <a-form-item label="Description">
                     <a-textarea
                         v-model:value="editSpace.description"
@@ -286,6 +294,7 @@ const newSpace = ref({
 const editSpace = ref({
     id: null,
     name: "",
+    key: "",
     description: "",
     iconType: "gradient",
     iconGradient: presetColors[0].value,
@@ -364,6 +373,7 @@ const showEditModal = (space) => {
     editSpace.value = {
         id: space.id,
         name: space.name,
+        key: space.key,
         description: space.description || "",
         iconType: iconType,
         iconUrl: iconType === 'image' ? space.icon || '' : '',

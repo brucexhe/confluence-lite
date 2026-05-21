@@ -111,6 +111,7 @@ public class PageService
             .Where(p => p.WorkspaceId == workspaceId)
             .OrderBy(p => p.SortOrder)
             .OrderBy(p => p.Title)
+            .Select(p=>p.Id,p.Title,p.ParentId,p.SortOrder)
             .ToListAsync();
 
         var pageDict = new Dictionary<long, PageTreeNodeDto>();
@@ -123,8 +124,7 @@ public class PageService
                 Id = page.Id,
                 Title = page.Title,
                 ParentId = page.ParentId,
-                SortOrder = page.SortOrder,
-                Status = page.Status,
+                SortOrder = page.SortOrder, 
                 Children = new List<PageTreeNodeDto>()
             };
 

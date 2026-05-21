@@ -121,7 +121,7 @@ public class PageTreeNodeDto
     public string Title { get; set; } = string.Empty;
     public long? ParentId { get; set; }
     public int SortOrder { get; set; }
-    public int Status { get; set; }
+    //public int Status { get; set; }
     public List<PageTreeNodeDto>? Children { get; set; }
 }
 

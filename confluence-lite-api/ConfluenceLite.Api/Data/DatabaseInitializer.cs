@@ -360,6 +360,19 @@ public static class DatabaseInitializer
             )");
         CreateIndexIfNotExists(db, "ix_sh_user_time", "search_history", "userid, searchedat DESC");
 
+        // 创建全文索引 (GIN)
+        try
+        {
+            db.Ado.ExecuteCommand(@"
+                CREATE INDEX IF NOT EXISTS idx_pages_fts ON pages USING GIN (to_tsvector('simple', title || ' ' || COALESCE(content, '')));
+                CREATE INDEX IF NOT EXISTS idx_attachments_fts ON attachments USING GIN (to_tsvector('simple', filename || ' ' || COALESCE(comment, '')));
+            ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Database] Search index creation warning: {ex.Message}");
+        }
+
         db.Ado.ExecuteCommand(@"
             CREATE TABLE IF NOT EXISTS ""activity_events"" (
                 ""id"" BIGSERIAL PRIMARY KEY,

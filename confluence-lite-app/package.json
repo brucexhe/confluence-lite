@@ -11,6 +11,7 @@
   "dependencies": {
     "@tinymce/tinymce-vue": "^5.1.1",
     "ant-design-vue": "^4.1.2",
+    "dayjs": "^1.11.20",
     "lucide-vue-next": "^0.364.0",
     "pinia": "^2.1.7",
     "prismjs": "^1.30.0",

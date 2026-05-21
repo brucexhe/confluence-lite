@@ -166,6 +166,13 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(OidcUserInfo))]
 // Auth Middleware
 [JsonSerializable(typeof(UnauthorizedResponse))]
+// Search
+[JsonSerializable(typeof(SearchSuggestionDto))]
+[JsonSerializable(typeof(List<SearchSuggestionDto>))]
+[JsonSerializable(typeof(SearchResultDto))]
+[JsonSerializable(typeof(List<SearchResultDto>))]
+[JsonSerializable(typeof(ApiResponse<List<SearchSuggestionDto>>))]
+[JsonSerializable(typeof(ApiResponse<List<SearchResultDto>>))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

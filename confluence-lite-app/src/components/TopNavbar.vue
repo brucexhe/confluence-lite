@@ -104,7 +104,32 @@
         </div>
         <div class="nav-right">
             <div class="search-box">
-                <a-input-search placeholder="Search..." class="confluence-search" style="width: 200px" />
+                <a-auto-complete
+                    v-model:value="searchText"
+                    :options="suggestions"
+                    style="width: 220px"
+                    @search="handleSearchInput"
+                    @select="handleSelect"
+                >
+                    <a-input-search 
+                        placeholder="Search..." 
+                        class="confluence-search" 
+                        @search="onFullSearch" 
+                    />
+                    <template #option="item">
+                        <div class="suggestion-item">
+                            <span class="suggestion-icon">
+                                <FileText v-if="item.type === 'page'" :size="14" />
+                                <template v-else>
+                                    <Image v-if="isImage(item.contentType)" :size="14" />
+                                    <Paperclip v-else :size="14" />
+                                </template>
+                            </span>
+                            <span class="suggestion-title">{{ item.title }}</span>
+                            <span class="suggestion-space">{{ item.spaceKey }}</span>
+                        </div>
+                    </template>
+                </a-auto-complete>
             </div>
             <button class="create-btn" @click="handleCreate">Create</button>
             <a-dropdown :trigger="['click']">
@@ -140,12 +165,59 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../store/auth";
 import { useSiteInfo } from "../store/site";
 import { getSpaceColorById, getSpaceInitial } from "../utils/workspace";
 import UserAvatar from "./UserAvatar.vue";
+import { searchApi } from "../api";
+import { FileText, Paperclip, Image } from "lucide-vue-next";
+
+const searchText = ref("");
+const suggestions = ref([]);
+
+const handleSearchInput = async (val) => {
+    if (!val) {
+        suggestions.value = [];
+        return;
+    }
+    try {
+        const res = await searchApi.getSuggestions(val);
+        if (res && res.length > 0) {
+            suggestions.value = res.map(item => ({
+                value: item.title,
+                id: item.id,
+                title: item.title,
+                spaceKey: item.spaceKey,
+                type: item.type,
+                contentType: item.contentType
+            }));
+        } else {
+            suggestions.value = [];
+        }
+    } catch (error) {
+        console.error("Search suggestions error:", error);
+    }
+};
+
+const handleSelect = (val, option) => {
+    if (option.id) {
+        router.push(`/${option.spaceKey}/page/${option.id}`);
+        searchText.value = "";
+    }
+};
+
+const onFullSearch = (val) => {
+    if (val) {
+        router.push({ path: '/search', query: { key: val } });
+        searchText.value = "";
+    }
+};
+
+const isImage = (contentType) => {
+    return contentType?.startsWith("image/");
+};
 
 function isImageUrl(icon) {
     if (!icon) return false;
@@ -309,5 +381,42 @@ const handleCreate = () => {
 
 .create-btn:hover {
     background-color: #0065ff;
+}
+
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+}
+
+.suggestion-icon {
+    font-size: 14px;
+}
+
+.suggestion-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #172b4d;
+}
+
+.suggestion-space {
+    font-size: 11px;
+    color: #6b778c;
+    background: #ebecf0;
+    padding: 0 4px;
+    border-radius: 3px;
+}
+
+:deep(.ant-select-selection-search-input) {
+    color: white !important;
+}
+
+:deep(.ant-select-auto-complete.ant-select-single .ant-select-selector) {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border: none !important;
+    color: white !important;
 }
 </style>

@@ -72,11 +72,12 @@ docker-compose up -d
 - [x] 日志
 - [x] 作业管理
 - [x] 缓存管理
+- [x] 系统从confluence导入
+- [x] 全局搜索引擎
 - [ ] 页面排序
 - [ ] 多语言支持
 - [ ] 系统备份
 - [ ] 系统恢复
-- [ ] 系统从confluence导入
 
 
  

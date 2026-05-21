@@ -569,3 +569,17 @@ export const systemSettingApi = {
     return request('/api/system/office-preview-config/test', { method: 'POST', body: data })
   }
 }
+
+// ========== 搜索 ==========
+
+export const searchApi = {
+  /** 获取搜索建议 */
+  getSuggestions(q) {
+    return request(`/api/search/suggestions?q=${encodeURIComponent(q)}`)
+  },
+
+  /** 全局搜索 */
+  searchAll(q) {
+    return request(`/api/search?q=${encodeURIComponent(q)}`)
+  }
+}

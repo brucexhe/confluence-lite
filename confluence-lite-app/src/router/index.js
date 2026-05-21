@@ -67,6 +67,18 @@ const router = createRouter({
             ]
         },
         {
+            path: '/search',
+            name: 'search',
+            component: MainLayout,
+            meta: {requiresAuth: true},
+            children: [
+                {
+                    path: '',
+                    component: () => import('../views/Search.vue')
+                }
+            ]
+        },
+        {
             path: '/',
             name: 'home',
             meta: {requiresAuth: true},

@@ -311,6 +311,7 @@ public class OidcService
         return new UserDto
         {
             Id = user.Id,
+            AvatarUrl = user.AvatarUrl,
             Username = user.Username,
             Email = user.Email,
             DisplayName = user.DisplayName,

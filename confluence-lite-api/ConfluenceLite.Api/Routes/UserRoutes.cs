@@ -36,7 +36,7 @@ public static class UserRoutes
                 HttpOnly = true,
                 Secure = isHttps,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.Now.AddMinutes(1440)
+                Expires = DateTime.Now.AddDays(7)
             });
 
             var response = new LoginResponse

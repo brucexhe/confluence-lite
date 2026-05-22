@@ -1,8 +1,8 @@
-using ConfluenceLite.Api.DTOs;
-using ConfluenceLite.Api.Services;
-using ConfluenceLite.Api.Mappers;
-using ConfluenceLite.Api.Data;
 using System.Text.Json;
+using ConfluenceLite.Api.Data;
+using ConfluenceLite.Api.DTOs;
+using ConfluenceLite.Api.Mappers;
+using ConfluenceLite.Api.Services;
 
 namespace ConfluenceLite.Api.Routes;
 
@@ -34,7 +34,8 @@ public static class AuthRoutes
             WorkspaceService workspaceService) =>
         {
             var (userInfo, error) = await oidcService.HandleCallbackAsync(code, state);
-            
+
+
             Console.WriteLine(userInfo);
 
             if (userInfo == null || error != null)
@@ -59,7 +60,7 @@ public static class AuthRoutes
                 HttpOnly = true,
                 Secure = isHttps,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.Now.AddMinutes(1440)
+                Expires = DateTime.Now.AddDays(7)
             });
 
             var response = new LoginResponse

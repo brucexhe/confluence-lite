@@ -21,6 +21,7 @@ public class AuditDiffGenerator : IAuditDiffGenerator
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = false,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            // ChangeDetail.OldValue/NewValue 现在是 string?，source generator 可以正确处理
             TypeInfoResolver = AppJsonContext.Default
         };
     }
@@ -111,7 +112,7 @@ public class AuditDiffGenerator : IAuditDiffGenerator
         return char.ToLower(property.Name[0]) + property.Name.Substring(1);
     }
 
-    private static object? SanitizeValue(PropertyInfo property, object? value)
+    private static string? SanitizeValue(PropertyInfo property, object? value)
     {
         if (value == null)
             return null;
@@ -128,11 +129,12 @@ public class AuditDiffGenerator : IAuditDiffGenerator
         if (propertyName.Contains("password") ||
             propertyName.Contains("secret") ||
             propertyName.Contains("token") ||
-            propertyName.Contains("key") && propertyName.Contains("api"))
+            (propertyName.Contains("key") && propertyName.Contains("api")))
         {
             return "***";
         }
 
-        return value;
+        // 统一转换为字符串，避免反射序列化 object?
+        return value.ToString();
     }
 }

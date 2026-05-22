@@ -86,11 +86,11 @@ public class ChangeDetail
     /// 旧值
     /// </summary>
     [JsonPropertyName("old")]
-    public object? OldValue { get; set; }
+    public string? OldValue { get; set; }
 
     /// <summary>
     /// 新值
     /// </summary>
     [JsonPropertyName("new")]
-    public object? NewValue { get; set; }
+    public string? NewValue { get; set; }
 }

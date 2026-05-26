@@ -550,11 +550,14 @@ public static class DatabaseInitializer
                 ""name"" VARCHAR(200) NOT NULL,
                 ""description"" VARCHAR(500),
                 ""type"" VARCHAR(50) NOT NULL,
-                ""filepath"" VARCHAR(500) NOT NULL,
+                ""options"" JSONB,
+                ""filepath"" VARCHAR(500),
                 ""filesize"" BIGINT NOT NULL DEFAULT 0,
                 ""status"" VARCHAR(50) NOT NULL,
                 ""errormessage"" TEXT,
-                ""createdat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc')
+                ""createdbyid"" BIGINT NOT NULL DEFAULT 0,
+                ""createdat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc'),
+                ""completedat"" TIMESTAMP
             )");
         CreateIndexIfNotExists(db, "ix_sb_created", "system_backups", "createdat DESC");
 

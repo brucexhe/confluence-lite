@@ -102,12 +102,14 @@ public class BackupService
     /// </summary>
     public async Task<(BackupDto?, string?)> CreateBackupAsync(CreateBackupRequest request, long userId)
     {
+        var backupName = request.Name ?? $"backup-{DateTime.Now:yyyyMMdd-HHmmss}";
         var backup = new SystemBackup
         {
-            Name = request.Name ?? $"backup-{DateTime.Now:yyyyMMdd-HHmmss}",
+            Name = backupName,
             Description = request.Description ?? "",
             Type = request.Options.Contains("attachments") ? "full" : "database",
             Options = JsonSerializer.Serialize(request.Options),
+            FilePath = Path.Combine(_backupPath, $"{backupName}.zip"),
             Status = "processing",
             CreatedById = userId,
             CreatedAt = DateTime.Now
@@ -144,6 +146,8 @@ public class BackupService
         }
         catch (Exception ex)
         {
+            Console.WriteLine(ex.Message);
+            
             return (null, ex.Message);
         }
     }

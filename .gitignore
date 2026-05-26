@@ -11,3 +11,6 @@ cache
 /.idea
 confluence-lite-api/ConfluenceLite.Api/Data/appsettings.runtime.json
 /confluence-lite-api/ConfluenceLite.Api/Data/appsettings.runtime.json
+/confluence-lite-api/ConfluenceLite.Api/Data/temp
+/confluence-lite-api/ConfluenceLite.Api/Data/backups
+/confluence-lite-api/ConfluenceLite.Api/Data/cache

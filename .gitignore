@@ -7,10 +7,9 @@
 /.vs
 /confluence-lite-api/ConfluenceLite.Api/Data/INSTALLED
 cache
-/confluence-lite-api/ConfluenceLite.Api/appsettings.Development.json
+appsettings.Development.json
 /.idea
-confluence-lite-api/ConfluenceLite.Api/Data/appsettings.runtime.json
-/confluence-lite-api/ConfluenceLite.Api/Data/appsettings.runtime.json
-/confluence-lite-api/ConfluenceLite.Api/Data/temp
-/confluence-lite-api/ConfluenceLite.Api/Data/backups
-/confluence-lite-api/ConfluenceLite.Api/Data/cache
+appsettings.runtime.json
+temp
+backups
+cache

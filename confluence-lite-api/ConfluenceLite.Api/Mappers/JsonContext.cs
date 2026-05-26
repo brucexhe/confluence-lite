@@ -143,6 +143,9 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(List<BackupDto>))]
 [JsonSerializable(typeof(CreateBackupRequest))]
 [JsonSerializable(typeof(RestoreBackupRequest))]
+[JsonSerializable(typeof(BackupConfigDto))]
+[JsonSerializable(typeof(ApiResponse<BackupConfigDto>))]
+[JsonSerializable(typeof(List<string>))]
 [JsonSerializable(typeof(ApiResponse<BackupDto>))]
 [JsonSerializable(typeof(ApiResponse<List<BackupDto>>))]
 // Confluence Import

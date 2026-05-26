@@ -61,6 +61,11 @@ public class AppConfiguration
     /// 审计日志设置
     /// </summary>
     public AuditLogOptions AuditLog { get; set; } = new();
+
+    /// <summary>
+    /// 备份设置
+    /// </summary>
+    public BackupOptions Backup { get; set; } = new();
 }
 
 /// <summary>
@@ -327,4 +332,30 @@ public class AuditLogOptions
     /// 最大队列长度
     /// </summary>
     public int MaxQueueSize { get; set; } = 10000;
+}
+
+/// <summary>
+/// 备份配置选项
+/// </summary>
+public class BackupOptions
+{
+    /// <summary>
+    /// 是否启用自动备份
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// 备份间隔天数
+    /// </summary>
+    public int IntervalDays { get; set; } = 1;
+
+    /// <summary>
+    /// 备份内容: database, attachments, config
+    /// </summary>
+    public string[] Content { get; set; } = new[] { "database", "attachments", "config" };
+
+    /// <summary>
+    /// 备份保留天数
+    /// </summary>
+    public int RetentionDays { get; set; } = 30;
 }

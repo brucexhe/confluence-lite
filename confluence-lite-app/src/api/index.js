@@ -447,6 +447,26 @@ export const systemSettingApi = {
     return request(`/api/system/backup/${id}/restore`, { method: 'POST', body: data })
   },
 
+  /** 获取备份配置 */
+  getBackupConfig() {
+    return request('/api/system/backup-config')
+  },
+
+  /** 更新备份配置 */
+  updateBackupConfig(data) {
+    return request('/api/system/backup-config', { method: 'PUT', body: data })
+  },
+
+  /** 下载备份文件 */
+  downloadBackup(id, name) {
+    const link = document.createElement('a')
+    link.href = `/api/system/backup/${id}/download`
+    link.download = `${name || 'backup'}.zip`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  },
+
   /** 从 Confluence 导入 - 上传备份文件并开始导入 */
   importFromConfluence(file, options, onProgress) {
     return new Promise((resolve, reject) => {

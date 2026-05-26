@@ -6,6 +6,63 @@
         </div>
 
         <div class="page-content">
+            <!-- 自动备份配置 -->
+            <div class="section">
+                <h3 class="section-title">自动备份配置</h3>
+                <a-spin :spinning="configLoading">
+                    <a-form
+                        :label-col="{ style: { width: '120px' } }"
+                        :wrapper-col="{ span: 16 }"
+                    >
+                        <a-form-item label="启用自动备份">
+                            <a-switch
+                                v-model:checked="backupConfig.enabled"
+                                checked-children="开启"
+                                un-checked-children="关闭"
+                            />
+                            <div class="form-hint">定期自动创建系统备份</div>
+                        </a-form-item>
+
+                        <a-form-item label="备份间隔">
+                            <a-input-number
+                                v-model:value="backupConfig.intervalDays"
+                                :min="1"
+                                :max="365"
+                                style="width: 120px"
+                            />
+                            <span style="margin-left: 8px">天</span>
+                            <div class="form-hint">自动备份的时间间隔</div>
+                        </a-form-item>
+
+                        <a-form-item label="备份内容">
+                            <a-checkbox-group v-model:value="backupConfig.content">
+                                <a-checkbox value="database">数据库</a-checkbox>
+                                <a-checkbox value="attachments">附件文件</a-checkbox>
+                                <a-checkbox value="config">系统配置</a-checkbox>
+                            </a-checkbox-group>
+                            <div class="form-hint">选择自动备份时包含的内容</div>
+                        </a-form-item>
+
+                        <a-form-item label="保留天数">
+                            <a-input-number
+                                v-model:value="backupConfig.retentionDays"
+                                :min="1"
+                                :max="365"
+                                style="width: 120px"
+                            />
+                            <span style="margin-left: 8px">天</span>
+                            <div class="form-hint">超过此天数的备份将自动删除</div>
+                        </a-form-item>
+
+                        <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 120px">
+                            <a-button type="primary" :loading="configSaving" @click="saveBackupConfig">
+                                保存配置
+                            </a-button>
+                        </a-form-item>
+                    </a-form>
+                </a-spin>
+            </div>
+
             <!-- 创建备份 -->
             <div class="section">
                 <h3 class="section-title">创建备份</h3>
@@ -126,6 +183,15 @@ const restoreModalVisible = ref(false)
 const selectedBackup = ref(null)
 const confirmRestore = ref(false)
 
+const configLoading = ref(false)
+const configSaving = ref(false)
+const backupConfig = ref({
+    enabled: false,
+    intervalDays: 1,
+    content: ['database', 'attachments', 'config'],
+    retentionDays: 30
+})
+
 const backups = ref([])
 
 const columns = [
@@ -153,6 +219,42 @@ const getStatusColor = (status) => {
 const getStatusText = (status) => {
     const texts = { completed: '完成', processing: '处理中', failed: '失败' }
     return texts[status] || status
+}
+
+const loadBackupConfig = async () => {
+    configLoading.value = true
+    try {
+        const data = await systemSettingApi.getBackupConfig()
+        if (data) {
+            backupConfig.value = {
+                enabled: data.enabled || false,
+                intervalDays: data.intervalDays || 1,
+                content: data.content || ['database', 'attachments', 'config'],
+                retentionDays: data.retentionDays || 30
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load backup config:', error)
+    } finally {
+        configLoading.value = false
+    }
+}
+
+const saveBackupConfig = async () => {
+    if (backupConfig.value.content.length === 0) {
+        message.warning('请至少选择一种备份内容')
+        return
+    }
+
+    configSaving.value = true
+    try {
+        await systemSettingApi.updateBackupConfig(backupConfig.value)
+        message.success('备份配置保存成功')
+    } catch (error) {
+        message.error('保存备份配置失败')
+    } finally {
+        configSaving.value = false
+    }
 }
 
 const loadBackups = async () => {
@@ -226,13 +328,8 @@ const confirmRestoreBackup = async () => {
     }
 }
 
-const downloadBackup = async (backup) => {
-    try {
-        // TODO: 实现下载功能（可能需要特殊的下载端点）
-        message.success('开始下载: ' + backup.name)
-    } catch (error) {
-        message.error('下载失败')
-    }
+const downloadBackup = (backup) => {
+    systemSettingApi.downloadBackup(backup.id, backup.name)
 }
 
 const deleteBackup = async (id) => {
@@ -246,6 +343,7 @@ const deleteBackup = async (id) => {
 }
 
 onMounted(() => {
+    loadBackupConfig()
     loadBackups()
 })
 </script>
@@ -300,5 +398,12 @@ onMounted(() => {
 .text-muted {
     font-size: 12px;
     color: #6b778c;
+}
+
+.form-hint {
+    margin-top: 2px;
+    font-size: 12px;
+    color: #6b778c;
+    line-height: 1.4;
 }
 </style>

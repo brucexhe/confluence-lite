@@ -691,6 +691,50 @@ public static class SystemRoutes
             return Results.Ok(ApiResponse<List<JobExecutionDto>>.Ok(executions!));
         });
 
+        // ========== 备份配置 ==========
+
+        group.MapGet("/backup-config", (AppConfiguration appConfig) =>
+        {
+            var b = appConfig.Backup;
+            var dto = new BackupConfigDto
+            {
+                Enabled = b.Enabled,
+                IntervalDays = b.IntervalDays,
+                Content = b.Content.ToList(),
+                RetentionDays = b.RetentionDays
+            };
+            return Results.Ok(ApiResponse<BackupConfigDto>.Ok(dto));
+        });
+
+        group.MapPut("/backup-config", async (
+            BackupConfigDto dto,
+            AppConfiguration appConfig,
+            IHostEnvironment env,
+            IAuditLogService auditService,
+            HttpContext context) =>
+        {
+            var b = appConfig.Backup;
+
+            var oldValue = new BackupConfigDto
+            {
+                Enabled = b.Enabled,
+                IntervalDays = b.IntervalDays,
+                Content = b.Content.ToList(),
+                RetentionDays = b.RetentionDays
+            };
+
+            b.Enabled = dto.Enabled;
+            b.IntervalDays = dto.IntervalDays;
+            b.Content = dto.Content.ToArray();
+            b.RetentionDays = dto.RetentionDays;
+
+            SaveBackupConfig(env, dto);
+
+            await auditService.EnqueueChangeAsync(context, "backup", oldValue, dto);
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "备份配置已保存"));
+        });
+
         // ========== 备份管理 ==========
 
         group.MapGet("/backup/list", async (BackupService backupService) =>
@@ -1150,6 +1194,48 @@ public static class SystemRoutes
             ["LdapBindPassword"] = !string.IsNullOrEmpty(dto.LdapBindPassword) ? dto.LdapBindPassword : savedLdapPassword,
             ["LdapBaseDn"] = dto.LdapBaseDn,
             ["LdapUserFilter"] = dto.LdapUserFilter
+        };
+        root!["App"] = appNode;
+
+        var options = new JsonSerializerOptions { WriteIndented = true };
+        File.WriteAllText(configPath, root.ToJsonString(options));
+    }
+
+    private static void SaveBackupConfig(IHostEnvironment env, BackupConfigDto dto)
+    {
+        var dataDir = Path.Combine(env.ContentRootPath, "data");
+        if (!Directory.Exists(dataDir))
+            Directory.CreateDirectory(dataDir);
+
+        var configPath = Path.Combine(dataDir, "appsettings.runtime.json");
+
+        JsonObject? root;
+        if (File.Exists(configPath))
+        {
+            var existingJson = File.ReadAllText(configPath);
+            root = JsonNode.Parse(existingJson)?.AsObject();
+        }
+        else
+        {
+            root = new JsonObject();
+        }
+
+        var appNode = root!.TryGetPropertyValue("App", out var appVal)
+            ? appVal?.AsObject() ?? new JsonObject()
+            : new JsonObject();
+
+        var contentArray = new JsonArray();
+        foreach (var item in dto.Content)
+        {
+            contentArray.Add(JsonValue.Create(item));
+        }
+
+        appNode!["Backup"] = new JsonObject
+        {
+            ["Enabled"] = dto.Enabled,
+            ["IntervalDays"] = dto.IntervalDays,
+            ["Content"] = contentArray,
+            ["RetentionDays"] = dto.RetentionDays
         };
         root!["App"] = appNode;
 

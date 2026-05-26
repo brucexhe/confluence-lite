@@ -319,8 +319,24 @@ public class JobSchedulerService
 
     private async Task<string> ExecuteDatabaseBackupAsync()
     {
-        await Task.Delay(1000); // 模拟执行
-        return "数据库备份已完成";
+        var backupService = _serviceProvider.GetService<BackupService>();
+        var appConfig = _serviceProvider.GetService<AppConfiguration>();
+        if (backupService == null)
+            return "备份服务不可用";
+
+        var options = appConfig?.Backup.Content.ToList() ?? new List<string> { "database" };
+        var request = new CreateBackupRequest
+        {
+            Name = $"auto-backup-{DateTime.Now:yyyyMMdd-HHmmss}",
+            Description = "自动备份",
+            Options = options
+        };
+
+        var (backup, error) = await backupService.CreateBackupAsync(request, 0);
+        if (error != null)
+            return $"自动备份失败: {error}";
+
+        return $"自动备份已创建: {backup?.Name}";
     }
 
     private async Task<string> ExecuteLogCleanupAsync()

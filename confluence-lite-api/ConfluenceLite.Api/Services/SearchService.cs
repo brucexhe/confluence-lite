@@ -62,7 +62,7 @@ public class SearchService
         var sqlPages = @"
             SELECT 
                 p.id as Id, 
-                p.title as Title, 
+                ts_headline('simple', p.title, plainto_tsquery('simple', @query), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as Title,
                 ts_headline('simple', p.content, plainto_tsquery('simple', @query), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as Content,
                 'page' as Type,
                 w.name as SpaceName,
@@ -85,8 +85,8 @@ public class SearchService
         var sqlAttachments = @"
             SELECT 
                 a.id as Id, 
-                a.filename as Title, 
-                a.comment as Content,
+                ts_headline('simple', a.filename, plainto_tsquery('simple', @query), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as Title,
+                ts_headline('simple', a.comment, plainto_tsquery('simple', @query), 'StartSel=<mark>, StopSel=</mark>, MaxWords=35, MinWords=15') as Content,
                 'attachment' as Type,
                 a.contenttype as ContentType,
                 w.name as SpaceName,

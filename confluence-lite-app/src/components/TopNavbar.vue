@@ -103,7 +103,7 @@
             </nav>
         </div>
         <div class="nav-right">
-            <div class="search-box">
+            <div class="search-box" @keydown.capture.enter.prevent.stop="onFullSearch(searchText)">
                 <a-auto-complete
                     v-model:value="searchText"
                     :options="suggestions"
@@ -111,10 +111,10 @@
                     @search="handleSearchInput"
                     @select="handleSelect"
                 >
-                    <a-input-search 
-                        placeholder="Search..." 
-                        class="confluence-search" 
-                        @search="onFullSearch" 
+                    <a-input-search
+                        placeholder="Search..."
+                        class="confluence-search"
+                        @search="onFullSearch"
                     />
                     <template #option="item">
                         <div class="suggestion-item">
@@ -210,8 +210,9 @@ const handleSelect = (val, option) => {
 
 const onFullSearch = (val) => {
     if (val) {
-        router.push({ path: '/search', query: { key: val } });
+        suggestions.value = [];
         searchText.value = "";
+        router.push({ path: '/search', query: { key: val } });
     }
 };
 
@@ -348,7 +349,7 @@ const handleCreate = () => {
     height: 30px !important;
     font-size: 13px !important;
     border: none !important;
-    background-color: rgba(255, 255, 255, 0.2) !important;
+    background-color: rgba(255, 255, 255, 0) !important;
     color: #ffffff !important;
 }
 

@@ -7,7 +7,7 @@
     <!-- AOT 发布已关闭 - 改善开发体验，避免兼容性问题 -->
     <!-- <PublishAot>true</PublishAot> -->
     <InvariantGlobalization>true</InvariantGlobalization>
-    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
     <!-- 仅 AOT 发布时需要 -->
     <!-- <StripSymbols>true</StripSymbols> --> 
     <PublishSingleFile>true</PublishSingleFile>

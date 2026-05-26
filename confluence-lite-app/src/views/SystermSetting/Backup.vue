@@ -88,7 +88,13 @@
 
             <!-- 备份列表 -->
             <div class="section">
-                <h3 class="section-title">备份列表</h3>
+                <div class="section-title-row">
+                    <h3 class="section-title" style="margin: 0">备份列表</h3>
+                    <a-button class="refresh" size="small" :loading="loading" @click="loadBackups">
+                        <RefreshCw :size="14" style="vertical-align: middle" />
+                        刷新状态
+                    </a-button>
+                </div>
                 <a-table
                     :columns="columns"
                     :data-source="backups"
@@ -170,7 +176,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
-import { Plus } from 'lucide-vue-next'
+import { Plus, RefreshCw } from 'lucide-vue-next'
 import { systemSettingApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
@@ -405,5 +411,17 @@ onMounted(() => {
     font-size: 12px;
     color: #6b778c;
     line-height: 1.4;
+}
+
+.section-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+.refresh{
+    display: flex;
+    align-items: center;
+    gap: 4px; 
 }
 </style>

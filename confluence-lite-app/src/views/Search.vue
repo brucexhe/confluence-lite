@@ -21,8 +21,7 @@
                     </div>
                     <div class="result-content">
                         <h3 class="result-title">
-                            <router-link :to="getResultLink(item)">
-                                {{ item.title }}
+                            <router-link :to="getResultLink(item)" v-html="item.title">
                             </router-link>
                         </h3>
                         <div class="result-snippet" v-html="item.content"></div>

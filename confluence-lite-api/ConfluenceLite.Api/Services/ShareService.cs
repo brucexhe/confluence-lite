@@ -190,6 +190,56 @@ public class ShareService
     }
 
     /// <summary>
+    /// 获取我创建的所有分享
+    /// </summary>
+    public async Task<List<ShareDto>> GetMySharesAsync(long userId)
+    {
+        var shares = await _db.Db.Queryable<Share>()
+            .Where(s => s.SharedById == userId)
+            .OrderBy(s => s.CreatedAt, SqlSugar.OrderByType.Desc)
+            .ToListAsync();
+
+        var result = new List<ShareDto>();
+        foreach (var share in shares)
+        {
+            result.Add(await MapToDtoAsync(share));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// 更新分享设置
+    /// </summary>
+    public async Task<(ShareDto? share, string? error)> UpdateShareAsync(long id, long userId, UpdateShareRequest request)
+    {
+        var share = await _db.Shares.GetByIdAsync(id);
+        if (share == null)
+            return (null, "分享不存在");
+
+        if (share.SharedById != userId)
+        {
+            var page = await _db.Pages.GetByIdAsync(share.PageId);
+            if (page == null || page.CreatorId != userId)
+                return (null, "没有权限修改此分享");
+        }
+
+        if (request.ExpireAt.HasValue)
+            share.ExpireAt = request.ExpireAt;
+        if (request.AllowEdit.HasValue)
+            share.AllowEdit = request.AllowEdit.Value;
+        if (request.VisitPassword == "")
+            share.VisitPassword = null;
+        else if (request.VisitPassword != null)
+            share.VisitPassword = PasswordService.HashPassword(request.VisitPassword);
+
+        await _db.Db.Updateable(share)
+            .UpdateColumns(s => new { s.ExpireAt, s.AllowEdit, s.VisitPassword })
+            .ExecuteCommandAsync();
+
+        return (await MapToDtoAsync(share), null);
+    }
+
+    /// <summary>
     /// 删除分享
     /// </summary>
     public async Task<(bool success, string? error)> DeleteShareAsync(long id, long userId)

@@ -41,6 +41,8 @@ dotnet run
 cd client  
 npm install  
 npm run dev  
+
+### 使用docker compose
 docker-compose up -d  
 
  
@@ -74,10 +76,12 @@ docker-compose up -d
 - [x] 缓存管理
 - [x] 系统从confluence导入
 - [x] 全局搜索引擎
+- [x] 分享管理
+- [x] Confluence导入
+- [x] 系统备份
 - [ ] 页面排序
-- [ ] 多语言支持
-- [ ] 系统备份
 - [ ] 系统恢复
+- [ ] 多语言支持（zh-CN/en）
 
 
  
@@ -85,9 +89,9 @@ docker-compose up -d
 ## 🤝 贡献指南
 我们欢迎所有形式的贡献！请参阅 CONTRIBUTING.md了解如何参与。  
 Fork 本仓库  
-创建功能分支 (git checkout -b feature/AmazingFeature)  
-提交更改 (git commit -m 'Add some AmazingFeature')  
-推送分支 (git push origin feature/AmazingFeature)  
+创建功能分支 (git checkout -b feature/xxxFeature)  
+提交更改 (git commit -m 'Add some xxxFeature')  
+推送分支 (git push origin feature/xxxFeature)  
 开启 Pull Request  
 
 ## 📄 许可证

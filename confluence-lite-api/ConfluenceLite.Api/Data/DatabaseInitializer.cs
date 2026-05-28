@@ -341,7 +341,7 @@ public static class DatabaseInitializer
                 ""pageid"" BIGINT NOT NULL,
                 ""sharedbyid"" BIGINT NULL,
                 ""sharedwithid"" BIGINT NULL,
-                ""code"" VARCHAR(50),
+                ""code"" VARCHAR(100),
                 ""visitpassword"" VARCHAR(50),
                 ""isread"" BOOLEAN NOT NULL DEFAULT FALSE,
                 ""allowedit"" BOOLEAN NULL DEFAULT FALSE,

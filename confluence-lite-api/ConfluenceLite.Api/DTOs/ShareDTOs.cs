@@ -88,3 +88,13 @@ public class UpdateSharePageRequest
 
     public string? Content { get; set; }
 }
+
+/// <summary>
+/// 更新分享设置请求
+/// </summary>
+public class UpdateShareRequest
+{
+    public DateTime? ExpireAt { get; set; }
+    public bool? AllowEdit { get; set; }
+    public string? VisitPassword { get; set; }
+}

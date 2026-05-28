@@ -27,6 +27,36 @@ public static class ShareRoutes
             return Results.Ok(ApiResponse<ShareDto>.Ok(share, "分享创建成功"));
         });
 
+        // 获取我创建的分享列表 (需要认证)
+        group.MapGet("/my", async (
+            HttpContext context,
+            ShareService shareService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            var shares = await shareService.GetMySharesAsync(currentUser.UserId);
+            return Results.Ok(ApiResponse<List<ShareDto>>.Ok(shares));
+        });
+
+        // 更新分享设置 (需要认证)
+        group.MapPut("/{id}", async (
+            long id,
+            UpdateShareRequest request,
+            HttpContext context,
+            ShareService shareService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            var (share, error) = await shareService.UpdateShareAsync(id, currentUser.UserId, request);
+            if (share == null || error != null)
+                return Results.BadRequest(ApiResponse<ShareDto>.Fail(error ?? "更新失败"));
+            return Results.Ok(ApiResponse<ShareDto>.Ok(share, "更新成功"));
+        });
+
         // 获取页面的分享列表 (需要认证) - 必须在 /{code} 之前注册
         group.MapGet("/page/{pageId}/list", async (
             long pageId,

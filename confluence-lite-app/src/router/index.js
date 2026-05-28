@@ -67,6 +67,20 @@ const router = createRouter({
             ]
         },
         {
+            path: '/shares',
+            name: 'shares',
+            component: MainLayout, //() => import('../views/Workspace/List.vue'),
+            meta: {requiresAuth: true},
+            redirect: 'share-list',
+            children: [
+                {
+                    path: '',
+                    name: 'share-list',
+                    component: () => import('../views/Shares.vue')
+                },
+            ]
+        },
+        {
             path: '/search',
             name: 'search',
             component: MainLayout,
@@ -221,7 +235,13 @@ const router = createRouter({
                     component: () => import('../views/SystermSetting/Cache.vue')
                 }
             ]
-        }, 
+        },
+        {
+            path: '/share/:code',
+            name: 'share-view',
+            component: () => import('../views/Page/Share.vue'),
+            meta: { public: true }
+        },
         {
             path: '/:pathMatch(.*)*',
             redirect: '/404'

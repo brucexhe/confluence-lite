@@ -130,6 +130,7 @@ builder.Services.AddScoped<ConfluenceLite.Api.Services.Confluence.ConfluenceXmlP
 builder.Services.AddScoped<ConfluenceLite.Api.Services.Confluence.ConfluenceImportService>();
 builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<RecentService>();
+builder.Services.AddScoped<ShareService>();
 
 // ========== 审计日志服务 ==========
 builder.Services.Configure<AuditLogOptions>(

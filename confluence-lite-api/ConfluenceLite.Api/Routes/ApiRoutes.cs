@@ -20,5 +20,6 @@ public static class ApiRoutes
         app.MapOfficeRoutes();
         app.MapSearchRoutes();
         RecentRoutes.RegisterRoutes(app);
+        app.MapShareRoutes();
     }
 }

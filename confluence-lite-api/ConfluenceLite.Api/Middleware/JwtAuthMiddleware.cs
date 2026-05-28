@@ -49,6 +49,7 @@ public class JwtAuthMiddleware
         "/api/setup/test-connection",
         "/api/setup/install",
         "/api/siteinfo",
+        "/api/share/",
         "/health",
         "/alive"
     };

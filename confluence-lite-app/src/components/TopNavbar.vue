@@ -147,6 +147,9 @@
                         <a-menu-item @click="navigateTo('/recent')">
                             <span style="font-size: 14px; color: #172b4d">最近浏览</span>
                         </a-menu-item>
+                         <a-menu-item @click="navigateTo('/shares')">
+                            <span style="font-size: 14px; color: #172b4d">分享管理</span>
+                        </a-menu-item>
                         <a-menu-item @click="navigateTo('/profile')">
                             <span style="font-size: 14px; color: #172b4d">用户信息</span>
                         </a-menu-item>

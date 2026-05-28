@@ -626,3 +626,43 @@ export const recentApi = {
     return request(`/api/recent/${pageId}`, { method: 'POST' })
   }
 }
+
+// ========== 分享 ==========
+
+export const shareApi = {
+  /** 创建分享 */
+  create(data) {
+    return request('/api/share/', { method: 'POST', body: data })
+  },
+
+  /** 获取公开分享信息 (无需认证, 按 code) */
+  getInfo(code) {
+    return request(`/api/share/${code}`, { auth: false })
+  },
+
+  /** 获取分享的页面内容 */
+  getPageContent(code, password) {
+    const url = password
+      ? `/api/share/${code}/page?password=${encodeURIComponent(password)}`
+      : `/api/share/${code}/page`
+    return request(url, { auth: false })
+  },
+
+  /** 通过分享更新页面内容 */
+  updatePageContent(code, data, password) {
+    const url = password
+      ? `/api/share/${code}/page?password=${encodeURIComponent(password)}`
+      : `/api/share/${code}/page`
+    return request(url, { method: 'PUT', body: data, auth: false })
+  },
+
+  /** 获取页面的分享列表 */
+  listByPage(pageId) {
+    return request(`/api/share/page/${pageId}/list`)
+  },
+
+  /** 删除分享 */
+  remove(id) {
+    return request(`/api/share/${id}`, { method: 'DELETE' })
+  }
+}

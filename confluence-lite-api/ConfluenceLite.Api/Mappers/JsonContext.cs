@@ -179,6 +179,16 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(List<RecentDto>))]
 [JsonSerializable(typeof(ApiResponse<List<SearchSuggestionDto>>))]
 [JsonSerializable(typeof(ApiResponse<List<SearchResultDto>>))]
+// Share
+[JsonSerializable(typeof(ShareDto))]
+[JsonSerializable(typeof(List<ShareDto>))]
+[JsonSerializable(typeof(PublicShareInfoDto))]
+[JsonSerializable(typeof(SharePageInfoDto))]
+[JsonSerializable(typeof(CreateShareRequest))]
+[JsonSerializable(typeof(UpdateSharePageRequest))]
+[JsonSerializable(typeof(ApiResponse<ShareDto>))]
+[JsonSerializable(typeof(ApiResponse<List<ShareDto>>))]
+[JsonSerializable(typeof(ApiResponse<PublicShareInfoDto>))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

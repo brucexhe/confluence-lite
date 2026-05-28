@@ -78,6 +78,85 @@
         <!-- 视频预览组件 -->
         <VideoPreview v-model:open="videoPreviewOpen" :src="videoSrc" :fileName="videoFileName" />
 
+        <!-- Share Modal -->
+        <a-modal
+            v-model:open="shareVisible"
+            title="分享页面"
+            :width="520"
+            :footer="null"
+            @cancel="shareVisible = false"
+        >
+            <!-- Create form -->
+            <div v-if="!createdShare">
+                <a-form layout="vertical">
+                    <a-form-item label="分享类型">
+                        <a-radio-group v-model:value="shareForm.shareType">
+                            <a-radio value="anonymous">任何拥有链接的人</a-radio>
+                            <a-radio value="user">指定用户</a-radio>
+                        </a-radio-group>
+                    </a-form-item>
+
+                    <a-form-item v-if="shareForm.shareType === 'user'" label="选择用户">
+                        <a-select
+                            v-model:value="shareForm.sharedWithId"
+                            show-search
+                            :filter-option="false"
+                            :loading="userSearchLoading"
+                            placeholder="搜索用户"
+                            @search="handleUserSearch"
+                        >
+                            <a-select-option v-for="u in userList" :key="u.value" :value="u.value">
+                                {{ u.label }}
+                            </a-select-option>
+                        </a-select>
+                    </a-form-item>
+
+                    <a-form-item label="访问密码（可选）">
+                        <a-input-password v-model:value="shareForm.visitPassword" placeholder="留空则不需要密码" />
+                    </a-form-item>
+
+                    <a-form-item label="过期时间（可选）">
+                        <a-date-picker
+                            v-model:value="shareForm.expireAt"
+                            show-time
+                            placeholder="留空则永不过期"
+                            style="width: 100%"
+                        />
+                    </a-form-item>
+
+                    <a-form-item label="允许编辑">
+                        <a-switch v-model:checked="shareForm.allowEdit" />
+                    </a-form-item>
+
+                    <a-button type="primary" block :loading="shareLoading" @click="handleCreateShare" style="background-color: #0052cc">
+                        创建分享链接
+                    </a-button>
+                </a-form>
+            </div>
+
+            <!-- Created result -->
+            <div v-else class="share-result">
+                <div class="share-result-icon">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#36b37e" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                </div>
+                <h3 style="color: #172b4d; margin: 12px 0 8px">分享链接已创建</h3>
+                <div class="share-link-box">
+                    <input type="text" readonly :value="shareLink" class="share-link-input" />
+                    <a-button type="primary" size="small" @click="copyShareLink" style="background-color: #0052cc">
+                        复制
+                    </a-button>
+                </div>
+                <div class="share-link-info">
+                    <span v-if="createdShare.hasPassword">密码保护</span>
+                    <span v-if="createdShare.expireAt">有效期至 {{ new Date(createdShare.expireAt).toLocaleString('zh-CN') }}</span>
+                    <span v-if="!createdShare.expireAt">永不过期</span>
+                </div>
+            </div>
+        </a-modal>
+
         <!-- Scroll to Top Button -->
         <transition name="fade-up">
             <button v-if="showScrollTop" class="scroll-top-btn" @click="scrollToTop" title="回到顶部">
@@ -92,6 +171,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { message } from "ant-design-vue";
 import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import PageAttachments from "../../components/PageAttachments.vue";
@@ -99,7 +179,7 @@ import UserAvatar from "../../components/UserAvatar.vue";
 import ImagePreview from "../../components/ImagePreview.vue";
 import OfficePreview from "../../components/OfficePreview.vue";
 import VideoPreview from "../../components/VideoPreview.vue";
-import { pageApi, attachmentApi, recentApi } from "../../api";
+import { pageApi, attachmentApi, recentApi, shareApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { usePageTreeStore } from "../../store/pageTree";
 import Prism from "prismjs";
@@ -422,7 +502,79 @@ const handleDelete = async () => {
     }
 };
 
-const handleShare = () => console.log("Share clicked - TODO");
+const handleShare = () => {
+    shareVisible.value = true;
+    createdShare.value = null;
+    shareForm.value = {
+        shareType: 'anonymous',
+        sharedWithId: null,
+        visitPassword: '',
+        expireAt: null,
+        allowEdit: false
+    };
+};
+
+// Share dialog state
+const shareVisible = ref(false);
+const shareLoading = ref(false);
+const shareForm = ref({
+    shareType: 'anonymous',
+    sharedWithId: null,
+    visitPassword: '',
+    expireAt: null,
+    allowEdit: false
+});
+const createdShare = ref(null);
+const userList = ref([]);
+const userSearchLoading = ref(false);
+
+const shareLink = computed(() => {
+    if (!createdShare.value) return '';
+    return `${window.location.origin}/share/${createdShare.value.code}`;
+});
+
+const handleUserSearch = async (query) => {
+    if (!query || query.length < 1) { userList.value = []; return; }
+    userSearchLoading.value = true;
+    try {
+        const { userApi } = await import("../../api");
+        const data = await userApi.getList(1, 20);
+        userList.value = (data?.items || [])
+            .filter(u => u.username.includes(query) || (u.displayName && u.displayName.includes(query)))
+            .map(u => ({ value: u.id, label: u.displayName || u.username }));
+    } catch { userList.value = []; }
+    userSearchLoading.value = false;
+};
+
+const handleCreateShare = async () => {
+    if (shareForm.value.shareType === 'user' && !shareForm.value.sharedWithId) {
+        message.warning('请选择用户');
+        return;
+    }
+    shareLoading.value = true;
+    try {
+        const payload = {
+            pageId: Number(pageId.value),
+            sharedWithId: shareForm.value.shareType === 'user' ? shareForm.value.sharedWithId : null,
+            visitPassword: shareForm.value.visitPassword || null,
+            expireAt: shareForm.value.expireAt ? shareForm.value.expireAt.toISOString() : null,
+            allowEdit: shareForm.value.allowEdit
+        };
+        const data = await shareApi.create(payload);
+        createdShare.value = data;
+        message.success('分享链接已创建');
+    } catch (e) {
+        message.error(e.message || '创建分享失败');
+    }
+    shareLoading.value = false;
+};
+
+const copyShareLink = () => {
+    navigator.clipboard.writeText(shareLink.value).then(() => {
+        message.success('链接已复制到剪贴板');
+    });
+};
+
 const handleViewHistory = () => {
     historyVisible.value = true;
 };
@@ -805,5 +957,39 @@ onUnmounted(() => {
 .fade-up-leave-to {
     opacity: 0;
     transform: translateY(10px);
+}
+
+/* Share Modal */
+.share-result {
+    text-align: center;
+    padding: 16px 0;
+}
+
+.share-result-icon {
+    margin-bottom: 8px;
+}
+
+.share-link-box {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.share-link-input {
+    flex: 1;
+    padding: 6px 12px;
+    border: 1px solid #dfe1e6;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #172b4d;
+    background: #f4f5f7;
+}
+
+.share-link-info {
+    color: #6b778c;
+    font-size: 12px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
 }
 </style>

@@ -339,11 +339,14 @@ public static class DatabaseInitializer
             CREATE TABLE IF NOT EXISTS ""shares"" (
                 ""id"" BIGSERIAL PRIMARY KEY,
                 ""pageid"" BIGINT NOT NULL,
-                ""sharedbyid"" BIGINT NOT NULL,
-                ""sharedwithid"" BIGINT NOT NULL,
-                ""message"" VARCHAR(500),
+                ""sharedbyid"" BIGINT NULL,
+                ""sharedwithid"" BIGINT NULL,
+                ""code"" VARCHAR(50),
+                ""visitpassword"" VARCHAR(50),
                 ""isread"" BOOLEAN NOT NULL DEFAULT FALSE,
-                ""createdat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc')
+                ""allowedit"" BOOLEAN NULL DEFAULT FALSE,
+                ""createdat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc'),
+                ""expiredat"" TIMESTAMP NULL DEFAULT (NOW() AT TIME ZONE 'utc')
             )");
         CreateIndexIfNotExists(db, "ix_shares_recipient", "shares", "sharedwithid, isread");
         CreateIndexIfNotExists(db, "ix_shares_page", "shares", "pageid");

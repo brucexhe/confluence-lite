@@ -57,6 +57,7 @@
               type="text"
               size="small"
               style="color: var(--color-text-secondary)"
+              @click="router.push(`/${currentSpaceKey}/page/new`)"
               >+</a-button
             >
           </div>

@@ -77,11 +77,20 @@
 
         <!-- 视频预览组件 -->
         <VideoPreview v-model:open="videoPreviewOpen" :src="videoSrc" :fileName="videoFileName" />
+
+        <!-- Scroll to Top Button -->
+        <transition name="fade-up">
+            <button v-if="showScrollTop" class="scroll-top-btn" @click="scrollToTop" title="回到顶部">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M10 4L4 10h4v6h4v-6h4L10 4z" fill="currentColor"/>
+                </svg>
+            </button>
+        </transition>
     </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, inject } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
@@ -448,6 +457,35 @@ const officeFileName = ref("");
 const videoPreviewOpen = ref(false);
 const videoSrc = ref("");
 const videoFileName = ref("");
+
+// Scroll to top
+const showScrollTop = ref(false);
+let scrollContainer = null;
+
+function handleScroll() {
+    if (scrollContainer) {
+        showScrollTop.value = scrollContainer.scrollTop > 50;
+    }
+}
+
+function scrollToTop() {
+    if (scrollContainer) {
+        scrollContainer.scrollTo({ top: 0, behavior: "smooth" });
+    }
+}
+
+onMounted(() => {
+    scrollContainer = document.querySelector(".content-area");
+    if (scrollContainer) {
+        scrollContainer.addEventListener("scroll", handleScroll);
+    }
+});
+
+onUnmounted(() => {
+    if (scrollContainer) {
+        scrollContainer.removeEventListener("scroll", handleScroll);
+    }
+});
 </script>
 
 <style scoped>
@@ -731,5 +769,41 @@ const videoFileName = ref("");
     background: none;
     padding: 0;
     border: none;
+}
+
+/* Scroll to Top Button */
+.scroll-top-btn {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background-color: #dfe1e6;
+    color: #172b4d;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s, transform 0.2s;
+    z-index: 1000;
+}
+
+.scroll-top-btn:hover {
+    background-color: #c1c7d0;
+    transform: scale(1.1);
+}
+
+.fade-up-enter-active,
+.fade-up-leave-active {
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.fade-up-enter-from,
+.fade-up-leave-to {
+    opacity: 0;
+    transform: translateY(10px);
 }
 </style>

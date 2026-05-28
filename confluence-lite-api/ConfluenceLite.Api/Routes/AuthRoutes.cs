@@ -67,7 +67,7 @@ public static class AuthRoutes
             {
                 Token = "",
                 TokenType = "Bearer",
-                ExpiresIn = 1440,
+                ExpiresIn = DateTime.Now.AddDays(7).Second,
                 User = user,
                 Workspaces = workspaces.Select(w => new WorkspaceSummaryDto
                 {

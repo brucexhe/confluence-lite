@@ -149,6 +149,15 @@ export const pageApi = {
     return request(`/api/page/${id}`)
   },
 
+  /** 获取所有页面列表（管理后台） */
+  getList(page = 1, pageSize = 20, search = '', workspaceId = null, status = null) {
+    const params = new URLSearchParams({ page, pageSize })
+    if (search) params.append('search', search)
+    if (workspaceId) params.append('workspaceId', workspaceId)
+    if (status !== null && status !== undefined) params.append('status', status)
+    return request(`/api/page/all?${params.toString()}`)
+  },
+
   /** 获取空间页面列表 */
   getListByWorkspace(workspaceId, page = 1, pageSize = 20) {
     return request(`/api/page/workspace/${workspaceId}?page=${page}&pageSize=${pageSize}`)

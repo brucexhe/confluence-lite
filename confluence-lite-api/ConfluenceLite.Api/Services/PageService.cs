@@ -71,6 +71,51 @@ public class PageService
     }
 
     /// <summary>
+    /// 获取所有页面列表（管理后台，支持搜索和筛选）
+    /// </summary>
+    public async Task<PagedResponse<PageDto>> GetAllPagesAsync(PagedRequest request, string? search = null, long? workspaceId = null, int? status = null)
+    {
+        var query = _db.Db.Queryable<Page>().Where(p => !p.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(p => p.Title.Contains(search));
+        }
+
+        if (workspaceId.HasValue)
+        {
+            query = query.Where(p => p.WorkspaceId == workspaceId.Value);
+        }
+
+        if (status.HasValue)
+        {
+            query = query.Where(p => p.Status == status.Value);
+        }
+
+        var total = await query.CountAsync();
+
+        var pages = await query
+            .OrderByDescending(p => p.UpdatedAt)
+            .Skip(request.Skip)
+            .Take(request.PageSize)
+            .ToListAsync();
+
+        var dtos = new List<PageDto>();
+        foreach (var page in pages)
+        {
+            dtos.Add(await MapToDtoAsync(page));
+        }
+
+        return new PagedResponse<PageDto>
+        {
+            Items = dtos,
+            Total = total,
+            Page = request.Page,
+            PageSize = request.PageSize
+        };
+    }
+
+    /// <summary>
     /// 获取工作空间的页面列表
     /// </summary>
     public async Task<PagedResponse<PageDto>> GetPagesByWorkspaceAsync(long workspaceId, PagedRequest request)

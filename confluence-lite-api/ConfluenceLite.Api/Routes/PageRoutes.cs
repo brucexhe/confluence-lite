@@ -37,6 +37,20 @@ public static class PageRoutes
             return Results.Ok(ApiResponse<PageDto>.Ok(page));
         });
 
+        // 获取所有页面列表（管理后台）
+        group.MapGet("/all", async (
+            int page,
+            int pageSize,
+            string? search,
+            long? workspaceId,
+            int? status,
+            PageService pageService) =>
+        {
+            var pagedRequest = new PagedRequest { Page = page, PageSize = pageSize };
+            var result = await pageService.GetAllPagesAsync(pagedRequest, search, workspaceId, status);
+            return Results.Ok(ApiResponse<PagedResponse<PageDto>>.Ok(result));
+        });
+
         // 获取工作空间的页面列表
         group.MapGet("/workspace/{workspaceId}", async (
             long workspaceId,

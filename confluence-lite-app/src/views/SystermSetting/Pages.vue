@@ -53,32 +53,31 @@
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'title'">
                         <div class="page-title">
-                            <a @click="$router.push(`/${record.spaceKey}/page/${record.id}`)">
+                            <a @click="$router.push(`/${record.workspace?.key}/page/${record.id}`)">
                                 {{ record.title }}
-                            </a>
-                            <div class="page-path">/${{ record.spaceKey }}/{{ record.id }}</div>
+                            </a> 
                         </div>
                     </template>
                     <template v-else-if="column.key === 'space'">
-                        <a-tag color="blue">{{ record.spaceName }}</a-tag>
+                        <a-tag color="blue">{{ record.workspace?.name }}</a-tag>
+                    </template>
+                    <template v-else-if="column.key === 'creator'">
+                        <span>{{ record.creator?.displayName || record.creator?.username || '-' }}</span>
                     </template>
                     <template v-else-if="column.key === 'status'">
                         <a-tag :color="getStatusColor(record.status)">
                             {{ getStatusText(record.status) }}
                         </a-tag>
                     </template>
-                    <template v-else-if="column.key === 'viewCount'">
-                        <span>{{ formatNumber(record.viewCount) }}</span>
-                    </template>
                     <template v-else-if="column.key === 'updatedAt'">
                         <span class="text-muted">{{ formatDateTime(record.updatedAt) }}</span>
                     </template>
                     <template v-else-if="column.key === 'action'">
                         <a-space split>
-                            <a-button type="link" size="small" @click="$router.push(`/${record.spaceKey}/page/${record.id}`)">
+                            <a-button type="link" size="small" @click="$router.push(`/${record.workspace?.key}/page/${record.id}`)">
                                 查看
                             </a-button>
-                            <a-button type="link" size="small" @click="$router.push(`/${record.spaceKey}/page/${record.id}/edit`)">
+                            <a-button type="link" size="small" @click="$router.push(`/${record.workspace?.key}/page/${record.id}/edit`)">
                                 编辑
                             </a-button>
                             <a-dropdown>
@@ -105,27 +104,61 @@
                 </template>
             </a-table>
         </div>
+
+        <!-- 版本历史弹窗 -->
+        <a-modal
+            v-model:open="historyVisible"
+            :title="`页面历史 - ${historyPageTitle}`"
+            footer={null}
+            width="700px"
+        >
+            <a-table
+                :columns="historyColumns"
+                :data-source="versions"
+                :loading="versionsLoading"
+                size="small"
+                row-key="id"
+                :pagination="false"
+            >
+                <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'editor'">
+                        {{ record.editor?.displayName || record.editor?.username || '-' }}
+                    </template>
+                    <template v-else-if="column.key === 'createdAt'">
+                        {{ formatDateTime(record.createdAt) }}
+                    </template>
+                </template>
+            </a-table>
+        </a-modal>
     </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
-import { message } from 'ant-design-vue'
+import { message, Modal } from 'ant-design-vue'
 import { workspaceApi, pageApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
 const loading = ref(false)
 const searchText = ref('')
-const filterWorkspace = ref()
-const filterStatus = ref()
+const filterWorkspace = ref(undefined)
+const filterStatus = ref(undefined)
 const selectedRowKeys = ref([])
 const pages = ref([])
 const workspaces = ref([])
 
+// 版本历史
+const historyVisible = ref(false)
+const historyPageTitle = ref('')
+const versions = ref([])
+const versionsLoading = ref(false)
+
 const pagination = reactive({
     current: 1,
     pageSize: 20,
-    total: 0
+    total: 0,
+    showSizeChanger: true,
+    showTotal: (total) => `共 ${total} 条`
 })
 
 const workspaceOptions = computed(() => {
@@ -136,77 +169,96 @@ const workspaceOptions = computed(() => {
 })
 
 const statusOptions = [
-    { label: '已发布', value: 'published' },
-    { label: '草稿', value: 'draft' },
-    { label: '已归档', value: 'archived' }
+    { label: '已发布', value: 1 },
+    { label: '草稿', value: 0 },
+    { label: '已归档', value: 2 }
 ]
 
-const rowSelection = {
-    selectedRowKeys: selectedRowKeys,
+const rowSelection = computed(() => ({
+    selectedRowKeys: selectedRowKeys.value,
     onChange: (keys) => {
         selectedRowKeys.value = keys
     }
-}
+}))
 
 const columns = [
     { title: '页面标题', key: 'title' },
     { title: '所属空间', key: 'space' },
-    { title: '创建者', dataIndex: 'creatorName', key: 'creatorName' },
+    { title: '创建者', key: 'creator' },
     { title: '状态', key: 'status' },
-    { title: '浏览次数', dataIndex: 'viewCount', key: 'viewCount' },
     { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt' },
     { title: '操作', key: 'action', width: 180 }
 ]
 
+const historyColumns = [
+    { title: '版本', dataIndex: 'versionNumber', key: 'versionNumber', width: 60 },
+    { title: '标题', dataIndex: 'title', key: 'title' },
+    { title: '编辑者', key: 'editor', width: 120 },
+    { title: '时间', key: 'createdAt', width: 160 }
+]
+
 const getStatusColor = (status) => {
-    const colors = { published: 'green', draft: 'orange', archived: 'default' }
-    return colors[status] || 'default'
+    const colors = { 1: 'green', 0: 'orange', 2: 'default' }
+    return colors[status] ?? 'default'
 }
 
 const getStatusText = (status) => {
-    const texts = { published: '已发布', draft: '草稿', archived: '已归档' }
-    return texts[status] || status
-}
-
-const formatNumber = (num) => {
-    if (!num) return '0'
-    return num >= 1000 ? (num / 1000).toFixed(1) + 'k' : num.toString()
+    const texts = { 1: '已发布', 0: '草稿', 2: '已归档' }
+    return texts[status] ?? '未知'
 }
 
 const copyPageLink = (page) => {
-    const url = `${window.location.origin}/${page.spaceKey}/page/${page.id}`
+    const url = `${window.location.origin}/${page.workspace?.key}/page/${page.id}`
     navigator.clipboard.writeText(url)
     message.success('链接已复制到剪贴板')
 }
 
-const viewHistory = (page) => {
-    message.info('查看历史: ' + page.title)
-    // TODO: 跳转到历史页面
+const viewHistory = async (page) => {
+    historyPageTitle.value = page.title
+    historyVisible.value = true
+    versionsLoading.value = true
+    try {
+        const data = await pageApi.getVersions(page.id)
+        versions.value = data || []
+    } catch {
+        message.error('加载版本历史失败')
+    } finally {
+        versionsLoading.value = false
+    }
 }
 
-const batchDelete = async () => {
+const batchDelete = () => {
     if (selectedRowKeys.value.length === 0) {
         message.warning('请先选择要删除的页面')
         return
     }
 
-    try {
-        for (const id of selectedRowKeys.value) {
-            await pageApi.remove(id)
+    Modal.confirm({
+        title: '确认删除',
+        content: `确定要删除选中的 ${selectedRowKeys.value.length} 个页面吗？此操作不可恢复。`,
+        okText: '删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+            try {
+                for (const id of selectedRowKeys.value) {
+                    await pageApi.remove(id)
+                }
+                message.success(`成功删除 ${selectedRowKeys.value.length} 个页面`)
+                selectedRowKeys.value = []
+                loadPages()
+            } catch {
+                message.error('批量删除失败')
+            }
         }
-        message.success(`成功删除 ${selectedRowKeys.value.length} 个页面`)
-        selectedRowKeys.value = []
-        loadPages()
-    } catch (error) {
-        message.error('批量删除失败')
-    }
+    })
 }
 
 const loadWorkspaces = async () => {
     try {
         const data = await workspaceApi.getMy()
         workspaces.value = data || []
-    } catch (error) {
+    } catch {
         console.error('加载空间列表失败')
     }
 }
@@ -214,41 +266,16 @@ const loadWorkspaces = async () => {
 const loadPages = async () => {
     loading.value = true
     try {
-        // TODO: 调用 API 获取所有页面列表
-        await new Promise(resolve => setTimeout(resolve, 500))
-
-        // 模拟数据
-        const mockPages = []
-        workspaces.value.forEach(ws => {
-            for (let i = 1; i <= 5; i++) {
-                mockPages.push({
-                    id: `${ws.key}-${i}`,
-                    title: `${ws.name} - 示例页面 ${i}`,
-                    spaceName: ws.name,
-                    spaceKey: ws.key,
-                    status: 'published',
-                    creatorName: 'Admin',
-                    viewCount: Math.floor(Math.random() * 500),
-                    updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-                })
-            }
-        })
-
-        // 应用筛选
-        let filtered = mockPages
-        if (searchText.value) {
-            filtered = filtered.filter(p => p.title.toLowerCase().includes(searchText.value.toLowerCase()))
-        }
-        if (filterWorkspace.value) {
-            filtered = filtered.filter(p => p.spaceKey === workspaces.value.find(w => w.id === filterWorkspace.value)?.key)
-        }
-        if (filterStatus.value) {
-            filtered = filtered.filter(p => p.status === filterStatus.value)
-        }
-
-        pages.value = filtered
-        pagination.total = filtered.length
-    } catch (error) {
+        const data = await pageApi.getList(
+            pagination.current,
+            pagination.pageSize,
+            searchText.value,
+            filterWorkspace.value,
+            filterStatus.value
+        )
+        pages.value = data?.items || []
+        pagination.total = data?.total || 0
+    } catch {
         message.error('加载页面列表失败')
     } finally {
         loading.value = false
@@ -266,14 +293,23 @@ const handleTableChange = (pag) => {
     loadPages()
 }
 
-const handleDelete = async (id) => {
-    try {
-        await pageApi.remove(id)
-        message.success('页面删除成功')
-        loadPages()
-    } catch (error) {
-        message.error('删除页面失败')
-    }
+const handleDelete = (id) => {
+    Modal.confirm({
+        title: '确认删除',
+        content: '确定要删除该页面吗？子页面也会被一并删除，此操作不可恢复。',
+        okText: '删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+            try {
+                await pageApi.remove(id)
+                message.success('页面删除成功')
+                loadPages()
+            } catch {
+                message.error('删除页面失败')
+            }
+        }
+    })
 }
 
 onMounted(() => {
@@ -344,5 +380,8 @@ onMounted(() => {
 .text-muted {
     color: #6b778c;
     font-size: 13px;
+}
+:deep(.ant-table-wrapper .ant-table-tbody>tr>td){
+    padding: 10px 10px;
 }
 </style>

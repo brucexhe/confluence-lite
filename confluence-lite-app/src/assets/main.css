@@ -14,7 +14,8 @@
   --color-border: #E2E8F0; /* Slate-200 */
   
   --font-family-base: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  
+  --font-size-base: 14px;
+
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -35,6 +36,7 @@
 
 body {
   font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
   line-height: 1.5;

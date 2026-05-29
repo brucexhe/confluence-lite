@@ -635,6 +635,16 @@ export const shareApi = {
     return request('/api/share/', { method: 'POST', body: data })
   },
 
+  /** 获取我创建的分享列表 */
+  listMy() {
+    return request('/api/share/my')
+  },
+
+  /** 更新分享设置 */
+  update(id, data) {
+    return request(`/api/share/${id}`, { method: 'PUT', body: data })
+  },
+
   /** 获取公开分享信息 (无需认证, 按 code) */
   getInfo(code) {
     return request(`/api/share/${code}`, { auth: false })

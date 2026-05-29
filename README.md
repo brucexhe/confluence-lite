@@ -79,6 +79,7 @@ docker-compose up -d
 - [x] 分享管理
 - [x] Confluence导入
 - [x] 系统备份
+- [ ] 适配手机端访问
 - [ ] 页面排序
 - [ ] 系统恢复
 - [ ] 多语言支持（zh-CN/en）

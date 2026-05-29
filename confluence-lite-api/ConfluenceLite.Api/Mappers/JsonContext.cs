@@ -185,6 +185,7 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(PublicShareInfoDto))]
 [JsonSerializable(typeof(SharePageInfoDto))]
 [JsonSerializable(typeof(CreateShareRequest))]
+[JsonSerializable(typeof(UpdateShareRequest))]
 [JsonSerializable(typeof(UpdateSharePageRequest))]
 [JsonSerializable(typeof(ApiResponse<ShareDto>))]
 [JsonSerializable(typeof(ApiResponse<List<ShareDto>>))]

@@ -117,7 +117,7 @@ public class JwtOptions
     /// <summary>
     /// 过期时间(分钟)
     /// </summary>
-    public int ExpirationMinutes { get; set; } = 1440; // 24小时
+    public int ExpirationMinutes { get; set; } = 1440 * 7; // 24*7小时
 }
 
 /// <summary>

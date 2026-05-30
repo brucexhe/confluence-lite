@@ -100,7 +100,7 @@ public static class AuthRoutes
                         const data = {{responseJson}}; 
                         // 存储用户信息到 localStorage 
                         console.log(data);
-                        localStorage.setItem('auth_user', JSON.stringify(data));
+                        localStorage.setItem('auth_user', JSON.stringify(data.user));
                         // 存储空间列表到 localStorage，并将 key 转换为大写
                         const workspaces = data.workspaces.map(ws => ({
                             ...ws,

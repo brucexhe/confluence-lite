@@ -23,4 +23,10 @@ public class SecurityConfigDto
     // 访问控制
     public string IpWhitelist { get; set; } = "";
     public bool EnableTwoFactor { get; set; }
+
+    // JWT Token 配置
+    public string JwtSecret { get; set; } = "";
+    public string JwtIssuer { get; set; } = "ConfluenceLite";
+    public string JwtAudience { get; set; } = "ConfluenceLiteUsers";
+    public int JwtExpirationMinutes { get; set; } = 10080;
 }

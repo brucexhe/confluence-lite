@@ -244,6 +244,7 @@ public static class SystemRoutes
         group.MapGet("/security-config", (AppConfiguration appConfig) =>
         {
             var s = appConfig.SecuritySettings;
+            var jwt = appConfig.Jwt;
             var dto = new SecurityConfigDto
             {
                 AllowPublicRegistration = s.AllowPublicRegistration,
@@ -256,7 +257,11 @@ public static class SystemRoutes
                 AllowConcurrentSessions = s.AllowConcurrentSessions,
                 AllowRememberMe = s.AllowRememberMe,
                 IpWhitelist = s.IpWhitelist,
-                EnableTwoFactor = s.EnableTwoFactor
+                EnableTwoFactor = s.EnableTwoFactor,
+                JwtSecret = jwt.Secret,
+                JwtIssuer = jwt.Issuer,
+                JwtAudience = jwt.Audience,
+                JwtExpirationMinutes = jwt.ExpirationMinutes
             };
             return Results.Ok(ApiResponse<SecurityConfigDto>.Ok(dto));
         });
@@ -269,6 +274,7 @@ public static class SystemRoutes
             HttpContext context) =>
         {
             var s = appConfig.SecuritySettings;
+            var jwt = appConfig.Jwt;
 
             // 保存旧值用于审计
             var oldValue = new SecurityConfigDto
@@ -283,7 +289,11 @@ public static class SystemRoutes
                 AllowConcurrentSessions = s.AllowConcurrentSessions,
                 AllowRememberMe = s.AllowRememberMe,
                 IpWhitelist = s.IpWhitelist,
-                EnableTwoFactor = s.EnableTwoFactor
+                EnableTwoFactor = s.EnableTwoFactor,
+                JwtSecret = "***",
+                JwtIssuer = jwt.Issuer,
+                JwtAudience = jwt.Audience,
+                JwtExpirationMinutes = jwt.ExpirationMinutes
             };
 
             s.AllowPublicRegistration = dto.AllowPublicRegistration;
@@ -298,12 +308,30 @@ public static class SystemRoutes
             s.IpWhitelist = dto.IpWhitelist;
             s.EnableTwoFactor = dto.EnableTwoFactor;
 
-            SaveSecuritySettingsConfig(env, dto);
+            // 更新 JWT 配置（Secret 为空或 *** 时不修改）
+            var secretChanged = false;
+            if (!string.IsNullOrEmpty(dto.JwtSecret) && dto.JwtSecret != "***")
+            {
+                jwt.Secret = dto.JwtSecret;
+                secretChanged = true;
+            }
+            jwt.Issuer = dto.JwtIssuer;
+            jwt.Audience = dto.JwtAudience;
+            jwt.ExpirationMinutes = dto.JwtExpirationMinutes;
+
+            SaveSecuritySettingsConfig(env, dto, secretChanged ? jwt.Secret : null);
 
             // 记录审计日志
             await auditService.EnqueueChangeAsync(context, "security", oldValue, dto);
 
             return Results.Ok(ApiResponse<bool>.Ok(true, "配置已保存"));
+        });
+
+        // ========== JWT 密钥生成 ==========
+
+        group.MapPost("/generate-jwt-secret", () =>
+        {
+            return Results.Ok(ApiResponse<string>.Ok(TokenService.GenerateSecureKey()));
         });
 
         // ========== 邮件配置 ==========
@@ -1067,7 +1095,7 @@ public static class SystemRoutes
         File.WriteAllText(configPath, root.ToJsonString(options));
     }
 
-    private static void SaveSecuritySettingsConfig(IHostEnvironment env, SecurityConfigDto dto)
+    private static void SaveSecuritySettingsConfig(IHostEnvironment env, SecurityConfigDto dto, string? jwtSecret = null)
     {
         var dataDir = Path.Combine(env.ContentRootPath, "data");
         if (!Directory.Exists(dataDir))
@@ -1104,6 +1132,19 @@ public static class SystemRoutes
             ["IpWhitelist"] = dto.IpWhitelist,
             ["EnableTwoFactor"] = dto.EnableTwoFactor
         };
+
+        // 持久化 JWT 配置
+        var jwtNode = appNode.TryGetPropertyValue("Jwt", out var jwtVal)
+            ? jwtVal?.AsObject() ?? new JsonObject()
+            : new JsonObject();
+
+        if (jwtSecret != null)
+            jwtNode["Secret"] = jwtSecret;
+        jwtNode["Issuer"] = dto.JwtIssuer;
+        jwtNode["Audience"] = dto.JwtAudience;
+        jwtNode["ExpirationMinutes"] = dto.JwtExpirationMinutes;
+        appNode["Jwt"] = jwtNode;
+
         root!["App"] = appNode;
 
         var options = new JsonSerializerOptions { WriteIndented = true };

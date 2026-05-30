@@ -252,7 +252,7 @@ public class SecuritySettings
     public int PasswordExpireDays { get; set; }
 
     // 会话管理
-    public int SessionTimeout { get; set; } = 60;
+    public int SessionTimeout { get; set; } = 2;//2小时
     public bool AllowConcurrentSessions { get; set; } = true;
     public bool AllowRememberMe { get; set; } = true;
 

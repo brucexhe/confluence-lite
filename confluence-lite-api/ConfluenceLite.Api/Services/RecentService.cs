@@ -82,8 +82,13 @@ public class RecentService
 
             if (oldestId > 0)
             {
+                var cutoffTime = await _db.Db.Queryable<Recent>()
+                    .Where(x => x.Id == oldestId)
+                    .Select(x => x.VisitedAt)
+                    .FirstAsync();
+
                 await _db.Db.Deleteable<Recent>()
-                    .Where(r => r.UserId == userId && r.VisitedAt < _db.Db.Queryable<Recent>().Where(x => x.Id == oldestId).Select(x => x.VisitedAt).First())
+                    .Where(r => r.UserId == userId && r.VisitedAt < cutoffTime)
                     .ExecuteCommandAsync();
             }
         }

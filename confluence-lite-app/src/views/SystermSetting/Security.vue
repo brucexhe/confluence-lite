@@ -84,17 +84,6 @@
                 <div class="form-section">
                     <h3 class="section-title">会话管理</h3>
 
-                    <a-form-item label="会话超时时间" name="sessionTimeout">
-                        <a-input-number
-                            v-model:value="formState.sessionTimeout"
-                            :min="5"
-                            :max="1440"
-                            style="width: 120px"
-                        />
-                        <span style="margin-left: 8px">分钟</span>
-                        <div class="form-hint">用户无操作后自动退出登录的时间</div>
-                    </a-form-item>
-
                     <a-form-item label="允许同时登录" name="allowConcurrentSessions">
                         <a-switch
                             v-model:checked="formState.allowConcurrentSessions"
@@ -138,6 +127,54 @@
                     </a-form-item>
                 </div>
 
+                <!-- JWT Token 配置 -->
+                <div class="form-section">
+                    <h3 class="section-title">JWT Token 配置</h3>
+
+                    <a-form-item label="密钥" name="jwtSecret">
+                        <div style="display: flex; gap: 8px; max-width: 500px">
+                            <a-input-password
+                                v-model:value="formState.jwtSecret"
+                                placeholder="留空表示不修改当前密钥"
+                                style="flex: 1"
+                            />
+                            <a-button @click="handleGenerateSecret" :loading="generatingSecret">
+                                生成密钥
+                            </a-button>
+                        </div>
+                        <div class="form-hint">用于签发 JWT Token 的密钥，至少 32 个字符。修改后已登录用户需要重新登录</div>
+                    </a-form-item>
+
+                    <a-form-item label="发行者" name="jwtIssuer">
+                        <a-input
+                            v-model:value="formState.jwtIssuer"
+                            style="max-width: 300px"
+                            placeholder="JWT 发行者标识"
+                        />
+                        <div class="form-hint">Token 的发行者（Issuer）标识</div>
+                    </a-form-item>
+
+                    <a-form-item label="受众" name="jwtAudience">
+                        <a-input
+                            v-model:value="formState.jwtAudience"
+                            style="max-width: 300px"
+                            placeholder="JWT 受众标识"
+                        />
+                        <div class="form-hint">Token 的受众（Audience）标识</div>
+                    </a-form-item>
+
+                    <a-form-item label="过期时间" name="jwtExpirationMinutes">
+                        <a-input-number
+                            v-model:value="formState.jwtExpirationMinutes"
+                            :min="1"
+                            :max="525600"
+                            style="width: 160px"
+                        />
+                        <span style="margin-left: 8px">分钟（默认 10080 = 7 天）</span>
+                        <div class="form-hint">Token 的有效时长，过期后用户需要重新登录</div>
+                    </a-form-item>
+                </div>
+
                 <!-- 提交按钮 -->
                 <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 120px">
                     <a-space>
@@ -159,6 +196,7 @@ import { systemSettingApi } from '@/api'
 
 const loading = ref(false)
 const saving = ref(false)
+const generatingSecret = ref(false)
 
 // 表单数据
 const formState = ref({
@@ -179,7 +217,13 @@ const formState = ref({
 
     // 访问控制
     ipWhitelist: '',
-    enableTwoFactor: false
+    enableTwoFactor: false,
+
+    // JWT Token 配置
+    jwtSecret: '',
+    jwtIssuer: 'ConfluenceLite',
+    jwtAudience: 'ConfluenceLiteUsers',
+    jwtExpirationMinutes: 10080
 })
 
 // 角色选项
@@ -195,6 +239,23 @@ const complexityOptions = ref([
     { label: '中（需包含字母和数字）', value: 'medium' },
     { label: '高（需包含大小写字母、数字和符号）', value: 'high' }
 ])
+
+// 生成密钥
+const handleGenerateSecret = async () => {
+    generatingSecret.value = true
+    try {
+        const secret = await systemSettingApi.generateJwtSecret()
+        if (secret) {
+            formState.value.jwtSecret = secret
+            message.success('已生成新的密钥，保存后生效')
+        }
+    } catch (error) {
+        console.error('生成密钥失败:', error)
+        message.error('生成密钥失败')
+    } finally {
+        generatingSecret.value = false
+    }
+}
 
 // 加载配置
 const loadConfig = async () => {

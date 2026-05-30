@@ -183,6 +183,22 @@ export const pageApi = {
     return request(`/api/page/${id}`, { method: 'DELETE' })
   },
 
+  /** 批量更新页面排序和层级 */
+  batchSort(workspaceId, items) {
+    return request('/api/page/batch-sort', {
+      method: 'PUT',
+      body: { workspaceId, items }
+    })
+  },
+
+  /** 移动页面（即时保存） */
+  movePage(id, parentId, sortOrder) {
+    return request(`/api/page/${id}/move`, {
+      method: 'PUT',
+      body: { parentId, sortOrder }
+    })
+  },
+
   /** 获取页面版本列表 */
   getVersions(pageId) {
     return request(`/api/page/${pageId}/versions`)
@@ -354,6 +370,11 @@ export const systemSettingApi = {
   /** 更新安全设置 */
   updateSecurityConfig(data) {
     return request('/api/system/security-config', { method: 'PUT', body: data })
+  },
+
+  /** 生成 JWT 密钥 */
+  generateJwtSecret() {
+    return request('/api/system/generate-jwt-secret', { method: 'POST' })
   },
 
   /** 获取显示设置 */

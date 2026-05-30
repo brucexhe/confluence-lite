@@ -49,17 +49,11 @@
               justify-content: space-between;
               align-items: center;
               margin-bottom: 0.5rem;
-              padding: 0 0.5rem;
+              padding: 0 0 0 0.2rem;
             "
           >
             <h4 class="section-title">Pages</h4>
-            <a-button
-              type="text"
-              size="small"
-              style="color: var(--color-text-secondary)"
-              @click="router.push(`/${currentSpaceKey}/page/new`)"
-              >+</a-button
-            >
+           <Settings :size="16"  @click="settingsVisible = true" /> 
           </div>
           <PageTree
             :workspace-id="currentSpace?.id"
@@ -83,6 +77,11 @@
     <div v-else>
       <NotFound />
     </div>
+    <PageTreeSettings
+      v-model:open="settingsVisible"
+      :workspace-id="currentSpace?.id"
+      :space-key="currentSpaceKey"
+    />
   </div>
 </template>
 
@@ -90,9 +89,11 @@
 import { computed, ref, onUnmounted, provide, watch } from "vue";
 import { useAuthStore } from "../store/auth";
 import PageTree from "../components/PageTree.vue";
+import PageTreeSettings from "../components/PageTreeSettings.vue";
 import TopNavbar from "../components/TopNavbar.vue";
 import { useRoute, useRouter } from "vue-router";
 import NotFound from "../components/NotFound.vue";
+import { Settings } from "lucide-vue-next";
 import { getSpaceColorById, getSpaceInitial } from "../utils/workspace";
 
 function isImageUrl(icon) {
@@ -106,6 +107,9 @@ const router = useRouter();
 
 // 404 状态 - 子组件可以通过 setNotFound 通知父组件显示404
 const notFound = ref(false);
+
+// 页面排序设置弹窗
+const settingsVisible = ref(false);
 
 function setNotFound(value) {
   notFound.value = value;

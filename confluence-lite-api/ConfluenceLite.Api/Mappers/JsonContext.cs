@@ -190,6 +190,12 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(ApiResponse<ShareDto>))]
 [JsonSerializable(typeof(ApiResponse<List<ShareDto>>))]
 [JsonSerializable(typeof(ApiResponse<PublicShareInfoDto>))]
+// Batch Sort
+[JsonSerializable(typeof(BatchSortPageItem))]
+[JsonSerializable(typeof(List<BatchSortPageItem>))]
+[JsonSerializable(typeof(BatchSortPageRequest))]
+// Move Page
+[JsonSerializable(typeof(MovePageRequest))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

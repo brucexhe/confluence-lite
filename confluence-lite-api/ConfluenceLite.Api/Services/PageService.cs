@@ -259,6 +259,159 @@ public class PageService
     }
 
     /// <summary>
+    /// 批量更新页面排序和层级
+    /// </summary>
+    public async Task<(bool success, string? error)> BatchSortPagesAsync(BatchSortPageRequest request)
+    {
+        if (request.Items == null || request.Items.Count == 0)
+        {
+            return (true, null);
+        }
+
+        var pageIds = request.Items.Select(i => i.Id).ToList();
+        var pages = await _db.Db.Queryable<Page>()
+            .Where(p => pageIds.Contains(p.Id))
+            .ToListAsync();
+
+        if (pages.Count != pageIds.Count)
+        {
+            return (false, "部分页面不存在");
+        }
+
+        if (pages.Any(p => p.WorkspaceId != request.WorkspaceId))
+        {
+            return (false, "所有页面必须属于同一工作空间");
+        }
+
+        var pageDict = pages.ToDictionary(p => p.Id);
+
+        // 构建请求中的 id -> parentId 映射，用于循环检测
+        var newItemParentMap = request.Items.ToDictionary(i => i.Id, i => i.ParentId);
+
+        foreach (var item in request.Items)
+        {
+            if (item.ParentId.HasValue && item.ParentId.Value == item.Id)
+            {
+                return (false, $"页面 {item.Id} 不能成为自身的父页面");
+            }
+
+            // 沿父链向上遍历检测循环引用
+            var visited = new HashSet<long> { item.Id };
+            var currentParentId = item.ParentId;
+            while (currentParentId.HasValue)
+            {
+                if (!visited.Add(currentParentId.Value))
+                {
+                    return (false, $"检测到循环引用，涉及页面 {item.Id}");
+                }
+
+                // 优先从请求中查找新的 parentId，再从数据库中查找
+                if (newItemParentMap.TryGetValue(currentParentId.Value, out var newParent))
+                {
+                    currentParentId = newParent;
+                }
+                else if (pageDict.TryGetValue(currentParentId.Value, out var p))
+                {
+                    currentParentId = p.ParentId;
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        // 批量更新（不保存版本快照）
+        var now = DateTime.Now;
+        foreach (var item in request.Items)
+        {
+            var page = pageDict[item.Id];
+            page.ParentId = item.ParentId;
+            page.SortOrder = item.SortOrder;
+            page.UpdatedAt = now;
+
+            await _db.Db.Updateable(page)
+                .UpdateColumns(p => new { p.ParentId, p.SortOrder, p.UpdatedAt })
+                .ExecuteCommandAsync();
+        }
+
+        return (true, null);
+    }
+
+    /// <summary>
+    /// 移动单个页面（即时保存，不产生版本快照）
+    /// </summary>
+    public async Task<(bool success, string? error)> MovePageAsync(long pageId, MovePageRequest request)
+    {
+        var page = await _db.Pages.GetByIdAsync(pageId);
+        if (page == null)
+        {
+            return (false, "页面不存在");
+        }
+
+        // 验证父页面
+        if (request.ParentId.HasValue)
+        {
+            if (request.ParentId.Value == pageId)
+            {
+                return (false, "页面不能成为自身的父页面");
+            }
+
+            var parent = await _db.Pages.GetByIdAsync(request.ParentId.Value);
+            if (parent == null || parent.WorkspaceId != page.WorkspaceId)
+            {
+                return (false, "父页面不存在或不属于同一工作空间");
+            }
+        }
+
+        var oldParentId = page.ParentId;
+
+        // 更新页面位置
+        page.ParentId = request.ParentId;
+        page.SortOrder = request.SortOrder;
+        page.UpdatedAt = DateTime.Now;
+
+        await _db.Db.Updateable(page)
+            .UpdateColumns(p => new { p.ParentId, p.SortOrder, p.UpdatedAt })
+            .ExecuteCommandAsync();
+
+        // 重新索引旧父级下的兄弟排序
+        await ReindexSiblingsAsync(page.WorkspaceId, oldParentId);
+
+        // 如果父级发生变化，重新索引新父级下的兄弟排序
+        if (oldParentId != request.ParentId)
+        {
+            await ReindexSiblingsAsync(page.WorkspaceId, request.ParentId);
+        }
+
+        return (true, null);
+    }
+
+    /// <summary>
+    /// 重新索引同一父级下所有兄弟页面的排序序号
+    /// </summary>
+    private async Task ReindexSiblingsAsync(long workspaceId, long? parentId)
+    {
+        var siblings = await _db.Db.Queryable<Page>()
+            .Where(p => p.WorkspaceId == workspaceId && p.ParentId == parentId)
+            .OrderBy(p => p.SortOrder)
+            .ToListAsync();
+
+        var now = DateTime.Now;
+        for (int i = 0; i < siblings.Count; i++)
+        {
+            if (siblings[i].SortOrder != i)
+            {
+                siblings[i].SortOrder = i;
+                siblings[i].UpdatedAt = now;
+                await _db.Db.Updateable(siblings[i])
+                    .UpdateColumns(p => new { p.SortOrder, p.UpdatedAt })
+                    .ExecuteCommandAsync();
+            }
+        }
+    }
+
+    /// <summary>
     /// 删除页面
     /// </summary>
     public async Task<(bool success, string? error)> DeletePageAsync(long id, long userId)

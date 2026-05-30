@@ -81,6 +81,41 @@ public static class PageRoutes
             return Results.Ok(ApiResponse<List<PageDto>>.Ok(children));
         });
 
+        // 批量更新页面排序和层级
+        group.MapPut("/batch-sort", async (
+            BatchSortPageRequest request,
+            HttpContext context,
+            PageService pageService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            var (success, error) = await pageService.BatchSortPagesAsync(request);
+            if (!success || error != null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error ?? "批量排序失败"));
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "页面排序已更新"));
+        });
+
+        // 移动页面（即时保存，不产生版本快照）
+        group.MapPut("/{id}/move", async (
+            long id,
+            MovePageRequest request,
+            HttpContext context,
+            PageService pageService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            var (success, error) = await pageService.MovePageAsync(id, request);
+            if (!success || error != null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error ?? "移动页面失败"));
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "页面已移动"));
+        });
+
         // 更新页面
         group.MapPut("/{id}", async (
             long id,

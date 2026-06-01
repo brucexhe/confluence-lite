@@ -126,7 +126,7 @@ public static class SystemRoutes
                 DefaultLanguage = appConfig.SiteSettings.DefaultLanguage,
                 DefaultHomePage = appConfig.SiteSettings.DefaultHomePage,
                 Timezone = appConfig.SiteSettings.Timezone,
-                AllowRegistration = appConfig.SiteSettings.AllowRegistration
+                //AllowRegistration = appConfig.SiteSettings.AllowRegistration
             };
 
             appConfig.SiteSettings.SiteName = dto.SiteName;
@@ -136,7 +136,7 @@ public static class SystemRoutes
             appConfig.SiteSettings.DefaultLanguage = dto.DefaultLanguage;
             appConfig.SiteSettings.DefaultHomePage = dto.DefaultHomePage;
             appConfig.SiteSettings.Timezone = dto.Timezone;
-            appConfig.SiteSettings.AllowRegistration = dto.AllowRegistration;
+            //appConfig.SiteSettings.AllowRegistration = dto.AllowRegistration;
 
             SaveSiteSettingsConfig(env, dto);
 
@@ -956,7 +956,7 @@ public static class SystemRoutes
                 Installed = setupService.IsInstalled(),
                 SiteName = appConfig.SiteSettings.SiteName,
                 SiteLogo = appConfig.SiteSettings.SiteLogo,
-                AllowRegistration = appConfig.SiteSettings.AllowRegistration,
+                AllowRegistration = appConfig.SecuritySettings.AllowPublicRegistration,
                 PasswordEnabled = a.PasswordEnabled,
                 EmailLoginEnabled = a.EmailLoginEnabled,
                 OidcEnabled = a.OidcEnabled,
@@ -1041,7 +1041,7 @@ public static class SystemRoutes
             ["DefaultLanguage"] = dto.DefaultLanguage,
             ["DefaultHomePage"] = dto.DefaultHomePage,
             ["Timezone"] = dto.Timezone,
-            ["AllowRegistration"] = dto.AllowRegistration
+            //["AllowRegistration"] = dto.AllowRegistration
         };
         root!["App"] = appNode;
 

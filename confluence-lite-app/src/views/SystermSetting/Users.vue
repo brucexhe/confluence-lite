@@ -50,7 +50,7 @@
                     </template>
                     <template v-else-if="column.key === 'status'">
                         <a-tag :color="record.status === 'active' ? 'green' : 'red'">
-                            {{ record.status === 'active' ? '正常' : '禁用' }}
+                            {{ record.status == 1 ? '正常' : '禁用' }}
                         </a-tag>
                     </template>
                     <template v-else-if="column.key === 'createdAt'">

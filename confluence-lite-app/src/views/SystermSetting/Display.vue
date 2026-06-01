@@ -200,7 +200,7 @@ const formState = ref({
 
     // 页面显示
     pageSize: 20,
-    pageTreeExpandMode: 'first',
+    pageTreeExpandMode: 'none',
     showPageViews: true,
     showAuthorInfo: true,
     showLastModified: true,

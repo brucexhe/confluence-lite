@@ -105,17 +105,7 @@
                         :filter-option="filterTimezone"
                     ></a-select>
                     <div class="form-hint">用于显示日期和时间的时区</div>
-                </a-form-item>
-
-                <!-- 允许注册 -->
-                <a-form-item label="允许注册" name="allowRegistration">
-                    <a-switch
-                        v-model:checked="formState.allowRegistration"
-                        checked-children="开启"
-                        un-checked-children="关闭"
-                    />
-                    <div class="form-hint">是否允许新用户自行注册账号</div>
-                </a-form-item>
+                </a-form-item> 
 
                 <!-- 提交按钮 -->
                 <a-form-item style="margin-left: 100px">
@@ -150,7 +140,7 @@ const formState = ref({
     defaultLanguage: "zh-CN",
     defaultHomePage: null,
     timezone: "Asia/Shanghai",
-    allowRegistration: true,
+    allowRegistration: false,
 });
 
 // 标签选项

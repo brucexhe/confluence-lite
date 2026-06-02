@@ -197,4 +197,28 @@ onMounted(() => {
 :deep(.ant-list-item-meta-avatar) {
   margin-right: 20px;
 }
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+  .recent-page {
+    padding: 20px 1rem;
+  }
+
+  .header h1 {
+    font-size: 22px;
+  }
+
+  .item-title {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .item-meta {
+    flex-wrap: wrap;
+  }
+
+  :deep(.ant-list-item-meta-avatar) {
+    margin-right: 12px;
+  }
+}
 </style>

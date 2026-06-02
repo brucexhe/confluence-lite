@@ -61,6 +61,10 @@ docker-compose up -d
 ![](./snapshots/OFFICE文件预览.png)
 ![](./snapshots/系统设置.png)
 
+![](./snapshots/手机端-首页.png)
+![](./snapshots/手机端-菜单.png)
+![](./snapshots/手机端-页面.png)
+
 
 ## 进度
 
@@ -86,7 +90,7 @@ docker-compose up -d
 - [x] Confluence导入
 - [x] 系统备份
 - [x] 页面排序
-- [ ] 适配手机端访问
+- [x] 适配手机端访问
 - [ ] 系统恢复
 - [ ] 多语言支持（zh-CN/en）
 

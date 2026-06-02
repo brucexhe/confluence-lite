@@ -297,3 +297,35 @@ button {
   border-radius: 4px;
   margin: 16px 0;
 }
+
+/* ==================== Mobile Responsive ==================== */
+
+/* 全局表格响应式滚动 */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  body {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 全局表格在手机端可横向滚动 */
+  .page-content table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modal 全屏适配 */
+  .ant-modal {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px auto !important;
+  }
+
+  /* Drawer 全屏适配 */
+  .ant-drawer-content-wrapper {
+    max-width: 100vw;
+  }
+}

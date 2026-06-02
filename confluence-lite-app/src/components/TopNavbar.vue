@@ -1,10 +1,19 @@
 <template>
     <header class="top-navbar">
         <div class="nav-left">
+            <!-- Mobile hamburger button -->
+            <button v-if="isMobile" class="hamburger-btn" @click="$emit('toggle-sidebar')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
             <img v-if="siteLogo" class="logo" :src="siteLogo" alt="" @click="navigateTo('/')" style="cursor: pointer" />
             <div v-else class="logo" @click="navigateTo('/')" style="cursor: pointer"></div>
-            <a class="nav-title" href="/" style="cursor: pointer; color: #fff">{{ siteName }}</a>
-            <nav class="nav-links">
+            <a v-show="!(isMobile && searchExpanded)" class="nav-title" href="/" style="cursor: pointer; color: #fff">{{ siteName }}</a>
+            <nav v-if="!isMobile" class="nav-links">
                 <a-dropdown :trigger="['click']" placement="bottomLeft">
                     <a class="nav-link dropdown-link" @click.prevent>
                         Spaces
@@ -103,7 +112,35 @@
             </nav>
         </div>
         <div class="nav-right">
-            <div class="search-box" @keydown.capture.enter.prevent.stop="onFullSearch(searchText)">
+            <!-- Mobile: search icon toggle -->
+            <template v-if="isMobile">
+                <button v-if="!searchExpanded" class="mobile-icon-btn" @click="searchExpanded = true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </button>
+                <div v-if="searchExpanded" class="mobile-search-box">
+                    <a-auto-complete
+                        v-model:value="searchText"
+                        :options="suggestions"
+                        style="flex: 1"
+                        @search="handleSearchInput"
+                        @select="handleSelect"
+                    >
+                        <a-input-search
+                            placeholder="Search..."
+                            class="confluence-search"
+                            @search="onFullSearch"
+                            autofocus
+                        />
+                    </a-auto-complete>
+                    <button class="mobile-search-cancel" @click="searchExpanded = false; searchText = ''">取消</button>
+                </div>
+            </template>
+
+            <!-- PC: normal search box -->
+            <div v-if="!isMobile" class="search-box" @keydown.capture.enter.prevent.stop="onFullSearch(searchText)">
                 <a-auto-complete
                     v-model:value="searchText"
                     :options="suggestions"
@@ -131,7 +168,7 @@
                     </template>
                 </a-auto-complete>
             </div>
-            <button class="create-btn" @click="handleCreate">Create</button>
+            <button v-if="!isMobile" class="create-btn" @click="handleCreate">Create</button>
             <a-dropdown :trigger="['click']">
                 <UserAvatar
                     :user="authStore.user"
@@ -141,6 +178,10 @@
                 />
                 <template #overlay>
                     <a-menu style="min-width: 120px; padding: 4px 0">
+                        <a-menu-item v-if="isMobile" @click="handleCreate">
+                            <span style="font-size: 14px; color: #0052cc; font-weight: 500">+ Create Page</span>
+                        </a-menu-item>
+                        <a-menu-divider v-if="isMobile" />
                         <a-menu-item @click="navigateTo('/spaces')">
                             <span style="font-size: 14px; color: #172b4d">空间列表</span>
                         </a-menu-item>
@@ -168,7 +209,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "../store/auth";
 import { useSiteInfo } from "../store/site";
@@ -177,8 +218,27 @@ import UserAvatar from "./UserAvatar.vue";
 import { searchApi } from "../api";
 import { FileText, Paperclip, Image } from "lucide-vue-next";
 
+defineEmits(['toggle-sidebar']);
+
 const searchText = ref("");
 const suggestions = ref([]);
+const searchExpanded = ref(false);
+
+// Mobile detection
+const isMobile = ref(false);
+
+function checkMobile() {
+    isMobile.value = window.innerWidth <= 768;
+}
+
+onMounted(() => {
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+});
+
+onUnmounted(() => {
+    window.removeEventListener("resize", checkMobile);
+});
 
 const handleSearchInput = async (val) => {
     if (!val) {
@@ -208,6 +268,7 @@ const handleSelect = (val, option) => {
     if (option.id) {
         router.push(`/${option.spaceKey}/page/${option.id}`);
         searchText.value = "";
+        searchExpanded.value = false;
     }
 };
 
@@ -215,6 +276,7 @@ const onFullSearch = (val) => {
     if (val) {
         suggestions.value = [];
         searchText.value = "";
+        searchExpanded.value = false;
         router.push({ path: '/search', query: { key: val } });
     }
 };
@@ -309,6 +371,16 @@ const handleCreate = () => {
 .nav-title {
     font-weight: 500;
     font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .nav-title {
+        max-width: 120px;
+        font-size: 13px;
+    }
 }
 
 .nav-title:hover {
@@ -422,5 +494,67 @@ const handleCreate = () => {
     background-color: rgba(255, 255, 255, 0.2) !important;
     border: none !important;
     color: white !important;
+}
+
+/* Mobile hamburger button */
+.hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 3px;
+    height: 32px;
+    width: 32px;
+}
+
+.hamburger-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile search icon button */
+.mobile-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 3px;
+    height: 32px;
+    width: 32px;
+}
+
+.mobile-icon-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile expanded search box */
+.mobile-search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    margin-left: 10px;
+}
+
+.mobile-search-cancel {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 4px 0;
+}
+
+.mobile-search-cancel:hover {
+    opacity: 0.8;
 }
 </style>

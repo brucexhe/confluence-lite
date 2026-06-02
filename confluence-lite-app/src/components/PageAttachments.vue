@@ -3,7 +3,7 @@
         :open="open"
         @update:open="$emit('update:open', $event)"
         title="附件"
-        width="520"
+        :width="isMobile ? '100%' : 520"
         :body-style="{ padding: '0' }"
     > 
         <a-spin v-if="loading" style="display:block;padding:2rem;text-align:center;" />
@@ -28,10 +28,23 @@
 </template>
 
 <script setup>
-import { ref, watch, h } from 'vue'
+import { ref, watch, h, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
 import { Trash2, FileText, Image, FileArchive, FileSpreadsheet, File, Film, Music } from 'lucide-vue-next'
 import { attachmentApi } from '../api'
+
+// Mobile detection
+const isMobile = ref(false)
+function checkMobile() {
+    isMobile.value = window.innerWidth <= 768
+}
+onMounted(() => {
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+})
+onUnmounted(() => {
+    window.removeEventListener('resize', checkMobile)
+})
 
 const props = defineProps({
     open: { type: Boolean, default: false },

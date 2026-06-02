@@ -1,11 +1,12 @@
 <template>
   <div class="layout-wrapper" :class="{ 'is-resizing': isResizing }">
     <!-- Top Navigation -->
-    <TopNavbar />
+    <TopNavbar @toggle-sidebar="toggleMobileSidebar" />
 
     <div class="main-container" v-if="!notFound">
-      <!-- Sidebar Navigation -->
+      <!-- PC Sidebar -->
       <aside
+        v-if="!isMobile"
         class="sidebar"
         :style="{ width: sidebarWidth + 'px', minWidth: sidebarWidth + 'px' }"
       >
@@ -53,7 +54,7 @@
             "
           >
             <h4 class="section-title">Pages</h4>
-           <Settings :size="16"  @click="settingsVisible = true" /> 
+           <Settings :size="16"  @click="settingsVisible = true" />
           </div>
           <PageTree
             :workspace-id="currentSpace?.id"
@@ -66,6 +67,70 @@
           <img src="/images/confluence-icon-grab-handle.svg" alt="grab handle" />
         </div>
       </aside>
+
+      <!-- Mobile Sidebar Drawer -->
+      <a-drawer
+        v-if="isMobile"
+        :open="mobileSidebarOpen"
+        placement="left"
+        :width="280"
+        :closable="true"
+        :body-style="{ padding: 0 }"
+        @close="mobileSidebarOpen = false"
+      >
+        <template #title>
+          <div class="drawer-space-header">
+            <img
+              v-if="currentSpaceIcon && isImageUrl(currentSpaceIcon)"
+              class="space-icon-img"
+              :src="currentSpaceIcon"
+              alt=""
+            />
+            <div
+              v-else
+              class="space-icon"
+              :style="{
+                background: currentSpaceIcon || currentSpaceColor,
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 600,
+                fontSize: '14px',
+              }"
+            >
+              {{ currentSpaceInitial }}
+            </div>
+            <div class="space-info">
+              <h3
+                @click="navigateToSpace(currentSpaceKey); mobileSidebarOpen = false"
+                style="cursor: pointer"
+              >
+                {{ currentSpaceName }}
+              </h3>
+              <p>{{ currentSpaceKey }}</p>
+            </div>
+          </div>
+        </template>
+        <div class="drawer-sidebar-section">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 0.5rem;
+              padding: 0 0 0 0.2rem;
+            "
+          >
+            <h4 class="section-title">Pages</h4>
+            <Settings :size="16" @click="settingsVisible = true; mobileSidebarOpen = false" />
+          </div>
+          <PageTree
+            :workspace-id="currentSpace?.id"
+            :space-key="currentSpaceKey"
+          />
+        </div>
+      </a-drawer>
 
       <!-- Main Content Area -->
       <main class="content-area">
@@ -86,7 +151,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onUnmounted, provide, watch } from "vue";
+import { computed, ref, onUnmounted, provide, watch, onMounted } from "vue";
 import { useAuthStore } from "../store/auth";
 import PageTree from "../components/PageTree.vue";
 import PageTreeSettings from "../components/PageTreeSettings.vue";
@@ -105,6 +170,27 @@ const authStore = useAuthStore();
 const route = useRoute();
 const router = useRouter();
 
+// Mobile detection
+const isMobile = ref(false);
+const mobileSidebarOpen = ref(false);
+
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768;
+}
+
+onMounted(() => {
+  checkMobile();
+  window.addEventListener("resize", checkMobile);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", checkMobile);
+});
+
+function toggleMobileSidebar() {
+  mobileSidebarOpen.value = !mobileSidebarOpen.value;
+}
+
 // 404 状态 - 子组件可以通过 setNotFound 通知父组件显示404
 const notFound = ref(false);
 
@@ -121,6 +207,10 @@ watch(
   () => route.path,
   () => {
     notFound.value = false;
+    // 手机端导航后自动关闭侧边栏
+    if (isMobile.value) {
+      mobileSidebarOpen.value = false;
+    }
   }
 );
 
@@ -156,7 +246,7 @@ function navigateToSpace(key) {
   router.push(`/${key}`);
 }
 
-// Sidebar Resize Logic
+// Sidebar Resize Logic (PC only)
 const sidebarWidth = ref(260);
 const isResizing = ref(false);
 
@@ -324,5 +414,16 @@ onUnmounted(() => {
   flex: 1;
   background-color: var(--color-bg-secondary);
   overflow-y: auto;
+}
+
+/* Mobile Drawer styles */
+.drawer-space-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.drawer-sidebar-section {
+  padding: 1rem;
 }
 </style>

@@ -203,4 +203,57 @@ watch(() => route.path, (newPath, oldPath) => {
     background-color: #f4f5f7;
     overflow-y: auto;
 }
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+    }
+
+    .settings-sidebar {
+        width: 100%;
+        height: auto;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid #dfe1e6;
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-shrink: 0;
+    }
+
+    .sidebar-header {
+        padding: 12px 16px 8px;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 0 8px 8px;
+        gap: 0;
+        white-space: nowrap;
+    }
+
+    .nav-group {
+        margin-bottom: 0;
+        display: flex;
+        gap: 0;
+    }
+
+    .nav-group-title {
+        display: none;
+    }
+
+    .nav-item {
+        padding: 6px 12px;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .nav-item.active {
+        border-left-color: transparent;
+        border-bottom-color: #0052cc;
+    }
+}
 </style>

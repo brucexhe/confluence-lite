@@ -58,7 +58,7 @@
         <PageAttachments v-model:open="attachmentsVisible" :pageId="pageId" @changed="loadAttachmentCount" />
 
         <!-- View Source Modal -->
-        <a-modal v-model:open="sourceVisible" title="View Source" :width="800" :footer="null">
+        <a-modal v-model:open="sourceVisible" title="View Source" :width="isMobile ? '95%' : 800" :footer="null">
             <div class="source-viewer">
                 <pre><code>{{ pageContent }}</code></pre>
             </div>
@@ -82,7 +82,7 @@
         <a-modal
             v-model:open="shareVisible"
             title="分享页面"
-            :width="520"
+            :width="isMobile ? '95%' : 520"
             :footer="null"
             @cancel="shareVisible = false"
         >
@@ -195,6 +195,12 @@ import "prismjs/components/prism-sql";
 import "prismjs/components/prism-bash";
 import "prismjs/components/prism-yaml";
 import "prismjs/components/prism-json";
+
+// Mobile detection
+const isMobile = ref(false);
+function checkMobile() {
+    isMobile.value = window.innerWidth <= 768;
+}
 
 // 从 MainLayout 注入 setNotFound 方法
 const setNotFound = inject("setNotFound");
@@ -627,6 +633,8 @@ function scrollToTop() {
 }
 
 onMounted(() => {
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
     scrollContainer = document.querySelector(".content-area");
     if (scrollContainer) {
         scrollContainer.addEventListener("scroll", handleScroll);
@@ -634,6 +642,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+    window.removeEventListener("resize", checkMobile);
     if (scrollContainer) {
         scrollContainer.removeEventListener("scroll", handleScroll);
     }
@@ -991,5 +1000,62 @@ onUnmounted(() => {
     display: flex;
     gap: 12px;
     justify-content: center;
+}
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 10px 16px 0;
+        flex-wrap: wrap;
+    }
+
+    .page-header :deep(.ant-breadcrumb) {
+        font-size: 12px;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .page-actions {
+        gap: 0.25rem;
+    }
+
+    .page-actions :deep(.ant-btn) {
+        height: 28px !important;
+        padding: 4px 8px !important;
+    }
+
+    .page-actions :deep(.ant-btn span) {
+        font-size: 12px !important;
+    }
+
+    .page-view {
+        padding: 0 16px;
+    }
+
+    .page-title {
+        font-size: 22px;
+    }
+
+    :deep(.page-content pre[class*="language-"]) {
+        padding-left: 1em;
+        font-size: 12px;
+    }
+
+    .scroll-top-btn {
+        bottom: 16px;
+        right: 16px;
+        width: 36px;
+        height: 36px;
+    }
+
+    .share-link-box {
+        flex-direction: column;
+    }
+
+    .share-link-input {
+        width: 100%;
+    }
 }
 </style>

@@ -221,4 +221,28 @@ watch(() => route.query.key, fetchResults);
 .no-results p {
     color: var(--color-text-secondary);
 }
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .search-page {
+        padding: 20px 1rem;
+    }
+
+    .search-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .search-info {
+        font-size: 0.8rem;
+    }
+
+    .result-item {
+        gap: 0.75rem;
+    }
+
+    .result-meta {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+}
 </style>

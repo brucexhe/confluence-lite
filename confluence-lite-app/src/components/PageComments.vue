@@ -508,4 +508,39 @@ const addReply = async (commentId, event) => {
     border-radius: 3px;
     box-shadow: 0 4px 8px -2px rgba(9, 30, 66, 0.25);
 }
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .comments-section {
+        padding-top: 1.5rem;
+    }
+
+    .comments-header h3 {
+        font-size: 16px;
+    }
+
+    .add-comment {
+        gap: 8px;
+    }
+
+    .comment-item {
+        gap: 8px;
+    }
+
+    .comment-replies {
+        padding-left: 0.5rem;
+    }
+
+    .hint {
+        display: none;
+    }
+
+    .comment-actions {
+        justify-content: flex-end;
+    }
+
+    .spacer {
+        display: none;
+    }
+}
 </style>

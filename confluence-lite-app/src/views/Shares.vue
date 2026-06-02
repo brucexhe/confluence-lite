@@ -404,4 +404,37 @@ onMounted(() => {
 :deep(.ant-table-wrapper .ant-table-tbody > tr > td) {
     padding: 10px 10px;
 }
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .settings-page {
+        margin: 12px 1rem;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar :deep(.ant-space) {
+        width: 100%;
+    }
+
+    .toolbar :deep(.ant-space .ant-input-search) {
+        width: 100% !important;
+    }
+
+    .toolbar :deep(.ant-space .ant-select) {
+        width: 100% !important;
+    }
+
+    /* Table horizontal scroll on mobile */
+    :deep(.ant-table) {
+        overflow-x: auto;
+    }
+
+    :deep(.ant-table-wrapper) {
+        overflow-x: auto;
+    }
+}
 </style>

@@ -49,6 +49,12 @@ import { usePageTreeStore } from "../../store/pageTree";
 // TinyMCE 已在 index.html 中从 /tinymce/ 全局加载
 // 这里不需要任何 import 语句
 
+// Mobile detection
+const isMobile = ref(false);
+function checkMobile() {
+    isMobile.value = window.innerWidth <= 768;
+}
+
 const route = useRoute();
 const router = useRouter();
 const pageTreeStore = usePageTreeStore();
@@ -259,6 +265,8 @@ async function handleFileInsert(file) {
 }
 
 onMounted(async () => {
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
     await loadPageData();
     startAutoSave();
 
@@ -271,12 +279,15 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+    window.removeEventListener("resize", checkMobile);
     stopAutoSave();
     document.removeEventListener('drop', handleDropUpload, true);
     document.removeEventListener('dragover', null, true);
 });
 
-const editorConfig = computed(() => ({
+const editorConfig = computed(() => {
+    const mobile = isMobile.value;
+    return {
     base_url: '/tinymce/',
     min_height: 500,
     menubar: false,
@@ -291,11 +302,12 @@ const editorConfig = computed(() => ({
         "code", "fullscreen", "media", "table", "codesample",
         // paste is built-in, no need to declare
     ],
-    toolbar:
-        "undo redo | formatselect | " +
-        "bold italic forecolor backcolor | alignleft aligncenter " +
-        "alignright alignjustify | bullist numlist | " +
-        "table image codesample | removeformat",
+    toolbar: mobile
+        ? "undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | image codesample | removeformat"
+        : "undo redo | formatselect | " +
+          "bold italic forecolor backcolor | alignleft aligncenter " +
+          "alignright alignjustify | bullist numlist | " +
+          "table image codesample | removeformat",
     table_header_type: "section",
     table_use_colgroups: false,
     table_default_styles: {},
@@ -374,15 +386,10 @@ const editorConfig = computed(() => ({
             throw error;
         }
     },
-    content_style: `
-body { margin: 0 !important; padding:5px 40px 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; }
-table { border-collapse: collapse !important; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; }
-table th, table td {min-width:30px; border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; }
-table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; }
-pre[class*="language-"] { background: #f5f2f0; border-radius: 3px; padding: 16px; margin: 16px 0; border: 1px solid #dfe1e6; overflow-x: auto; }
-code { font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; }
-`,
-}));
+    content_style: mobile
+        ? `body { margin: 0 !important; padding:5px 16px 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; } table { border-collapse: collapse !important; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; } table th, table td {min-width:30px; border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; } table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; } pre[class*="language-"] { background: #f5f2f0; border-radius: 3px; padding: 16px; margin: 16px 0; border: 1px solid #dfe1e6; overflow-x: auto; } code { font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; }`
+        : `body { margin: 0 !important; padding:5px 40px 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.714; color: #172b4d; } table { border-collapse: collapse !important; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; } table th, table td {min-width:30px; border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; } table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; } pre[class*="language-"] { background: #f5f2f0; border-radius: 3px; padding: 16px; margin: 16px 0; border: 1px solid #dfe1e6; overflow-x: auto; } code { font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; }`,
+}});
 
 const onEditorInit = () => {
     setTimeout(() => {
@@ -597,6 +604,29 @@ const cancelEdit = () => {
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .editor-breadcrumb {
+        padding: 10px 16px 0;
+    }
+
+    #teleport-below-toolbar {
+        max-width: 100%;
+    }
+
+    #teleport-title-dest {
+        padding: 15px 16px 0;
+    }
+
+    .editor-title-input {
+        font-size: 22px;
+    }
+
+    .editor-actions {
+        padding: 8px 12px;
     }
 }
 </style>

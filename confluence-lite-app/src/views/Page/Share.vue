@@ -707,4 +707,50 @@ function formatTime(dateStr) {
     text-align: center;
     color: #6b778c;
 }
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .share-content-area {
+        padding: 20px 16px;
+    }
+
+    .share-password-card {
+        padding: 24px 16px;
+    }
+
+    .share-page-title {
+        font-size: 22px;
+    }
+
+    .share-page-header {
+        flex-wrap: wrap;
+    }
+
+    .share-edit-title {
+        font-size: 22px;
+    }
+
+    .share-edit-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .share-page-body :deep(pre[class*="language-"]) {
+        padding-left: 1em;
+        font-size: 12px;
+    }
+
+    .share-page-body :deep(table) {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .share-error-state {
+        padding: 40px 16px;
+    }
+
+    .share-loading {
+        padding: 80px 0;
+    }
+}
 </style>

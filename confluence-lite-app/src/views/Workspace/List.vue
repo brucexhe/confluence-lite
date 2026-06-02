@@ -77,7 +77,7 @@
             cancelText="Cancel"
             :confirmLoading="creating"
             :okButtonProps="{ style: { backgroundColor: '#0052cc' } }"
-            width="600px"
+            :width="isMobile ? '95%' : 600"
         >
             <a-form layout="vertical" style="margin-top: 1rem">
                 <a-form-item label="Space name" required>
@@ -163,7 +163,7 @@
             cancelText="Cancel"
             :confirmLoading="editing"
             :okButtonProps="{ style: { backgroundColor: '#0052cc' } }"
-            width="600px"
+            :width="isMobile ? '95%' : 600"
         >
             <a-form layout="vertical" style="margin-top: 1rem">
                 <a-form-item label="Space name" required>
@@ -242,11 +242,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
 import { workspaceApi, uploadApi } from "../../api";
 import { getSpaceColorById, getSpaceInitial } from "../../utils/workspace";
+
+// Mobile detection
+const isMobile = ref(false);
+function checkMobile() {
+    isMobile.value = window.innerWidth <= 768;
+}
+onMounted(() => { checkMobile(); window.addEventListener("resize", checkMobile); });
+onUnmounted(() => { window.removeEventListener("resize", checkMobile); });
 
 function isImageUrl(icon) {
     if (!icon) return false;
@@ -714,6 +722,26 @@ onMounted(() => {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .space-list-container {
+        padding: 12px 1rem 0;
+    }
+
+    .header-actions h2 {
+        font-size: 20px;
+    }
+
+    .filter-bar :deep(.ant-input-search) {
+        width: 100% !important;
+    }
+
+    /* Table horizontal scroll */
+    :deep(.ant-table-wrapper) {
+        overflow-x: auto;
     }
 }
 </style>

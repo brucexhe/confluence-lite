@@ -61,9 +61,9 @@ docker-compose up -d
 ![](./snapshots/OFFICE文件预览.png)
 ![](./snapshots/系统设置.png)
 
-![](./snapshots/手机端-首页.png)
-![](./snapshots/手机端-菜单.png)
-![](./snapshots/手机端-页面.png)
+<img src="./snapshots/手机端-首页.png" width="300" alt="首页">
+<img src="./snapshots/手机端-菜单.png" width="300" alt="菜单">
+<img src="./snapshots/手机端-页面.png" width="300" alt="页面"> 
 
 
 ## 进度

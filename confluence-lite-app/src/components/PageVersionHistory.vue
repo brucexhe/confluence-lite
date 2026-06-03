@@ -9,7 +9,7 @@
         <a-spin v-if="loading" style="display:block;padding:2rem;text-align:center;" />
         <template v-else-if="viewingVersion">
             <div class="version-detail-header">
-               
+
                 <span style="font-weight:500;" class="version-number">v{{ viewingVersion.versionNumber }} </span>
                 <span class="bold">{{ viewingVersion.title }}</span>
             </div>
@@ -17,10 +17,10 @@
                 {{ editorName(viewingVersion) }}
                 · {{ formatTime(viewingVersion.createdAt) }}
             </div>
-           
+
             <div class="version-content" v-html="viewingVersion.content"></div>
 
-             <div class="version-actions" v-if="!isCurrentVersion(viewingVersion)">
+            <div class="version-actions" v-if="!isCurrentVersion(viewingVersion)">
                 <a-button type="link" size="small" @click="viewingVersion = null">← 返回列表</a-button>
                 <a-button type="primary" @click="restoreVersion" :loading="restoring">
                     恢复此版本
@@ -206,11 +206,15 @@ watch(() => props.open, (val) => {
 }
 
 .version-actions {
+    position: sticky;
+    bottom: 0;
     padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
+    background: #fff;
+    border-top: 1px solid #f0f0f0;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    z-index: 10;
 }
 
 .version-content {
@@ -218,5 +222,138 @@ watch(() => props.open, (val) => {
     font-size: 14px;
     line-height: 1.714;
     color: #172b4d;
+    word-break: break-word;
+}
+
+.version-content :deep(img) {
+    max-width: 100%;
+    height: auto;
+}
+
+.version-content :deep(.lead-text) {
+    font-size: 14px;
+    color: #172b4d;
+    line-height: 1.714;
+    margin-bottom: 16px;
+}
+
+.version-content :deep(ul),
+.version-content :deep(ol) {
+    padding-left: 1.5em;
+    margin-bottom: 12px;
+}
+
+.version-content :deep(li) {
+    font-size: 14px;
+    line-height: 1.714;
+    color: #172b4d;
+    margin-bottom: 4px;
+}
+
+.version-content :deep(h2) {
+    font-size: 20px;
+    font-weight: 500;
+    color: #172b4d;
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+.version-content :deep(p) {
+    font-size: 14px;
+    margin-bottom: 12px;
+    line-height: 1.714;
+    color: #172b4d;
+    word-break: break-word;
+}
+
+.version-content :deep(pre) {
+    background-color: #f4f5f7;
+    border-radius: 3px;
+    padding: 16px;
+    margin: 16px 0;
+    font-family:
+        SFMono-Regular,
+        Consolas,
+        Liberation Mono,
+        Menlo,
+        monospace;
+    font-size: 14px;
+    color: #172b4d;
+    border: 1px solid #dfe1e6;
+    overflow-x: auto;
+}
+
+.version-content :deep(pre code) {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+    color: inherit;
+}
+
+.version-content :deep(pre[class*="language-"]) {
+    padding-left: 3.8em;
+}
+
+.version-content :deep(pre[class*="language-"] .line-numbers-rows) {
+    border-right: 1px solid #dfe1e6;
+}
+
+.version-content :deep(pre .code-copy-btn) {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid #dfe1e6;
+    border-radius: 3px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #42526e;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1;
+}
+
+.version-content :deep(pre:hover .code-copy-btn) {
+    opacity: 1;
+}
+
+.version-content :deep(:not(pre) > code) {
+    background: #f4f5f7;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family:
+        SFMono-Regular,
+        Consolas,
+        Liberation Mono,
+        Menlo,
+        monospace;
+    font-size: 13px;
+    color: #c7254e;
+}
+
+.version-content :deep(table) {
+    border-collapse: collapse !important;
+    margin: 16px 0;
+    border: 1px solid #dfe1e6 !important;
+    font-size: 14px;
+}
+
+.version-content :deep(table th),
+.version-content :deep(table td) {
+    border: 1px solid #dfe1e6 !important;
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+    line-height: 1.5;
+}
+
+.version-content :deep(table th) {
+    background: #f4f5f7 center right no-repeat;
+    color: #172b4d;
+    font-weight: 600;
+    cursor: pointer;
+    padding-right: 24px;
 }
 </style>

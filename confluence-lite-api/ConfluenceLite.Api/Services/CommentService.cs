@@ -160,7 +160,8 @@ public class CommentService
             {
                 Id = user.Id,
                 Username = user.Username,
-                DisplayName = user.DisplayName
+                DisplayName = user.DisplayName,
+                AvatarUrl = user.AvatarUrl
             }
         };
     }

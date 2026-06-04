@@ -8,6 +8,7 @@ public class SiteInfoDto
     public bool Installed { get; set; }
     public string SiteName { get; set; } = "Confluence Lite";
     public string SiteLogo { get; set; } = "";
+    public string Lang { get; set; } = "en";
     public bool AllowRegistration { get; set; } = true;
 
     // 认证配置

@@ -961,7 +961,8 @@ public static class SystemRoutes
                 EmailLoginEnabled = a.EmailLoginEnabled,
                 OidcEnabled = a.OidcEnabled,
                 OidcProviderName = a.OidcProviderName,
-                LdapEnabled = a.LdapEnabled
+                LdapEnabled = a.LdapEnabled,
+                Lang = appConfig.SiteSettings.DefaultLanguage
             };
             return Results.Ok(ApiResponse<SiteInfoDto>.Ok(dto));
         });

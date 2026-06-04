@@ -6,6 +6,7 @@ const siteLogo = ref('')
 const allowRegistration = ref(true)
 const installed = ref(false)
 const loaded = ref(false)
+const lang = ref('en')
 
 const authConfig = ref({
   passwordEnabled: true,
@@ -21,6 +22,7 @@ export async function loadSiteInfo() {
     if (data) {
       siteName.value = data.siteName || 'Confluence Lite'
       siteLogo.value = data.siteLogo || ''
+      lang.value = data.lang || 'en'
       allowRegistration.value = data.allowRegistration !== false
       installed.value = data.installed === true
       if (data.passwordEnabled !== undefined) {
@@ -42,5 +44,5 @@ export async function loadSiteInfo() {
 }
 
 export function useSiteInfo() {
-  return { siteName, siteLogo, allowRegistration, installed, loaded, authConfig }
+  return { siteName, siteLogo, lang, allowRegistration, installed, loaded, authConfig }
 }

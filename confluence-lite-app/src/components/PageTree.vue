@@ -1,7 +1,7 @@
 <template>
     <div class="page-tree-container">
         <a-spin v-if="loading" size="small" style="padding: 8px 16px; display: block;"/>
-        <div v-else-if="treeData.length === 0" class="empty-hint">暂无页面</div>
+        <div v-else-if="treeData.length === 0" class="empty-hint">{{ $t('page.noPages') }}</div>
         <a-tree
             v-else
             class="confluence-tree"
@@ -32,6 +32,7 @@ import {Modal} from 'ant-design-vue'
 import {Dot, Folder, ChevronRight} from 'lucide-vue-next'
 import {pageApi} from '../api'
 import { usePageTreeStore } from '../store/pageTree'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
     workspaceId: {type: Number, default: null},
@@ -40,6 +41,7 @@ const props = defineProps({
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const loading = ref(false)
 const treeData = ref([])
 const selectedKeys = ref([])
@@ -162,10 +164,10 @@ const onSelect = (keys, info) => {
         const doNavigate = () => router.push(target)
         if (isEditing()) {
             Modal.confirm({
-                title: '未保存的更改',
-                content: '当前编辑未保存，确认离开？',
-                okText: '离开',
-                cancelText: '留下',
+                title: t('page.unsavedChanges'),
+                content: t('page.unsavedChangesContent'),
+                okText: t('page.leave'),
+                cancelText: t('page.stay'),
                 onOk: doNavigate,
                 onCancel: () => {
                     selectedKeys.value = [String(route.params.id)]

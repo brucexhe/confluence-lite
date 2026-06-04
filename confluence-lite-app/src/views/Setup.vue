@@ -11,104 +11,104 @@
           <span class="brand-icon">C</span>
           <span class="brand-name">Confluence Lite</span>
         </div>
-        <h2 class="setup-title">系统安装向导</h2>
+        <h2 class="setup-title">{{ $t('setup.title') }}</h2>
       </div>
 
       <!-- Step 1: Database Config -->
       <div v-if="currentStep === 0" class="step-content">
-        <h3>配置数据库连接</h3>
+        <h3>{{ $t('setup.step1Title') }}</h3>
         <a-form layout="vertical" :model="dbConfig">
-          <a-form-item label="数据库类型">
+          <a-form-item :label="$t('setup.dbType')">
             <a-select v-model:value="dbConfig.dbType">
               <a-select-option value="PostgreSQL">PostgreSQL</a-select-option>
-              <a-select-option value="MySQL">MySQL (即将支持)</a-select-option>
+              <a-select-option value="MySQL">{{ $t('setup.mysqlComingSoon') }}</a-select-option>
             </a-select>
           </a-form-item>
           <div class="form-row">
-            <a-form-item label="主机地址" class="form-item-flex">
+            <a-form-item :label="$t('setup.host')" class="form-item-flex">
               <a-input v-model:value="dbConfig.host" placeholder="localhost" />
             </a-form-item>
-            <a-form-item label="端口" class="form-item-port">
+            <a-form-item :label="$t('setup.port')" class="form-item-port">
               <a-input-number v-model:value="dbConfig.port" :min="1" :max="65535" style="width:100%" />
             </a-form-item>
           </div>
-          <a-form-item label="数据库名称">
+          <a-form-item :label="$t('setup.dbName')">
             <a-input v-model:value="dbConfig.database" placeholder="confluencelite" />
           </a-form-item>
           <div class="form-row">
-            <a-form-item label="用户名" class="form-item-flex">
+            <a-form-item :label="$t('setup.username')" class="form-item-flex">
               <a-input v-model:value="dbConfig.username" placeholder="postgres" />
             </a-form-item>
-            <a-form-item label="密码" class="form-item-flex">
-              <a-input-password v-model:value="dbConfig.password" placeholder="数据库密码" />
+            <a-form-item :label="$t('setup.password')" class="form-item-flex">
+              <a-input-password v-model:value="dbConfig.password" :placeholder="$t('setup.dbPasswordPlaceholder')" />
             </a-form-item>
           </div>
         </a-form>
         <div class="step-actions">
           <a-button @click="testConnection" :loading="testing" type="primary" ghost>
-            测试连接
+            {{ $t('setup.testConnection') }}
           </a-button>
           <a-button type="primary" @click="nextStep" :disabled="!connectionTested">
-            下一步
+            {{ $t('setup.nextStep') }}
           </a-button>
         </div>
         <div v-if="testResult" class="test-result" :class="testResult.success ? 'success' : 'error'">
-          <span v-if="testResult.success">连接成功 — {{ testResult.version }}</span>
+          <span v-if="testResult.success">{{ $t('setup.connectionSuccess', { version: testResult.version }) }}</span>
           <span v-else>{{ testResult.error }}</span>
         </div>
       </div>
 
       <!-- Step 2: Admin Account -->
       <div v-if="currentStep === 1" class="step-content">
-        <h3>创建管理员账户</h3>
+        <h3>{{ $t('setup.step2Title') }}</h3>
         <a-form layout="vertical" :model="adminConfig">
           <div class="form-row">
-            <a-form-item label="用户名" class="form-item-flex">
+            <a-form-item :label="$t('setup.username')" class="form-item-flex">
               <a-input v-model:value="adminConfig.username" placeholder="admin" />
             </a-form-item>
-            <a-form-item label="显示名称" class="form-item-flex">
+            <a-form-item :label="$t('setup.displayName')" class="form-item-flex">
               <a-input v-model:value="adminConfig.displayName" placeholder="Admin" />
             </a-form-item>
           </div>
           <div class="form-row">
-            <a-form-item label="密码" class="form-item-flex">
-              <a-input-password v-model:value="adminConfig.password" placeholder="至少6位" />
+            <a-form-item :label="$t('setup.password')" class="form-item-flex">
+              <a-input-password v-model:value="adminConfig.password" :placeholder="$t('setup.passwordMinLength')" />
             </a-form-item>
-            <a-form-item label="确认密码" class="form-item-flex">
-              <a-input-password v-model:value="adminConfig.confirmPassword" placeholder="再次输入密码" />
+            <a-form-item :label="$t('setup.confirmPassword')" class="form-item-flex">
+              <a-input-password v-model:value="adminConfig.confirmPassword" :placeholder="$t('setup.confirmPasswordPlaceholder')" />
             </a-form-item>
           </div>
-          <a-form-item label="邮箱 (可选)">
+          <a-form-item :label="$t('setup.emailOptional')">
             <a-input v-model:value="adminConfig.email" placeholder="admin@example.com" />
           </a-form-item>
         </a-form>
         <div class="step-actions">
-          <a-button @click="prevStep">上一步</a-button>
+          <a-button @click="prevStep">{{ $t('setup.prevStep') }}</a-button>
           <a-button type="primary" @click="nextStep"
                     :disabled="!adminConfig.username || !adminConfig.password || adminConfig.password !== adminConfig.confirmPassword">
-            下一步
+            {{ $t('setup.nextStep') }}
           </a-button>
         </div>
       </div>
 
       <!-- Step 3: Default Space -->
       <div v-if="currentStep === 2" class="step-content">
-        <h3>配置默认空间</h3>
-        <p class="step-desc">系统将自动创建一个空间作为您的知识库起点。</p>
+        <h3>{{ $t('setup.step3Title') }}</h3>
+        <p class="step-desc">{{ $t('setup.step3Desc') }}</p>
         <a-form layout="vertical" :model="spaceConfig">
-          <a-form-item label="空间名称">
-            <a-input v-model:value="spaceConfig.name" placeholder="我的知识库" />
+          <a-form-item :label="$t('setup.spaceName')">
+            <a-input v-model:value="spaceConfig.name" :placeholder="$t('setup.spaceNamePlaceholder')" />
           </a-form-item>
-          <a-form-item label="空间标识 (英文/数字)">
-            <a-input v-model:value="spaceConfig.key" placeholder="HOME"
+          <a-form-item :label="$t('setup.spaceKey')">
+            <a-input v-model:value="spaceConfig.key" :placeholder="$t('setup.spaceKeyPlaceholder')"
                      style="text-transform:uppercase" @input="spaceConfig.key = spaceConfig.key.toUpperCase()" />
           </a-form-item>
         </a-form>
         <div class="step-actions">
-          <a-button @click="prevStep">上一步</a-button>
+          <a-button @click="prevStep">{{ $t('setup.prevStep') }}</a-button>
           <a-button type="primary" @click="runInstall" :disabled="!spaceConfig.name || !spaceConfig.key"
                     :loading="installing">
-            开始安装
+            {{ $t('setup.startInstall') }}
           </a-button>
         </div>
       </div>
@@ -117,20 +117,20 @@
       <div v-if="currentStep === 3" class="step-content">
         <div v-if="installing" class="install-progress">
           <a-spin size="large" />
-          <p class="install-text">正在安装，请稍候...</p>
+          <p class="install-text">{{ $t('setup.installing') }}</p>
           <p class="install-detail">{{ installStatus }}</p>
         </div>
         <div v-else-if="installError" class="install-error">
-          <p class="error-text">安装失败</p>
+          <p class="error-text">{{ $t('setup.installFailed') }}</p>
           <p class="error-detail">{{ installError }}</p>
-          <a-button type="primary" @click="currentStep = 2">返回重试</a-button>
+          <a-button type="primary" @click="currentStep = 2">{{ $t('setup.backToRetry') }}</a-button>
         </div>
         <div v-else class="install-success">
           <div class="success-icon">✓</div>
-          <h3>安装完成！</h3>
-          <p>管理员账户和默认空间已创建完成。</p>
+          <h3>{{ $t('setup.installComplete') }}</h3>
+          <p>{{ $t('setup.adminAndSpaceCreated') }}</p>
           <a-button type="primary" size="large" @click="goToHome">
-            进入系统
+            {{ $t('setup.enterSystem') }}
           </a-button>
         </div>
       </div>
@@ -143,7 +143,9 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../store/auth'
 import { setupApi } from '../api'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -180,7 +182,7 @@ const spaceConfig = ref({
 // 当管理员用户名变化时，自动填充空间名和key
 watch(() => adminConfig.value.username, (val) => {
   if (val) {
-    spaceConfig.value.name = "知识库"
+    spaceConfig.value.name = t('setup.defaultSpaceName')
     spaceConfig.value.key = val.toUpperCase()
   }
 }, { immediate: true })
@@ -199,7 +201,7 @@ async function testConnection() {
     testResult.value = data
     connectionTested.value = data?.success === true
   } catch (e) {
-    testResult.value = { success: false, error: `请求失败: ${e.message}` }
+    testResult.value = { success: false, error: t('setup.requestFailed', { message: e.message }) }
     connectionTested.value = false
   } finally {
     testing.value = false
@@ -222,7 +224,7 @@ async function runInstall() {
   currentStep.value = 3
   installing.value = true
   installError.value = null
-  installStatus.value = '保存配置...'
+  installStatus.value = t('setup.savingConfig')
 
   const payload = {
     database: { ...dbConfig.value },
@@ -235,19 +237,19 @@ async function runInstall() {
   }
 
   try {
-    installStatus.value = '正在初始化数据库...'
+    installStatus.value = t('setup.initializingDb')
     const data = await setupApi.install(payload)
 
     if (data) {
-      installStatus.value = '安装完成！'
+      installStatus.value = t('setup.installComplete')
       installResult.value = data
       installing.value = false
     } else {
-      installError.value = '安装失败'
+      installError.value = t('setup.installFailedMsg')
       installing.value = false
     }
   } catch (e) {
-    installError.value = e.message || '安装失败'
+    installError.value = e.message || t('setup.installFailedMsg')
     installing.value = false
   }
 }

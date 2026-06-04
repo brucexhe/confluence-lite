@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>身份验证方式</h1>
-            <p class="page-description">配置用户的登录和认证方式</p>
+            <h1>{{ $t('settings.authenticationDetail.title') }}</h1>
+            <p class="page-description">{{ $t('settings.authenticationDetail.description') }}</p>
         </div>
 
         <a-spin :spinning="loading">
@@ -15,24 +15,24 @@
             >
                 <!-- 密码认证 -->
                 <div class="form-section">
-                    <h3 class="section-title">密码认证</h3>
+                    <h3 class="section-title">{{ $t('settings.authenticationDetail.passwordAuth') }}</h3>
 
-                    <a-form-item label="启用密码登录" name="passwordEnabled">
+                    <a-form-item :label="$t('settings.authenticationDetail.enablePasswordLogin')" name="passwordEnabled">
                         <a-switch
                             v-model:checked="formState.passwordEnabled"
-                            checked-children="开启"
-                            un-checked-children="关闭"
+                            :checked-children="$t('common.enabled')"
+                            :un-checked-children="$t('common.disabled')"
                         />
-                        <div class="form-hint">用户可以使用用户名/邮箱和密码登录</div>
+                        <div class="form-hint">{{ $t('settings.authenticationDetail.passwordLoginHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="允许邮箱登录" name="emailLoginEnabled">
+                    <a-form-item :label="$t('settings.authenticationDetail.allowEmailLogin')" name="emailLoginEnabled">
                         <a-switch
                             v-model:checked="formState.emailLoginEnabled"
-                            checked-children="允许"
-                            un-checked-children="禁止"
+                            :checked-children="$t('common.enable')"
+                            :un-checked-children="$t('common.disable')"
                         />
-                        <div class="form-hint">用户可以使用邮箱代替用户名登录</div>
+                        <div class="form-hint">{{ $t('settings.authenticationDetail.emailLoginHint') }}</div>
                     </a-form-item>
                 </div>
 
@@ -40,23 +40,23 @@
                 <div class="form-section">
                     <h3 class="section-title">OpenID Connect</h3>
 
-                    <a-form-item label="启用 OpenID" name="oidcEnabled">
+                    <a-form-item :label="$t('settings.authenticationDetail.enableOidc')" name="oidcEnabled">
                         <a-switch
                             v-model:checked="formState.oidcEnabled"
-                            checked-children="开启"
-                            un-checked-children="关闭"
+                            :checked-children="$t('common.enabled')"
+                            :un-checked-children="$t('common.disabled')"
                         />
-                        <div class="form-hint">允许用户通过 OpenID Connect 提供商登录</div>
+                        <div class="form-hint">{{ $t('settings.authenticationDetail.oidcHint') }}</div>
                     </a-form-item>
 
                     <template v-if="formState.oidcEnabled">
-                        <a-form-item label="提供商名称" name="oidcProviderName">
+                        <a-form-item :label="$t('settings.authenticationDetail.providerName')" name="oidcProviderName">
                             <a-input
                                 v-model:value="formState.oidcProviderName"
-                                placeholder="例如：Google、GitHub"
+                                :placeholder="$t('settings.authenticationDetail.providerNamePlaceholder')"
                                 style="max-width: 300px"
                             />
-                            <div class="form-hint">显示在登录按钮上的名称</div>
+                            <div class="form-hint">{{ $t('settings.authenticationDetail.providerNameHint') }}</div>
                         </a-form-item>
 
                         <a-form-item label="Discovery URL" name="oidcDiscoveryUrl">
@@ -65,13 +65,13 @@
                                 placeholder="https://accounts.google.com/.well-known/openid-configuration"
                                 style="max-width: 500px"
                             />
-                            <div class="form-hint">OpenID Connect 发现端点 URL</div>
+                            <div class="form-hint">{{ $t('settings.authenticationDetail.discoveryUrlHint') }}</div>
                         </a-form-item>
 
                         <a-form-item label="Client ID" name="oidcClientId">
                             <a-input
                                 v-model:value="formState.oidcClientId"
-                                placeholder="应用程序的客户端 ID"
+                                :placeholder="$t('settings.authenticationDetail.clientIdPlaceholder')"
                                 style="max-width: 400px"
                             />
                         </a-form-item>
@@ -79,7 +79,7 @@
                         <a-form-item label="Client Secret" name="oidcClientSecret">
                             <a-input-password
                                 v-model:value="formState.oidcClientSecret"
-                                placeholder="应用程序的客户端密钥"
+                                :placeholder="$t('settings.authenticationDetail.clientSecretPlaceholder')"
                                 style="max-width: 400px"
                             />
                         </a-form-item>
@@ -90,25 +90,25 @@
                                 placeholder="openid profile email"
                                 style="max-width: 400px"
                             />
-                            <div class="form-hint">请求的权限范围，用空格分隔</div>
+                            <div class="form-hint">{{ $t('settings.authenticationDetail.scopesHint') }}</div>
                         </a-form-item>
 
-                        <a-form-item label="自动创建用户" name="oidcAutoCreateUser">
+                        <a-form-item :label="$t('settings.authenticationDetail.autoCreateUser')" name="oidcAutoCreateUser">
                             <a-switch
                                 v-model:checked="formState.oidcAutoCreateUser"
-                                checked-children="开启"
-                                un-checked-children="关闭"
+                                :checked-children="$t('common.enabled')"
+                                :un-checked-children="$t('common.disabled')"
                             />
-                            <div class="form-hint">首次登录时自动创建用户账号</div>
+                            <div class="form-hint">{{ $t('settings.authenticationDetail.autoCreateUserHint') }}</div>
                         </a-form-item>
 
-                        <a-form-item label="默认角色" name="oidcDefaultRole">
+                        <a-form-item :label="$t('settings.authenticationDetail.defaultRole')" name="oidcDefaultRole">
                             <a-select
                                 v-model:value="formState.oidcDefaultRole"
                                 style="max-width: 200px"
                                 :options="roleOptions"
                             />
-                            <div class="form-hint">自动创建用户的默认角色</div>
+                            <div class="form-hint">{{ $t('settings.authenticationDetail.defaultRoleHint') }}</div>
                         </a-form-item>
                     </template>
                 </div>
@@ -117,17 +117,17 @@
                 <div class="form-section">
                     <h3 class="section-title">LDAP / AD</h3>
 
-                    <a-form-item label="启用 LDAP" name="ldapEnabled">
+                    <a-form-item :label="$t('settings.authenticationDetail.enableLdap')" name="ldapEnabled">
                         <a-switch
                             v-model:checked="formState.ldapEnabled"
-                            checked-children="开启"
-                            un-checked-children="关闭"
+                            :checked-children="$t('common.enabled')"
+                            :un-checked-children="$t('common.disabled')"
                         />
-                        <div class="form-hint">允许用户通过 LDAP/Active Directory 登录</div>
+                        <div class="form-hint">{{ $t('settings.authenticationDetail.ldapHint') }}</div>
                     </a-form-item>
 
                     <template v-if="formState.ldapEnabled">
-                        <a-form-item label="LDAP 服务器" name="ldapUrl">
+                        <a-form-item :label="$t('settings.authenticationDetail.ldapServer')" name="ldapUrl">
                             <a-input
                                 v-model:value="formState.ldapUrl"
                                 placeholder="ldap://ldap.example.com:389"
@@ -141,44 +141,44 @@
                                 placeholder="cn=admin,dc=example,dc=com"
                                 style="max-width: 400px"
                             />
-                            <div class="form-hint">用于绑定查询的 DN</div>
+                            <div class="form-hint">{{ $t('settings.authenticationDetail.bindDnHint') }}</div>
                         </a-form-item>
 
-                        <a-form-item label="Bind 密码" name="ldapBindPassword">
+                        <a-form-item :label="$t('settings.authenticationDetail.bindPassword')" name="ldapBindPassword">
                             <a-input-password
                                 v-model:value="formState.ldapBindPassword"
-                                placeholder="绑定密码"
+                                :placeholder="$t('settings.authenticationDetail.bindPasswordPlaceholder')"
                                 style="max-width: 400px"
                             />
                         </a-form-item>
 
-                        <a-form-item label="用户搜索基础" name="ldapBaseDn">
+                        <a-form-item :label="$t('settings.authenticationDetail.userSearchBase')" name="ldapBaseDn">
                             <a-input
                                 v-model:value="formState.ldapBaseDn"
                                 placeholder="ou=users,dc=example,dc=com"
                                 style="max-width: 400px"
                             />
-                            <div class="form-hint">搜索用户的基础 DN</div>
+                            <div class="form-hint">{{ $t('settings.authenticationDetail.userSearchBaseHint') }}</div>
                         </a-form-item>
 
-                        <a-form-item label="用户搜索过滤器" name="ldapUserFilter">
+                        <a-form-item :label="$t('settings.authenticationDetail.userSearchFilter')" name="ldapUserFilter">
                             <a-input
                                 v-model:value="formState.ldapUserFilter"
                                 placeholder="(uid={username})"
                                 style="max-width: 400px"
                             />
-                            <div class="form-hint">{username} 会被替换为实际用户名</div>
+                            <div class="form-hint">{{ $t('settings.authenticationDetail.userSearchFilterHint') }}</div>
                         </a-form-item>
                     </template>
                 </div>
 
                 <!-- 测试连接 -->
                 <div class="form-section" v-if="formState.oidcEnabled || formState.ldapEnabled">
-                    <h3 class="section-title">测试连接</h3>
-                    <a-form-item label="测试认证">
+                    <h3 class="section-title">{{ $t('settings.authenticationDetail.testConnection') }}</h3>
+                    <a-form-item :label="$t('settings.authenticationDetail.testAuth')">
                         <a-space>
                             <a-button @click="testConnection" :loading="testing">
-                                测试连接
+                                {{ $t('settings.authenticationDetail.testConnectionBtn') }}
                             </a-button>
                             <span v-if="testResult" :style="{ color: testResult.success ? 'green' : 'red' }">
                                 {{ testResult.message }}
@@ -191,9 +191,9 @@
                 <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 140px">
                     <a-space>
                         <a-button type="primary" html-type="submit" :loading="saving">
-                            保存设置
+                            {{ $t('settings.saveSettings') }}
                         </a-button>
-                        <a-button @click="handleReset">重置</a-button>
+                        <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
                     </a-space>
                 </a-form-item>
             </a-form>
@@ -202,9 +202,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { systemSettingApi } from '@/api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -235,11 +238,11 @@ const formState = reactive({
     ldapUserFilter: '(uid={username})'
 })
 
-const roleOptions = [
-    { label: '普通用户', value: 'user' },
-    { label: '编辑者', value: 'editor' },
-    { label: '管理员', value: 'admin' }
-]
+const roleOptions = computed(() => [
+    { label: t('profile.user'), value: 'user' },
+    { label: t('settings.authenticationDetail.editorRole'), value: 'editor' },
+    { label: t('profile.administrator'), value: 'admin' }
+])
 
 const loadConfig = async () => {
     loading.value = true
@@ -259,9 +262,9 @@ const handleSubmit = async () => {
     saving.value = true
     try {
         await systemSettingApi.updateAuthConfig(formState)
-        message.success('认证设置保存成功')
+        message.success(t('settings.saveSuccess'))
     } catch (error) {
-        message.error('保存设置失败')
+        message.error(t('settings.saveFailed'))
     } finally {
         saving.value = false
     }
@@ -269,7 +272,7 @@ const handleSubmit = async () => {
 
 const handleReset = () => {
     loadConfig()
-    message.info('已重置为服务器配置')
+    message.info(t('settings.resetToServer'))
 }
 
 const testConnection = async () => {
@@ -278,9 +281,9 @@ const testConnection = async () => {
     try {
         // TODO: 调用测试连接 API
         await new Promise(resolve => setTimeout(resolve, 1000))
-        testResult.value = { success: true, message: '连接成功' }
+        testResult.value = { success: true, message: t('settings.authenticationDetail.connectionSuccess') }
     } catch (error) {
-        testResult.value = { success: false, message: '连接失败: ' + error.message }
+        testResult.value = { success: false, message: t('settings.authenticationDetail.connectionFailed') + ': ' + error.message }
     } finally {
         testing.value = false
     }

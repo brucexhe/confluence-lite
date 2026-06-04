@@ -2,12 +2,12 @@
     <a-drawer
         :open="open"
         @update:open="$emit('update:open', $event)"
-        title="附件"
+        :title="$t('attachment.title')"
         :width="isMobile ? '100%' : 520"
         :body-style="{ padding: '0' }"
     > 
         <a-spin v-if="loading" style="display:block;padding:2rem;text-align:center;" />
-        <div v-else-if="attachments.length === 0" style="padding:2rem;text-align:center;color:#6b778c;">暂无附件</div>
+        <div v-else-if="attachments.length === 0" style="padding:2rem;text-align:center;color:#6b778c;">{{ $t('attachment.noAttachments') }}</div>
         <div v-else>
             <div v-for="item in attachments" :key="item.id" class="attachment-item">
                 <div class="attachment-icon">
@@ -30,8 +30,11 @@
 <script setup>
 import { ref, watch, h, onMounted, onUnmounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { Trash2, FileText, Image, FileArchive, FileSpreadsheet, File, Film, Music } from 'lucide-vue-next'
 import { attachmentApi } from '../api'
+
+const { t, locale } = useI18n()
 
 // Mobile detection
 const isMobile = ref(false)
@@ -97,13 +100,13 @@ function formatTime(dateStr) {
     const now = new Date()
     const diff = now - date
     const minutes = Math.floor(diff / 60000)
-    if (minutes < 1) return '刚刚'
-    if (minutes < 60) return `${minutes} 分钟前`
+    if (minutes < 1) return t('common.justNow')
+    if (minutes < 60) return t('common.minutesAgo', { n: minutes })
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours} 小时前`
+    if (hours < 24) return t('common.hoursAgo', { n: hours })
     const days = Math.floor(hours / 24)
-    if (days < 30) return `${days} 天前`
-    return date.toLocaleDateString('zh-CN')
+    if (days < 30) return t('common.daysAgo', { n: days })
+    return date.toLocaleDateString(locale.value)
 }
 
 async function loadAttachments() {
@@ -111,7 +114,7 @@ async function loadAttachments() {
     try {
         attachments.value = await attachmentApi.getListByPage(props.pageId) || []
     } catch (e) {
-        console.error('加载附件列表失败:', e)
+        console.error('Failed to load attachments:', e)
     } finally {
         loading.value = false
     }
@@ -120,23 +123,23 @@ async function loadAttachments() {
 async function handleUpload({ file }) {
     try {
         await attachmentApi.upload(props.pageId, file)
-        message.success('上传成功')
+        message.success(t('attachment.uploadSuccess'))
         await loadAttachments()
         emit('changed')
     } catch (e) {
-        console.error('上传失败:', e)
-        message.error('上传失败')
+        console.error('Upload failed:', e)
+        message.error(t('attachment.uploadFailed'))
     }
 }
 
 async function deleteAttachment(id) {
-    if (!confirm('确定要删除此附件吗？')) return
+    if (!confirm(t('attachment.confirmDelete'))) return
     try {
         await attachmentApi.remove(id)
         await loadAttachments()
         emit('changed')
     } catch (e) {
-        console.error('删除附件失败:', e)
+        console.error('Failed to delete attachment:', e)
     }
 }
 

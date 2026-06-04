@@ -2,9 +2,9 @@
     <div v-if="notFound" class="not-found-container">
         <div class="not-found-content">
             <div class="error-icon">404</div>
-            <h2>工作空间不存在</h2>
-            <p>您访问的工作空间 "{{ route.params.spaceKey }}" 不存在</p>
-            <button class="back-btn" @click="goBack">返回首页</button>
+            <h2>{{ $t('notFound.workspaceNotExist') }}</h2>
+            <p>{{ $t('notFound.workspaceNotExistMsg', { key: route.params.spaceKey }) }}</p>
+            <button class="back-btn" @click="goBack">{{ $t('common.backToHome') }}</button>
         </div>
     </div>
     <div v-else class="workspace-home">
@@ -19,10 +19,10 @@
             <div class="activity-section">
                 <a-card class="activity-card" :bordered="false">
                     <template #title>
-                        <span class="card-title">最近活动</span>
+                        <span class="card-title">{{ $t('workspace.recentActivity') }}</span>
                     </template>
                     <template #extra>
-                        <a-button type="link" size="small" @click="loadActivities">刷新</a-button>
+                        <a-button type="link" size="small" @click="loadActivities">{{ $t('common.refresh') }}</a-button>
                     </template>
 
                     <a-spin :spinning="loading">
@@ -69,9 +69,9 @@
                                 </a-list-item>
                             </template>
                         </a-list>
-                        <a-empty v-else-if="!loading" description="暂无活动" class="empty-state">
+                        <a-empty v-else-if="!loading" :description="$t('workspace.noActivity')" class="empty-state">
                             <template #description>
-                                <span style="color: #6b778c; font-size: 13px">暂无活动记录</span>
+                                <span style="color: #6b778c; font-size: 13px">{{ $t('workspace.noActivityRecord') }}</span>
                             </template>
                         </a-empty>
                     </a-spin>
@@ -82,14 +82,14 @@
             <div class="quick-actions">
                 <a-card :bordered="false" class="quick-card">
                     <template #title>
-                        <span class="card-title">快速操作</span>
+                        <span class="card-title">{{ $t('workspace.quickActions') }}</span>
                     </template>
                     <div class="action-buttons">
                         <a-button block @click="createPage">
-                            <span style="font-size: 14px">+ 创建页面</span>
+                            <span style="font-size: 14px">{{ $t('workspace.createPage') }}</span>
                         </a-button>
                         <a-button block @click="goToSettings">
-                            <span style="font-size: 14px">⚙ 空间设置</span>
+                            <span style="font-size: 14px">{{ $t('workspace.spaceSettings') }}</span>
                         </a-button>
                     </div>
                 </a-card>
@@ -101,10 +101,12 @@
 <script setup>
 import { ref, computed, onMounted, inject, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { FileText } from "lucide-vue-next";
 import { activityApi } from "@/api";
 import UserAvatar from "@/components/UserAvatar.vue";
 
+const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 
@@ -145,7 +147,7 @@ const currentSpace = computed(() => {
 });
 
 const workspaceName = computed(() => currentSpace.value?.name || route.params.spaceKey || "");
-const workspaceDescription = computed(() => currentSpace.value?.description || "工作空间首页");
+const workspaceDescription = computed(() => currentSpace.value?.description || t('workspace.home'));
 
 // 如果找不到空间，显示 404
 watch(
@@ -166,16 +168,16 @@ function formatTime(dateStr) {
     const diff = now - date;
 
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return "刚刚";
-    if (minutes < 60) return `${minutes} 分钟前`;
+    if (minutes < 1) return t('common.justNow');
+    if (minutes < 60) return t('common.minutesAgo', { n: minutes });
 
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} 小时前`;
+    if (hours < 24) return t('common.hoursAgo', { n: hours });
 
     const days = Math.floor(hours / 24);
-    if (days < 7) return `${days} 天前`;
+    if (days < 7) return t('common.daysAgo', { n: days });
 
-    return date.toLocaleDateString("zh-CN");
+    return date.toLocaleDateString(locale.value);
 }
 
 async function loadWorkspaceInfo() {
@@ -186,13 +188,13 @@ async function loadWorkspaceInfo() {
         const data = await workspaceApi.getByKey(key);
         if (data) {
             workspaceName.value = data.name || key;
-            workspaceDescription.value = data.description || "工作空间首页";
+            workspaceDescription.value = data.description || t('workspace.home');
         } else {
             setNotFound(true);
         }
     } catch (error) {
         // API请求失败或返回404，显示404内容
-        console.error("加载工作空间信息失败:", error);
+        console.error("Failed to load workspace info:", error);
         setNotFound(true);
     }
 }
@@ -212,11 +214,11 @@ async function loadActivities() {
         if (Array.isArray(data)) {
             activities.value = data;
         } else {
-            console.warn("活动 API 返回格式不正确:", data);
+            console.warn("Activity API returned unexpected format:", data);
             activities.value = [];
         }
     } catch (error) {
-        console.error("加载活动失败:", error);
+        console.error("Failed to load activities:", error);
         activities.value = [];
     } finally {
         loading.value = false;

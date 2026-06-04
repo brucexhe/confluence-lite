@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>作业管理</h1>
-            <p class="page-description">管理系统定时任务和后台作业</p>
+            <h1>{{ $t('settings.jobs.title') }}</h1>
+            <p class="page-description">{{ $t('settings.jobs.description') }}</p>
         </div>
 
         <div class="page-content">
@@ -10,29 +10,29 @@
             <a-row :gutter="16" class="stats-row">
                 <a-col :span="6">
                     <a-card>
-                        <a-statistic title="运行中" :value="stats.running" :value-style="{ color: '#1890ff' }" />
+                        <a-statistic :title="$t('settings.jobs.running')" :value="stats.running" :value-style="{ color: '#1890ff' }" />
                     </a-card>
                 </a-col>
                 <a-col :span="6">
                     <a-card>
-                        <a-statistic title="已完成" :value="stats.completed" :value-style="{ color: '#52c41a' }" />
+                        <a-statistic :title="$t('settings.jobs.completed')" :value="stats.completed" :value-style="{ color: '#52c41a' }" />
                     </a-card>
                 </a-col>
                 <a-col :span="6">
                     <a-card>
-                        <a-statistic title="失败" :value="stats.failed" :value-style="{ color: '#f5222d' }" />
+                        <a-statistic :title="$t('common.failed')" :value="stats.failed" :value-style="{ color: '#f5222d' }" />
                     </a-card>
                 </a-col>
                 <a-col :span="6">
                     <a-card>
-                        <a-statistic title="等待中" :value="stats.pending" />
+                        <a-statistic :title="$t('settings.jobs.scheduled')" :value="stats.pending" />
                     </a-card>
                 </a-col>
             </a-row>
 
             <!-- 作业列表 -->
             <div class="section">
-                <h3 class="section-title">定时任务</h3>
+                <h3 class="section-title">{{ $t('settings.jobs.scheduledTasks') }}</h3>
                 <a-table
                     :columns="jobColumns"
                     :data-source="scheduledJobs"
@@ -44,8 +44,8 @@
                             <a-switch
                                 :checked="record.enabled"
                                 @change="toggleJob(record)"
-                                checked-children="启用"
-                                un-checked-children="禁用"
+                                :checked-children="$t('common.enable')"
+                                :un-checked-children="$t('common.disable')"
                             />
                         </template>
                         <template v-else-if="column.key === 'cron'">
@@ -53,7 +53,7 @@
                         </template>
                         <template v-else-if="column.key === 'lastRun'">
                             <span v-if="record.lastRun">{{ formatDateTime(record.lastRun) }}</span>
-                            <span v-else class="text-muted">未执行</span>
+                            <span v-else class="text-muted">{{ $t('settings.jobs.notExecuted') }}</span>
                         </template>
                         <template v-else-if="column.key === 'nextRun'">
                             <span v-if="record.nextRun">{{ formatDateTime(record.nextRun) }}</span>
@@ -62,10 +62,10 @@
                         <template v-else-if="column.key === 'action'">
                             <a-space>
                                 <a-button type="link" size="small" @click="runNow(record)">
-                                    立即执行
+                                    {{ $t('settings.jobs.runNow') }}
                                 </a-button>
                                 <a-button type="link" size="small" @click="showJobLog(record)">
-                                    执行日志
+                                    {{ $t('settings.jobs.executionLog') }}
                                 </a-button>
                             </a-space>
                         </template>
@@ -75,7 +75,7 @@
 
             <!-- 执行历史 -->
             <div class="section">
-                <h3 class="section-title">执行历史</h3>
+                <h3 class="section-title">{{ $t('settings.jobs.executionHistory') }}</h3>
                 <a-table
                     :columns="historyColumns"
                     :data-source="jobHistory"
@@ -106,10 +106,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { systemSettingApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 const stats = ref({
     running: 2,
@@ -209,22 +212,22 @@ const jobHistory = ref([
     }
 ])
 
-const jobColumns = [
-    { title: '任务名称', dataIndex: 'name', key: 'name' },
-    { title: '描述', dataIndex: 'description', key: 'description' },
-    { title: '执行计划', key: 'cron' },
-    { title: '状态', key: 'enabled' },
-    { title: '上次执行', key: 'lastRun' },
-    { title: '下次执行', key: 'nextRun' },
-    { title: '操作', key: 'action', width: 180 }
-]
+const jobColumns = computed(() => [
+    { title: t('settings.jobs.jobName'), dataIndex: 'name', key: 'name' },
+    { title: t('common.description'), dataIndex: 'description', key: 'description' },
+    { title: t('settings.jobs.executionSchedule'), key: 'cron' },
+    { title: t('common.status'), key: 'enabled' },
+    { title: t('settings.jobs.lastRun'), key: 'lastRun' },
+    { title: t('settings.jobs.nextRun'), key: 'nextRun' },
+    { title: t('common.actions'), key: 'action', width: 180 }
+])
 
-const historyColumns = [
-    { title: '状态', key: 'status' },
-    { title: '开始时间', key: 'startedAt' },
-    { title: '耗时', key: 'durationMs' },
-    { title: '消息', dataIndex: 'outputMessage', key: 'outputMessage' }
-]
+const historyColumns = computed(() => [
+    { title: t('common.status'), key: 'status' },
+    { title: t('settings.jobs.startTime'), key: 'startedAt' },
+    { title: t('settings.jobs.duration'), key: 'durationMs' },
+    { title: t('settings.logsDetail.message'), dataIndex: 'outputMessage', key: 'outputMessage' }
+])
 
 const getExecutionStatusColor = (status) => {
     const colors = { success: 'green', failed: 'red', running: 'blue' }
@@ -232,7 +235,7 @@ const getExecutionStatusColor = (status) => {
 }
 
 const getExecutionStatusText = (status) => {
-    const texts = { success: '成功', failed: '失败', running: '运行中' }
+    const texts = { success: t('common.success'), failed: t('common.failed'), running: t('settings.jobs.running') }
     return texts[status] || status
 }
 
@@ -241,25 +244,25 @@ const toggleJob = async (job) => {
         if (job.enabled) {
             await systemSettingApi.pauseJob(job.id)
             job.enabled = false
-            message.success('任务已禁用')
+            message.success(t('settings.jobs.jobDisabled'))
         } else {
             await systemSettingApi.resumeJob(job.id)
             job.enabled = true
-            message.success('任务已启用')
+            message.success(t('settings.jobs.jobEnabled'))
         }
     } catch (error) {
-        message.error('操作失败')
+        message.error(t('common.operationFailed'))
     }
 }
 
 const runNow = async (job) => {
     try {
         await systemSettingApi.runJob(job.id)
-        message.success('任务 ' + job.name + ' 已加入执行队列')
+        message.success(t('settings.jobs.jobQueued', { name: job.name }))
         // 刷新任务列表
         loadJobs()
     } catch (error) {
-        message.error('执行任务失败')
+        message.error(t('settings.jobs.runFailed'))
     }
 }
 
@@ -269,9 +272,9 @@ const showJobLog = async (job) => {
         if (data) {
             jobHistory.value = data || []
         }
-        message.info(`查看任务日志: ${job.name}，共 ${jobHistory.value.length} 条记录`)
+        message.info(t('settings.jobs.viewJobLog', { name: job.name, count: jobHistory.value.length }))
     } catch (error) {
-        message.error('加载任务日志失败')
+        message.error(t('settings.jobs.loadJobLogFailed'))
     }
 }
 

@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>显示设置</h1>
-            <p class="page-description">自定义系统界面的外观和显示方式</p>
+            <h1>{{ $t('settings.display.title') }}</h1>
+            <p class="page-description">{{ $t('settings.display.description') }}</p>
         </div>
 
         <a-spin :spinning="loading">
@@ -15,18 +15,18 @@
             >
                 <!-- 主题设置 -->
                 <div class="form-section">
-                    <h3 class="section-title">主题设置</h3>
+                    <h3 class="section-title">{{ $t('settings.display.themeSettings') }}</h3>
 
-                    <a-form-item label="默认主题" name="defaultTheme">
+                    <a-form-item :label="$t('settings.display.defaultTheme')" name="defaultTheme">
                         <a-radio-group v-model:value="formState.defaultTheme" button-style="solid">
-                            <a-radio-button value="light">浅色</a-radio-button>
-                            <a-radio-button value="dark">深色</a-radio-button>
-                            <a-radio-button value="auto">跟随系统</a-radio-button>
+                            <a-radio-button value="light">{{ $t('settings.display.themeLight') }}</a-radio-button>
+                            <a-radio-button value="dark">{{ $t('settings.display.themeDark') }}</a-radio-button>
+                            <a-radio-button value="auto">{{ $t('settings.display.themeAuto') }}</a-radio-button>
                         </a-radio-group>
-                        <div class="form-hint">新用户的默认界面主题</div>
+                        <div class="form-hint">{{ $t('settings.display.defaultThemeHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="主题色" name="primaryColor">
+                    <a-form-item :label="$t('settings.display.primaryColor')" name="primaryColor">
                         <div class="color-picker-wrapper">
                             <input
                                 type="color"
@@ -34,109 +34,109 @@
                                 class="color-input"
                             />
                             <span class="color-value">{{ formState.primaryColor }}</span>
-                            <a-button size="small" @click="resetColor">重置</a-button>
+                            <a-button size="small" @click="resetColor">{{ $t('common.reset') }}</a-button>
                         </div>
-                        <div class="form-hint">系统主题的主色调</div>
+                        <div class="form-hint">{{ $t('settings.display.primaryColorHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="紧凑模式" name="compactMode">
+                    <a-form-item :label="$t('settings.display.compactMode')" name="compactMode">
                         <a-switch
                             v-model:checked="formState.compactMode"
-                            checked-children="开启"
-                            un-checked-children="关闭"
+                            :checked-children="$t('common.on')"
+                            :un-checked-children="$t('common.off')"
                         />
-                        <div class="form-hint">启用后界面元素间距更紧凑</div>
+                        <div class="form-hint">{{ $t('settings.display.compactModeHint') }}</div>
                     </a-form-item>
                 </div>
 
                 <!-- 页面显示 -->
                 <div class="form-section">
-                    <h3 class="section-title">页面显示</h3>
+                    <h3 class="section-title">{{ $t('settings.display.pageDisplay') }}</h3>
 
-                    <a-form-item label="每页显示条数" name="pageSize">
+                    <a-form-item :label="$t('settings.display.pageSize')" name="pageSize">
                         <a-select
                             v-model:value="formState.pageSize"
                             style="width: 120px"
                             :options="pageSizeOptions"
                         ></a-select>
-                        <div class="form-hint">列表页面默认每页显示的条目数量</div>
+                        <div class="form-hint">{{ $t('settings.display.pageSizeHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="页面树展开方式" name="pageTreeExpandMode">
+                    <a-form-item :label="$t('settings.display.pageTreeExpandMode')" name="pageTreeExpandMode">
                         <a-radio-group v-model:value="formState.pageTreeExpandMode">
-                            <a-radio value="all">全部展开</a-radio>
-                            <a-radio value="first">仅展开第一级</a-radio>
-                            <a-radio value="none">全部折叠</a-radio>
+                            <a-radio value="all">{{ $t('settings.display.expandAll') }}</a-radio>
+                            <a-radio value="first">{{ $t('settings.display.expandFirst') }}</a-radio>
+                            <a-radio value="none">{{ $t('settings.display.collapseAll') }}</a-radio>
                         </a-radio-group>
-                        <div class="form-hint">侧边栏页面树的默认展开状态</div>
+                        <div class="form-hint">{{ $t('settings.display.pageTreeExpandModeHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="显示页面浏览量" name="showPageViews">
+                    <a-form-item :label="$t('settings.display.showPageViews')" name="showPageViews">
                         <a-switch
                             v-model:checked="formState.showPageViews"
-                            checked-children="显示"
-                            un-checked-children="隐藏"
+                            :checked-children="$t('common.show')"
+                            :un-checked-children="$t('common.hide')"
                         />
-                        <div class="form-hint">在页面底部显示浏览次数</div>
+                        <div class="form-hint">{{ $t('settings.display.showPageViewsHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="显示作者信息" name="showAuthorInfo">
+                    <a-form-item :label="$t('settings.display.showAuthorInfo')" name="showAuthorInfo">
                         <a-switch
                             v-model:checked="formState.showAuthorInfo"
-                            checked-children="显示"
-                            un-checked-children="隐藏"
+                            :checked-children="$t('common.show')"
+                            :un-checked-children="$t('common.hide')"
                         />
-                        <div class="form-hint">在页面显示创建者和最后更新者信息</div>
+                        <div class="form-hint">{{ $t('settings.display.showAuthorInfoHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="显示最后更新时间" name="showLastModified">
+                    <a-form-item :label="$t('settings.display.showLastModified')" name="showLastModified">
                         <a-switch
                             v-model:checked="formState.showLastModified"
-                            checked-children="显示"
-                            un-checked-children="隐藏"
+                            :checked-children="$t('common.show')"
+                            :un-checked-children="$t('common.hide')"
                         />
-                        <div class="form-hint">在页面显示最后更新时间</div>
+                        <div class="form-hint">{{ $t('settings.display.showLastModifiedHint') }}</div>
                     </a-form-item>
                 </div>
 
                 <!-- 编辑器设置 -->
                 <div class="form-section">
-                    <h3 class="section-title">编辑器设置</h3>
+                    <h3 class="section-title">{{ $t('settings.display.editorSettings') }}</h3>
 
-                    <a-form-item label="默认编辑模式" name="defaultEditorMode">
+                    <a-form-item :label="$t('settings.display.defaultEditorMode')" name="defaultEditorMode">
                         <a-radio-group v-model:value="formState.defaultEditorMode">
-                            <a-radio value="visual">可视化编辑器</a-radio>
+                            <a-radio value="visual">{{ $t('settings.display.visualEditor') }}</a-radio>
                             <a-radio value="markdown">Markdown</a-radio>
                         </a-radio-group>
-                        <div class="form-hint">创建或编辑页面时的默认编辑模式</div>
+                        <div class="form-hint">{{ $t('settings.display.defaultEditorModeHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="自动保存间隔" name="autoSaveInterval">
+                    <a-form-item :label="$t('settings.display.autoSaveInterval')" name="autoSaveInterval">
                         <a-input-number
                             v-model:value="formState.autoSaveInterval"
                             :min="10"
                             :max="300"
                             style="width: 120px"
                         />
-                        <span style="margin-left: 8px">秒</span>
-                        <div class="form-hint">编辑器自动保存草稿的时间间隔</div>
+                        <span style="margin-left: 8px">{{ $t('settings.display.seconds') }}</span>
+                        <div class="form-hint">{{ $t('settings.display.autoSaveIntervalHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="启用拼写检查" name="enableSpellCheck">
+                    <a-form-item :label="$t('settings.display.enableSpellCheck')" name="enableSpellCheck">
                         <a-switch
                             v-model:checked="formState.enableSpellCheck"
-                            checked-children="开启"
-                            un-checked-children="关闭"
+                            :checked-children="$t('common.on')"
+                            :un-checked-children="$t('common.off')"
                         />
-                        <div class="form-hint">在编辑器中启用浏览器拼写检查</div>
+                        <div class="form-hint">{{ $t('settings.display.enableSpellCheckHint') }}</div>
                     </a-form-item>
                 </div>
 
                 <!-- 侧边栏设置 -->
                 <div class="form-section">
-                    <h3 class="section-title">侧边栏设置</h3>
+                    <h3 class="section-title">{{ $t('settings.display.sidebarSettings') }}</h3>
 
-                    <a-form-item label="默认侧边栏宽度" name="defaultSidebarWidth">
+                    <a-form-item :label="$t('settings.display.defaultSidebarWidth')" name="defaultSidebarWidth">
                         <a-slider
                             v-model:value="formState.defaultSidebarWidth"
                             :min="200"
@@ -145,25 +145,25 @@
                             style="width: 300px"
                         />
                         <span style="margin-left: 12px">{{ formState.defaultSidebarWidth }}px</span>
-                        <div class="form-hint">页面树侧边栏的默认宽度</div>
+                        <div class="form-hint">{{ $t('settings.display.defaultSidebarWidthHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="显示空间图标" name="showSpaceIcon">
+                    <a-form-item :label="$t('settings.display.showSpaceIcon')" name="showSpaceIcon">
                         <a-switch
                             v-model:checked="formState.showSpaceIcon"
-                            checked-children="显示"
-                            un-checked-children="隐藏"
+                            :checked-children="$t('common.show')"
+                            :un-checked-children="$t('common.hide')"
                         />
-                        <div class="form-hint">在侧边栏空间头部显示图标</div>
+                        <div class="form-hint">{{ $t('settings.display.showSpaceIconHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="允许折叠侧边栏" name="allowCollapseSidebar">
+                    <a-form-item :label="$t('settings.display.allowCollapseSidebar')" name="allowCollapseSidebar">
                         <a-switch
                             v-model:checked="formState.allowCollapseSidebar"
-                            checked-children="允许"
-                            un-checked-children="禁止"
+                            :checked-children="$t('common.allow')"
+                            :un-checked-children="$t('common.forbid')"
                         />
-                        <div class="form-hint">允许用户折叠/展开侧边栏</div>
+                        <div class="form-hint">{{ $t('settings.display.allowCollapseSidebarHint') }}</div>
                     </a-form-item>
                 </div>
 
@@ -171,9 +171,9 @@
                 <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 120px">
                     <a-space>
                         <a-button type="primary" html-type="submit" :loading="saving">
-                            保存设置
+                            {{ $t('settings.saveSettings') }}
                         </a-button>
-                        <a-button @click="handleReset">重置</a-button>
+                        <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
                     </a-space>
                 </a-form-item>
             </a-form>
@@ -184,8 +184,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { systemSettingApi } from '@/api'
 
+const { t } = useI18n()
 const loading = ref(false)
 const saving = ref(false)
 
@@ -218,10 +220,10 @@ const formState = ref({
 
 // 每页条数选项
 const pageSizeOptions = ref([
-    { label: '10 条/页', value: 10 },
-    { label: '20 条/页', value: 20 },
-    { label: '50 条/页', value: 50 },
-    { label: '100 条/页', value: 100 }
+    { label: t('settings.display.pageSizeOption', { n: 10 }), value: 10 },
+    { label: t('settings.display.pageSizeOption', { n: 20 }), value: 20 },
+    { label: t('settings.display.pageSizeOption', { n: 50 }), value: 50 },
+    { label: t('settings.display.pageSizeOption', { n: 100 }), value: 100 }
 ])
 
 // 重置主题色

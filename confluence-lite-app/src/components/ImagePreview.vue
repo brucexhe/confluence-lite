@@ -12,7 +12,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="zoomOut"
-                        title="缩小"
+                        :title="$t('imagePreview.zoomOut')"
                         :disabled="scale <= 0.1"
                     >
                         <template #icon><ZoomOutIcon :size="16" /></template>
@@ -23,7 +23,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="zoomIn"
-                        title="放大"
+                        :title="$t('imagePreview.zoomIn')"
                         :disabled="scale >= 3"
                     >
                         <template #icon><ZoomInIcon :size="16" /></template>
@@ -34,7 +34,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="rotateLeft"
-                        title="向左旋转"
+                        :title="$t('imagePreview.rotateLeft')"
                     >
                         <template #icon><RotateCcwIcon :size="16" /></template>
                     </a-button>
@@ -43,7 +43,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="rotateRight"
-                        title="向右旋转"
+                        :title="$t('imagePreview.rotateRight')"
                     >
                         <template #icon><RotateCwIcon :size="16" /></template>
                     </a-button>
@@ -52,7 +52,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="close"
-                        title="关闭 (ESC)"
+                        :title="$t('imagePreview.close')"
                     >
                         <template #icon><XIcon :size="16" /></template>
                     </a-button>

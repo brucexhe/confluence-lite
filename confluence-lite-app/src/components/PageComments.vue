@@ -3,7 +3,7 @@
         <div class="comments-header">
             <h3>
                 <CommentIcon :size="16" />
-                Comments ({{ comments.length }})
+                {{ $t('comment.comments', { count: comments.length }) }}
             </h3>
             <a-dropdown v-if="comments.length > 0">
                 <a class="sort-link">
@@ -12,8 +12,8 @@
                 </a>
                 <template #overlay>
                     <a-menu @click="handleSortChange">
-                        <a-menu-item key="newest">Newest first</a-menu-item>
-                        <a-menu-item key="oldest">Oldest first</a-menu-item>
+                        <a-menu-item key="newest">{{ $t('comment.newestFirst') }}</a-menu-item>
+                        <a-menu-item key="oldest">{{ $t('comment.oldestFirst') }}</a-menu-item>
                     </a-menu>
                 </template>
             </a-dropdown>
@@ -25,16 +25,16 @@
             <div class="comment-input-wrapper">
                 <a-textarea
                     v-model:value="newComment"
-                    placeholder="Write a comment..."
+                    :placeholder="$t('comment.writeComment')"
                     :rows="2"
                     class="comment-input"
                     @keydown="handleKeyDown"
                 />
                 <div class="comment-actions">
                     <div class="spacer"></div>
-                    <span class="hint">按 <kbd>回车</kbd> 提交</span>
+                    <span class="hint" v-html="$t('comment.submitHint')"></span>
                     <a-button type="primary" size="small" @click="addComment" :disabled="!newComment.trim()">
-                        保存
+                        {{ $t('comment.saveBtn') }}
                     </a-button>
                 </div>
             </div>
@@ -52,7 +52,7 @@
                             <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
                             <template #overlay>
                                 <a-menu>
-                                    <a-menu-item @click="deleteComment(comment.id)" danger>Delete</a-menu-item>
+                                    <a-menu-item @click="deleteComment(comment.id)" danger>{{ $t('comment.delete') }}</a-menu-item>
                                 </a-menu>
                             </template>
                         </a-dropdown>
@@ -81,21 +81,21 @@
                         @click="toggleReply(comment.id)"
                         class="reply-btn"
                     >
-                        回复
+                        {{ $t('comment.reply') }}
                     </a-button>
 
                     <!-- Reply Input -->
                     <div v-if="comment.showReply" class="reply-input-wrapper">
                         <a-input
                             v-model:value="comment.replyText"
-                            placeholder="Write a reply..."
+                            :placeholder="$t('comment.writeReply')"
                             size="small"
                             @keydown.enter="addReply(comment.id, $event)"
                         />
                         <div class="reply-actions">
-                            <a-button size="small" @click="cancelReply(comment.id)">Cancel</a-button>
+                            <a-button size="small" @click="cancelReply(comment.id)">{{ $t('common.cancel') }}</a-button>
                             <a-button type="primary" size="small" @click="addReply(comment.id)" :disabled="!comment.replyText?.trim()">
-                                Reply
+                                {{ $t('comment.replyBtn') }}
                             </a-button>
                         </div>
                     </div>
@@ -105,7 +105,7 @@
             <!-- Empty State -->
             <div v-if="comments.length === 0" class="empty-comments">
                 <CommentIcon :size="32" class="empty-icon" />
-                <p>No comments yet. Be the first to comment!</p>
+                <p>{{ $t('comment.noComments') }}</p>
             </div>
         </div>
     </div>
@@ -114,10 +114,12 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { MessageSquare as CommentIcon, ChevronDown as DownIcon } from 'lucide-vue-next';
+import { useI18n } from 'vue-i18n';
 import { commentApi } from '../api';
 import { useAuthStore } from '../store/auth';
 import UserAvatar from './UserAvatar.vue';
 
+const { t, locale } = useI18n();
 const authStore = useAuthStore();
 
 const props = defineProps({
@@ -142,13 +144,13 @@ function formatTime(dateStr) {
     const now = new Date();
     const diff = now - date;
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return '刚刚';
-    if (minutes < 60) return `${minutes} 分钟前`;
+    if (minutes < 1) return t('common.justNow');
+    if (minutes < 60) return t('common.minutesAgo', { n: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} 小时前`;
+    if (hours < 24) return t('common.hoursAgo', { n: hours });
     const days = Math.floor(hours / 24);
-    if (days < 30) return `${days} 天前`;
-    return date.toLocaleDateString('zh-CN');
+    if (days < 30) return t('common.daysAgo', { n: days });
+    return date.toLocaleDateString(locale.value);
 }
 
 // Load comments from API
@@ -173,7 +175,7 @@ onMounted(loadComments);
 watch(() => props.pageId, loadComments);
 
 const sortText = computed(() => {
-    return sortOrder.value === 'newest' ? 'Newest first' : 'Oldest first';
+    return sortOrder.value === 'newest' ? t('comment.newestFirst') : t('comment.oldestFirst');
 });
 
 const sortedComments = computed(() => {

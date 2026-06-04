@@ -1,18 +1,18 @@
 <template>
   <a-modal
     :open="open"
-    title="页面排序设置"
+    :title="$t('pageTreeSettings.title')"
     :width="700"
     :maskClosable="false"
     :keyboard="false"
     @cancel="handleClose"
   >
     <template #footer>
-      <a-button @click="handleClose">关闭</a-button>
+      <a-button @click="handleClose">{{ $t('common.close') }}</a-button>
     </template>
-    <div class="tree-settings-hint">拖拽页面可调整排序或更改层级</div>
+    <div class="tree-settings-hint">{{ $t('pageTreeSettings.dragHint') }}</div>
     <a-spin v-if="loading" size="small" style="padding: 16px; display: block" />
-    <div v-else-if="treeData.length === 0" class="empty-hint">暂无页面</div>
+    <div v-else-if="treeData.length === 0" class="empty-hint">{{ $t('page.noPages') }}</div>
     <div v-else class="tree-scroll-container">
       <a-tree
         class="confluence-tree draggable-tree"
@@ -44,8 +44,11 @@
 <script setup>
 import { ref, watch } from "vue";
 import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
 import { Dot, ChevronRight } from "lucide-vue-next";
 import { pageApi } from "../api";
+
+const { t } = useI18n();
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -81,7 +84,7 @@ watch(
         const data = await pageApi.getTree(props.workspaceId);
         treeData.value = (data || []).map(mapNode);
       } catch (e) {
-        message.error("加载页面树失败");
+        message.error(t('pageTreeSettings.loadTreeFailed'));
       } finally {
         loading.value = false;
       }
@@ -190,7 +193,7 @@ async function onDrop(info) {
   try {
     await pageApi.movePage(Number(dragKey), targetParentId, targetSortOrder);
   } catch (e) {
-    message.error(e.message || "移动页面失败，正在恢复...");
+    message.error(e.message || t('pageTreeSettings.moveFailed'));
     // 保存失败，重新加载树恢复原状
     await reloadTree();
   }

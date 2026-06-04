@@ -1,21 +1,21 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>用户组管理</h1>
-            <p class="page-description">管理系统用户组和权限</p>
+            <h1>{{ $t('settings.groups.title') }}</h1>
+            <p class="page-description">{{ $t('settings.groups.description') }}</p>
         </div>
 
         <div class="page-content">
             <div class="toolbar">
                 <a-input-search
                     v-model:value="searchText"
-                    placeholder="搜索用户组"
+                    :placeholder="$t('settings.groups.searchPlaceholder')"
                     style="width: 250px"
                     @search="handleSearch"
                 />
                 <a-button type="primary" @click="showCreateModal">
                     <Plus :size="14" style="vertical-align: middle" />
-                    添加用户组
+                    {{ $t('settings.groups.addGroup') }}
                 </a-button>
             </div>
 
@@ -29,17 +29,17 @@
             >
                 <template #bodyCell="{ column, record }">
                     <template v-if="column.key === 'memberCount'">
-                        <a-tag color="blue">{{ record.memberCount || 0 }} 人</a-tag>
+                        <a-tag color="blue">{{ record.memberCount || 0 }} {{ $t('settings.groups.memberCountUnit') }}</a-tag>
                     </template>
                     <template v-else-if="column.key === 'createdAt'">
                         <span>{{ formatDateTime(record.createdAt) }}</span>
                     </template>
                     <template v-else-if="column.key === 'action'">
                         <a-space>
-                            <a-button type="link" size="small" @click="showEditModal(record)">编辑</a-button>
-                            <a-button type="link" size="small" @click="showMembersModal(record)">成员</a-button>
-                            <a-popconfirm title="确定要删除该用户组吗？" @confirm="handleDelete(record.id)">
-                                <a-button type="link" size="small" danger>删除</a-button>
+                            <a-button type="link" size="small" @click="showEditModal(record)">{{ $t('common.edit') }}</a-button>
+                            <a-button type="link" size="small" @click="showMembersModal(record)">{{ $t('settings.groups.members') }}</a-button>
+                            <a-popconfirm :title="$t('settings.groups.confirmDelete')" @confirm="handleDelete(record.id)">
+                                <a-button type="link" size="small" danger>{{ $t('common.delete') }}</a-button>
                             </a-popconfirm>
                         </a-space>
                     </template>
@@ -50,16 +50,16 @@
         <!-- 添加/编辑用户组弹窗 -->
         <a-modal
             v-model:open="modalVisible"
-            :title="editingGroup ? '编辑用户组' : '添加用户组'"
+            :title="editingGroup ? $t('settings.groups.editGroup') : $t('settings.groups.addGroup')"
             @ok="handleSubmit"
             :confirm-loading="submitting"
             width="500px"
         >
             <a-form ref="formRef" :model="formState" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
-                <a-form-item label="组名称" name="name" :rules="[{ required: true, message: '请输入组名称' }]">
+                <a-form-item :label="$t('settings.groups.groupName')" name="name" :rules="[{ required: true, message: $t('settings.groups.groupNameRequired') }]">
                     <a-input v-model:value="formState.name" />
                 </a-form-item>
-                <a-form-item label="描述" name="description">
+                <a-form-item :label="$t('settings.groups.groupDescription')" name="description">
                     <a-textarea v-model:value="formState.description" :rows="3" />
                 </a-form-item>
             </a-form>
@@ -68,7 +68,7 @@
         <!-- 成员管理弹窗 -->
         <a-modal
             v-model:open="membersModalVisible"
-            title="成员管理"
+            :title="$t('settings.groups.memberManagement')"
             :footer="null"
             width="600px"
         >
@@ -76,13 +76,13 @@
                 <a-select
                     v-model:value="selectedUsers"
                     mode="multiple"
-                    placeholder="选择要添加的用户"
+                    :placeholder="$t('settings.groups.selectUsersToAdd')"
                     style="width: 100%"
                     :filter-option="filterUser"
                     :options="availableUserOptions"
                     show-search
                 />
-                <a-button type="primary" style="margin-top: 8px" @click="addMembers">添加成员</a-button>
+                <a-button type="primary" style="margin-top: 8px" @click="addMembers">{{ $t('settings.groups.addMembers') }}</a-button>
             </div>
             <a-list
                 :data-source="currentMembers"
@@ -92,7 +92,7 @@
                     <a-list-item>
                         <a-list-item-meta :title="item.name" :description="item.username" />
                         <template #actions>
-                            <a-button type="link" danger size="small" @click="removeMember(item.id)">移除</a-button>
+                            <a-button type="link" danger size="small" @click="removeMember(item.id)">{{ $t('settings.groups.remove') }}</a-button>
                         </template>
                     </a-list-item>
                 </template>
@@ -104,10 +104,12 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { Plus } from 'lucide-vue-next'
 import { userApi, userGroupApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
+const { t } = useI18n()
 const loading = ref(false)
 const submitting = ref(false)
 const loadingMembers = ref(false)
@@ -141,11 +143,11 @@ const pagination = reactive({
 })
 
 const columns = [
-    { title: '组名称', dataIndex: 'name', key: 'name' },
-    { title: '描述', dataIndex: 'description', key: 'description' },
-    { title: '成员数', key: 'memberCount' },
-    { title: '创建时间', key: 'createdAt' },
-    { title: '操作', key: 'action', width: 180 }
+    { title: t('settings.groups.groupName'), dataIndex: 'name', key: 'name' },
+    { title: t('settings.groups.groupDescription'), dataIndex: 'description', key: 'description' },
+    { title: t('settings.groups.memberCount'), key: 'memberCount' },
+    { title: t('settings.groups.createdAt'), key: 'createdAt' },
+    { title: t('common.action'), key: 'action', width: 180 }
 ]
 
 const loadGroups = async () => {
@@ -155,7 +157,7 @@ const loadGroups = async () => {
         groups.value = data?.items || []
         pagination.total = data?.total || 0
     } catch (error) {
-        message.error('加载用户组列表失败')
+        message.error(t('settings.groups.loadFailed'))
     } finally {
         loading.value = false
     }
@@ -166,7 +168,7 @@ const loadAvailableUsers = async () => {
         const data = await userApi.getList(1, 100)
         availableUsers.value = data?.items || []
     } catch (error) {
-        message.error('加载用户列表失败')
+        message.error(t('settings.users.loadFailed'))
     }
 }
 
@@ -180,7 +182,7 @@ const loadGroupMembers = async (groupId) => {
             username: m.username
         })) || []
     } catch (error) {
-        message.error('加载组成员失败')
+        message.error(t('settings.groups.loadMembersFailed'))
     } finally {
         loadingMembers.value = false
     }
@@ -232,11 +234,11 @@ const handleSubmit = async () => {
                 description: formState.description
             })
         }
-        message.success(editingGroup.value ? '用户组更新成功' : '用户组创建成功')
+        message.success(editingGroup.value ? t('settings.groups.updateSuccess') : t('settings.groups.createSuccess'))
         modalVisible.value = false
         loadGroups()
     } catch (error) {
-        message.error(error?.message || '操作失败')
+        message.error(error?.message || t('common.operationFailed'))
     } finally {
         submitting.value = false
     }
@@ -245,10 +247,10 @@ const handleSubmit = async () => {
 const handleDelete = async (id) => {
     try {
         await userGroupApi.remove(id)
-        message.success('用户组删除成功')
+        message.success(t('settings.groups.deleteSuccess'))
         loadGroups()
     } catch (error) {
-        message.error(error?.message || '删除用户组失败')
+        message.error(error?.message || t('settings.groups.deleteFailed'))
     }
 }
 
@@ -260,21 +262,21 @@ const addMembers = async () => {
     if (selectedUsers.value.length === 0) return
     try {
         await userGroupApi.addMembers(currentGroupId.value, selectedUsers.value)
-        message.success('成员添加成功')
+        message.success(t('settings.groups.addMembersSuccess'))
         selectedUsers.value = []
         await loadGroupMembers(currentGroupId.value)
     } catch (error) {
-        message.error(error?.message || '添加成员失败')
+        message.error(error?.message || t('settings.groups.addMembersFailed'))
     }
 }
 
 const removeMember = async (userId) => {
     try {
         await userGroupApi.removeMember(currentGroupId.value, userId)
-        message.success('成员移除成功')
+        message.success(t('settings.groups.removeMemberSuccess'))
         await loadGroupMembers(currentGroupId.value)
     } catch (error) {
-        message.error(error?.message || '移除成员失败')
+        message.error(error?.message || t('settings.groups.removeMemberFailed'))
     }
 }
 

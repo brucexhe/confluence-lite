@@ -12,7 +12,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="handleDownload"
-                        title="下载视频"
+                        :title="$t('videoPreview.download')"
                     >
                         <template #icon><DownloadIcon :size="16" /></template>
                     </a-button>
@@ -21,7 +21,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="close"
-                        title="关闭 (ESC)"
+                        :title="$t('videoPreview.close')"
                     >
                         <template #icon><XIcon :size="16" /></template>
                     </a-button>
@@ -39,7 +39,7 @@
                     autoplay
                     class="preview-video"
                 >
-                    您的浏览器不支持 video 标签。
+                    {{ $t('videoPreview.browserNotSupported') }}
                 </video>
             </div>
         </div>

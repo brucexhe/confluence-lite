@@ -12,10 +12,10 @@
             </a-breadcrumb>
             <div class="page-actions">
                 <a-button @click="enterEditMode">
-                    <span style="font-size: 14px">Edit</span>
+                    <span style="font-size: 14px">{{ $t('page.edit') }}</span>
                 </a-button>
                 <a-button @click="handleShare">
-                    <span style="font-size: 14px">Share</span>
+                    <span style="font-size: 14px">{{ $t('page.share') }}</span>
                 </a-button>
                 <a-dropdown>
                     <a-button>
@@ -23,13 +23,13 @@
                     </a-button>
                     <template #overlay>
                         <a-menu>
-                            <a-menu-item @click="handleViewHistory">View History</a-menu-item>
-                            <a-menu-item @click="handleViewAttachments">Attachmens({{ attachmentCount }})</a-menu-item>
-                            <a-menu-item @click="handleViewSource">View Source</a-menu-item>
-                            <a-menu-item @click="handleExportPdf">Export PDF</a-menu-item>
-                            <a-menu-item @click="handleMove">Move to</a-menu-item>
+                            <a-menu-item @click="handleViewHistory">{{ $t('page.viewHistory') }}</a-menu-item>
+                            <a-menu-item @click="handleViewAttachments">{{ $t('page.attachments') }}({{ attachmentCount }})</a-menu-item>
+                            <a-menu-item @click="handleViewSource">{{ $t('page.viewSource') }}</a-menu-item>
+                            <a-menu-item @click="handleExportPdf">{{ $t('page.exportPdf') }}</a-menu-item>
+                            <a-menu-item @click="handleMove">{{ $t('page.moveTo') }}</a-menu-item>
                             <a-menu-divider />
-                            <a-menu-item @click="handleDelete" danger>Delete</a-menu-item>
+                            <a-menu-item @click="handleDelete" danger>{{ $t('page.delete') }}</a-menu-item>
                         </a-menu>
                     </template>
                 </a-dropdown>
@@ -41,7 +41,7 @@
             <h1 class="page-title bold">{{ pageTitle }}</h1>
 
             <div class="page-meta">
-                <span>由&nbsp;{{ pageCreatorName }}&nbsp;创建于&nbsp;</span>
+                <span>{{ $t('page.createdBy', { name: pageCreatorName }) }}</span>
                 <span class="date">{{ pageUpdatedTime }}</span>
             </div>
 
@@ -58,7 +58,7 @@
         <PageAttachments v-model:open="attachmentsVisible" :pageId="pageId" @changed="loadAttachmentCount" />
 
         <!-- View Source Modal -->
-        <a-modal v-model:open="sourceVisible" title="View Source" :width="isMobile ? '95%' : 800" :footer="null">
+        <a-modal v-model:open="sourceVisible" :title="$t('page.viewSource')" :width="isMobile ? '95%' : 800" :footer="null">
             <div class="source-viewer">
                 <pre><code>{{ pageContent }}</code></pre>
             </div>
@@ -81,7 +81,7 @@
         <!-- Share Modal -->
         <a-modal
             v-model:open="shareVisible"
-            title="分享页面"
+            :title="$t('page.sharePage')"
             :width="isMobile ? '95%' : 520"
             :footer="null"
             @cancel="shareVisible = false"
@@ -89,20 +89,20 @@
             <!-- Create form -->
             <div v-if="!createdShare">
                 <a-form layout="vertical">
-                    <a-form-item label="分享类型">
+                    <a-form-item :label="$t('page.shareType')">
                         <a-radio-group v-model:value="shareForm.shareType">
-                            <a-radio value="anonymous">任何拥有链接的人</a-radio>
-                            <a-radio value="user">指定用户</a-radio>
+                            <a-radio value="anonymous">{{ $t('page.anyoneWithLink') }}</a-radio>
+                            <a-radio value="user">{{ $t('page.specificUser') }}</a-radio>
                         </a-radio-group>
                     </a-form-item>
 
-                    <a-form-item v-if="shareForm.shareType === 'user'" label="选择用户">
+                    <a-form-item v-if="shareForm.shareType === 'user'" :label="$t('page.selectUser')">
                         <a-select
                             v-model:value="shareForm.sharedWithId"
                             show-search
                             :filter-option="false"
                             :loading="userSearchLoading"
-                            placeholder="搜索用户"
+                            :placeholder="$t('page.searchUser')"
                             @search="handleUserSearch"
                         >
                             <a-select-option v-for="u in userList" :key="u.value" :value="u.value">
@@ -111,25 +111,25 @@
                         </a-select>
                     </a-form-item>
 
-                    <a-form-item label="访问密码（可选）">
-                        <a-input-password v-model:value="shareForm.visitPassword" placeholder="留空则不需要密码" />
+                    <a-form-item :label="$t('page.accessPassword')">
+                        <a-input-password v-model:value="shareForm.visitPassword" :placeholder="$t('page.leaveBlankNoPassword')" />
                     </a-form-item>
 
-                    <a-form-item label="过期时间（可选）">
+                    <a-form-item :label="$t('page.expirationTime')">
                         <a-date-picker
                             v-model:value="shareForm.expireAt"
                             show-time
-                            placeholder="留空则永不过期"
+                            :placeholder="$t('page.leaveBlankNeverExpire')"
                             style="width: 100%"
                         />
                     </a-form-item>
 
-                    <a-form-item label="允许编辑">
+                    <a-form-item :label="$t('page.allowEdit')">
                         <a-switch v-model:checked="shareForm.allowEdit" />
                     </a-form-item>
 
                     <a-button type="primary" block :loading="shareLoading" @click="handleCreateShare" style="background-color: #0052cc">
-                        创建分享链接
+                        {{ $t('page.createShareLink') }}
                     </a-button>
                 </a-form>
             </div>
@@ -142,24 +142,24 @@
                         <polyline points="22 4 12 14.01 9 11.01"/>
                     </svg>
                 </div>
-                <h3 style="color: #172b4d; margin: 12px 0 8px">分享链接已创建</h3>
+                <h3 style="color: #172b4d; margin: 12px 0 8px">{{ $t('page.shareLinkCreated') }}</h3>
                 <div class="share-link-box">
                     <input type="text" readonly :value="shareLink" class="share-link-input" />
                     <a-button type="primary" size="small" @click="copyShareLink" style="background-color: #0052cc">
-                        复制
+                        {{ $t('page.copyLink') }}
                     </a-button>
                 </div>
                 <div class="share-link-info">
-                    <span v-if="createdShare.hasPassword">密码保护</span>
-                    <span v-if="createdShare.expireAt">有效期至 {{ new Date(createdShare.expireAt).toLocaleString('zh-CN') }}</span>
-                    <span v-if="!createdShare.expireAt">永不过期</span>
+                    <span v-if="createdShare.hasPassword">{{ $t('page.passwordProtected') }}</span>
+                    <span v-if="createdShare.expireAt">{{ $t('page.validUntil', { time: new Date(createdShare.expireAt).toLocaleString(locale) }) }}</span>
+                    <span v-if="!createdShare.expireAt">{{ $t('page.neverExpires') }}</span>
                 </div>
             </div>
         </a-modal>
 
         <!-- Scroll to Top Button -->
         <transition name="fade-up">
-            <button v-if="showScrollTop" class="scroll-top-btn" @click="scrollToTop" title="回到顶部">
+            <button v-if="showScrollTop" class="scroll-top-btn" @click="scrollToTop" :title="$t('page.backToTop')">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path d="M10 4L4 10h4v6h4v-6h4L10 4z" fill="currentColor"/>
                 </svg>
@@ -172,6 +172,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, inject } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
 import PageComments from "../../components/PageComments.vue";
 import PageVersionHistory from "../../components/PageVersionHistory.vue";
 import PageAttachments from "../../components/PageAttachments.vue";
@@ -208,6 +209,7 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const pageTreeStore = usePageTreeStore();
+const { t, locale } = useI18n();
 const pageId = computed(() => route.params.id);
 const contentRef = ref(null);
 
@@ -306,13 +308,13 @@ function formatTime(dateStr) {
     const now = new Date();
     const diff = now - date;
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return "刚刚";
-    if (minutes < 60) return `${minutes} 分钟前`;
+    if (minutes < 1) return t('common.justNow');
+    if (minutes < 60) return t('common.minutesAgo', { n: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} 小时前`;
+    if (hours < 24) return t('common.hoursAgo', { n: hours });
     const days = Math.floor(hours / 24);
-    if (days < 30) return `${days} 天前`;
-    return date.toLocaleDateString("zh-CN");
+    if (days < 30) return t('common.daysAgo', { n: days });
+    return date.toLocaleDateString(locale.value);
 }
 
 // 为代码块添加行号 class 并执行语法高亮
@@ -493,7 +495,7 @@ const enterEditMode = () => {
 };
 
 const handleDelete = async () => {
-    if (!confirm("确定要删除此页面吗？")) return;
+    if (!confirm(t('page.confirmDelete'))) return;
     try {
         await pageApi.remove(pageId.value);
         // Invalidate cache so the tree reflects the deletion
@@ -554,7 +556,7 @@ const handleUserSearch = async (query) => {
 
 const handleCreateShare = async () => {
     if (shareForm.value.shareType === 'user' && !shareForm.value.sharedWithId) {
-        message.warning('请选择用户');
+        message.warning(t('page.pleaseSelectUser'));
         return;
     }
     shareLoading.value = true;
@@ -568,16 +570,16 @@ const handleCreateShare = async () => {
         };
         const data = await shareApi.create(payload);
         createdShare.value = data;
-        message.success('分享链接已创建');
+        message.success(t('page.shareCreated'));
     } catch (e) {
-        message.error(e.message || '创建分享失败');
+        message.error(e.message || t('page.createShareFailed'));
     }
     shareLoading.value = false;
 };
 
 const copyShareLink = () => {
     navigator.clipboard.writeText(shareLink.value).then(() => {
-        message.success('链接已复制到剪贴板');
+        message.success(t('page.linkCopied'));
     });
 };
 

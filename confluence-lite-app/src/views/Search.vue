@@ -1,8 +1,8 @@
 <template>
     <div class="search-page">
         <div class="search-header">
-            <h1>Search Results</h1>
-            <div class="search-info" v-if="!loading">Found {{ results.length }} results for "{{ searchKey }}"</div>
+            <h1>{{ $t('searchPage.title') }}</h1>
+            <div class="search-info" v-if="!loading">{{ $t('searchPage.resultInfo', { count: results.length, key: searchKey }) }}</div>
         </div>
 
         <div class="search-results-container">
@@ -38,8 +38,8 @@
 
             <div v-else class="no-results">
                 <div class="no-results-icon">🔍</div>
-                <h2>No results found</h2>
-                <p>Try different keywords or check your spelling.</p>
+                <h2>{{ $t('searchPage.noResults') }}</h2>
+                <p>{{ $t('searchPage.tryDifferent') }}</p>
             </div>
         </div>
     </div>
@@ -52,10 +52,12 @@ import { searchApi } from "../api";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { FileText, Paperclip, Image } from "lucide-vue-next";
+import { useI18n } from 'vue-i18n';
 
 dayjs.extend(relativeTime);
 
 const route = useRoute();
+const { t } = useI18n();
 const loading = ref(true);
 const results = ref([]);
 const searchKey = computed(() => route.query.key || "");

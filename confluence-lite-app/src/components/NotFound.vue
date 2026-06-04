@@ -12,14 +12,16 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
 // 根据路由参数动态设置标题和消息
-const title = computed(() => route.meta.notFoundTitle || '页面不存在')
-const message = computed(() => route.meta.notFoundMessage || '您访问的页面不存在')
-const buttonText = computed(() => route.meta.notFoundButton || '返回首页')
+const title = computed(() => route.meta.notFoundTitle || t('notFound.pageNotExist'))
+const message = computed(() => route.meta.notFoundMessage || t('notFound.pageNotExistMsg'))
+const buttonText = computed(() => route.meta.notFoundButton || t('common.backToHome'))
 
 function goBack() {
   // 如果有指定的返回路径，使用它；否则返回首页

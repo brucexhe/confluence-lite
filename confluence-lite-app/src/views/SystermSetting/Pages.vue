@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>页面管理</h1>
-            <p class="page-description">管理系统所有页面</p>
+            <h1>{{ $t('settings.pages.title') }}</h1>
+            <p class="page-description">{{ $t('settings.pages.description') }}</p>
         </div>
 
         <div class="page-content">
@@ -11,13 +11,13 @@
                 <a-space>
                     <a-input-search
                         v-model:value="searchText"
-                        placeholder="搜索页面标题"
+                        :placeholder="$t('settings.pages.searchPlaceholder')"
                         style="width: 250px"
                         @search="handleSearch"
                     />
                     <a-select
                         v-model:value="filterWorkspace"
-                        placeholder="筛选空间"
+                        :placeholder="$t('settings.pages.filterWorkspace')"
                         style="width: 150px"
                         allow-clear
                         :options="workspaceOptions"
@@ -25,7 +25,7 @@
                     />
                     <a-select
                         v-model:value="filterStatus"
-                        placeholder="筛选状态"
+                        :placeholder="$t('settings.pages.filterStatus')"
                         style="width: 120px"
                         allow-clear
                         :options="statusOptions"
@@ -34,9 +34,9 @@
                 </a-space>
                 <a-space v-if="selectedRowKeys.length > 0">
                     <a-button danger @click="batchDelete">
-                        批量删除 ({{ selectedRowKeys.length }})
+                        {{ $t('settings.pages.batchDelete') }} ({{ selectedRowKeys.length }})
                     </a-button>
-                    <a-button @click="selectedRowKeys = []">取消选择</a-button>
+                    <a-button @click="selectedRowKeys = []">{{ $t('settings.pages.cancelSelect') }}</a-button>
                 </a-space>
             </div>
 
@@ -55,7 +55,7 @@
                         <div class="page-title">
                             <a @click="$router.push(`/${record.workspace?.key}/page/${record.id}`)">
                                 {{ record.title }}
-                            </a> 
+                            </a>
                         </div>
                     </template>
                     <template v-else-if="column.key === 'space'">
@@ -75,28 +75,28 @@
                     <template v-else-if="column.key === 'action'">
                         <a-space split>
                             <a-button type="link" size="small" @click="$router.push(`/${record.workspace?.key}/page/${record.id}`)">
-                                查看
+                                {{ $t('common.view') }}
                             </a-button>
                             <a-button type="link" size="small" @click="$router.push(`/${record.workspace?.key}/page/${record.id}/edit`)">
-                                编辑
+                                {{ $t('common.edit') }}
                             </a-button>
                             <a-dropdown>
                                 <template #overlay>
                                     <a-menu>
                                         <a-menu-item @click="copyPageLink(record)">
-                                            复制链接
+                                            {{ $t('settings.pages.copyLink') }}
                                         </a-menu-item>
                                         <a-menu-item @click="viewHistory(record)">
-                                            查看历史
+                                            {{ $t('settings.pages.viewHistory') }}
                                         </a-menu-item>
                                         <a-menu-divider />
                                         <a-menu-item danger @click="handleDelete(record.id)">
-                                            删除页面
+                                            {{ $t('settings.pages.deletePage') }}
                                         </a-menu-item>
                                     </a-menu>
                                 </template>
                                 <a-button type="link" size="small">
-                                    更多
+                                    {{ $t('common.more') }}
                                 </a-button>
                             </a-dropdown>
                         </a-space>
@@ -108,7 +108,7 @@
         <!-- 版本历史弹窗 -->
         <a-modal
             v-model:open="historyVisible"
-            :title="`页面历史 - ${historyPageTitle}`"
+            :title="$t('settings.pages.pageHistory') + ' - ' + historyPageTitle"
             footer={null}
             width="700px"
         >
@@ -136,9 +136,11 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import { message, Modal } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { workspaceApi, pageApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
+const { t } = useI18n()
 const loading = ref(false)
 const searchText = ref('')
 const filterWorkspace = ref(undefined)
@@ -158,7 +160,7 @@ const pagination = reactive({
     pageSize: 20,
     total: 0,
     showSizeChanger: true,
-    showTotal: (total) => `共 ${total} 条`
+    showTotal: (total) => t('common.total', { n: total })
 })
 
 const workspaceOptions = computed(() => {
@@ -169,9 +171,9 @@ const workspaceOptions = computed(() => {
 })
 
 const statusOptions = [
-    { label: '已发布', value: 1 },
-    { label: '草稿', value: 0 },
-    { label: '已归档', value: 2 }
+    { label: t('settings.pages.published'), value: 1 },
+    { label: t('settings.pages.draft'), value: 0 },
+    { label: t('settings.pages.archived'), value: 2 }
 ]
 
 const rowSelection = computed(() => ({
@@ -182,19 +184,19 @@ const rowSelection = computed(() => ({
 }))
 
 const columns = [
-    { title: '页面标题', key: 'title' },
-    { title: '所属空间', key: 'space' },
-    { title: '创建者', key: 'creator' },
-    { title: '状态', key: 'status' },
-    { title: '更新时间', dataIndex: 'updatedAt', key: 'updatedAt' },
-    { title: '操作', key: 'action', width: 180 }
+    { title: t('settings.pages.pageTitle'), key: 'title' },
+    { title: t('settings.pages.space'), key: 'space' },
+    { title: t('settings.pages.creator'), key: 'creator' },
+    { title: t('settings.pages.status'), key: 'status' },
+    { title: t('settings.pages.updatedAt'), dataIndex: 'updatedAt', key: 'updatedAt' },
+    { title: t('common.action'), key: 'action', width: 180 }
 ]
 
 const historyColumns = [
-    { title: '版本', dataIndex: 'versionNumber', key: 'versionNumber', width: 60 },
-    { title: '标题', dataIndex: 'title', key: 'title' },
-    { title: '编辑者', key: 'editor', width: 120 },
-    { title: '时间', key: 'createdAt', width: 160 }
+    { title: t('settings.pages.version'), dataIndex: 'versionNumber', key: 'versionNumber', width: 60 },
+    { title: t('settings.pages.historyTitle'), dataIndex: 'title', key: 'title' },
+    { title: t('settings.pages.editor'), key: 'editor', width: 120 },
+    { title: t('settings.pages.time'), key: 'createdAt', width: 160 }
 ]
 
 const getStatusColor = (status) => {
@@ -203,14 +205,14 @@ const getStatusColor = (status) => {
 }
 
 const getStatusText = (status) => {
-    const texts = { 1: '已发布', 0: '草稿', 2: '已归档' }
-    return texts[status] ?? '未知'
+    const texts = { 1: t('settings.pages.published'), 0: t('settings.pages.draft'), 2: t('settings.pages.archived') }
+    return texts[status] ?? t('common.unknown')
 }
 
 const copyPageLink = (page) => {
     const url = `${window.location.origin}/${page.workspace?.key}/page/${page.id}`
     navigator.clipboard.writeText(url)
-    message.success('链接已复制到剪贴板')
+    message.success(t('settings.pages.linkCopied'))
 }
 
 const viewHistory = async (page) => {
@@ -221,7 +223,7 @@ const viewHistory = async (page) => {
         const data = await pageApi.getVersions(page.id)
         versions.value = data || []
     } catch {
-        message.error('加载版本历史失败')
+        message.error(t('settings.pages.loadVersionsFailed'))
     } finally {
         versionsLoading.value = false
     }
@@ -229,26 +231,26 @@ const viewHistory = async (page) => {
 
 const batchDelete = () => {
     if (selectedRowKeys.value.length === 0) {
-        message.warning('请先选择要删除的页面')
+        message.warning(t('settings.pages.selectPagesFirst'))
         return
     }
 
     Modal.confirm({
-        title: '确认删除',
-        content: `确定要删除选中的 ${selectedRowKeys.value.length} 个页面吗？此操作不可恢复。`,
-        okText: '删除',
+        title: t('common.confirmDelete'),
+        content: t('settings.pages.batchDeleteConfirm', { count: selectedRowKeys.value.length }),
+        okText: t('common.delete'),
         okType: 'danger',
-        cancelText: '取消',
+        cancelText: t('common.cancel'),
         onOk: async () => {
             try {
                 for (const id of selectedRowKeys.value) {
                     await pageApi.remove(id)
                 }
-                message.success(`成功删除 ${selectedRowKeys.value.length} 个页面`)
+                message.success(t('settings.pages.batchDeleteSuccess', { count: selectedRowKeys.value.length }))
                 selectedRowKeys.value = []
                 loadPages()
             } catch {
-                message.error('批量删除失败')
+                message.error(t('settings.pages.batchDeleteFailed'))
             }
         }
     })
@@ -276,7 +278,7 @@ const loadPages = async () => {
         pages.value = data?.items || []
         pagination.total = data?.total || 0
     } catch {
-        message.error('加载页面列表失败')
+        message.error(t('settings.pages.loadFailed'))
     } finally {
         loading.value = false
     }
@@ -295,18 +297,18 @@ const handleTableChange = (pag) => {
 
 const handleDelete = (id) => {
     Modal.confirm({
-        title: '确认删除',
-        content: '确定要删除该页面吗？子页面也会被一并删除，此操作不可恢复。',
-        okText: '删除',
+        title: t('common.confirmDelete'),
+        content: t('settings.pages.deleteConfirm'),
+        okText: t('common.delete'),
         okType: 'danger',
-        cancelText: '取消',
+        cancelText: t('common.cancel'),
         onOk: async () => {
             try {
                 await pageApi.remove(id)
-                message.success('页面删除成功')
+                message.success(t('settings.pages.deleteSuccess'))
                 loadPages()
             } catch {
-                message.error('删除页面失败')
+                message.error(t('settings.pages.deleteFailed'))
             }
         }
     })

@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>邮件设置</h1>
-            <p class="page-description">配置系统的邮件服务，用于通知和验证</p>
+            <h1>{{ $t('settings.mail.title') }}</h1>
+            <p class="page-description">{{ $t('settings.mail.description') }}</p>
         </div>
 
         <a-spin :spinning="loading">
@@ -16,38 +16,38 @@
             >
                 <!-- SMTP 设置 -->
                 <div class="form-section">
-                    <h3 class="section-title">SMTP 服务器设置</h3>
+                    <h3 class="section-title">{{ $t('settings.mail.smtpSectionTitle') }}</h3>
 
                     <a-form-item
-                        label="启用邮件"
+                        :label="$t('settings.mail.enableMail')"
                         name="enabled"
                     >
                         <a-switch
                             v-model:checked="formState.enabled"
-                            checked-children="开启"
-                            un-checked-children="关闭"
+                            :checked-children="$t('common.enabled')"
+                            :un-checked-children="$t('common.disabled')"
                         />
-                        <div class="form-hint">启用后系统将发送通知邮件</div>
+                        <div class="form-hint">{{ $t('settings.mail.enableMailHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="SMTP 主机"
+                        :label="$t('settings.mail.smtpHost')"
                         name="smtpHost"
-                        :rules="[{ required: formState.enabled, message: '请输入 SMTP 主机地址' }]"
+                        :rules="[{ required: formState.enabled, message: t('settings.mail.smtpHostRequired') }]"
                     >
                         <a-input
                             v-model:value="formState.smtpHost"
-                            placeholder="例如: smtp.gmail.com"
+                            :placeholder="$t('settings.mail.smtpHostPlaceholder')"
                             style="max-width: 400px"
                             :disabled="!formState.enabled"
                         />
-                        <div class="form-hint">邮件服务器的主机地址</div>
+                        <div class="form-hint">{{ $t('settings.mail.smtpHostHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="SMTP 端口"
+                        :label="$t('settings.mail.smtpPort')"
                         name="smtpPort"
-                        :rules="[{ required: formState.enabled, message: '请输入 SMTP 端口' }]"
+                        :rules="[{ required: formState.enabled, message: t('settings.mail.smtpPortRequired') }]"
                     >
                         <a-input-number
                             v-model:value="formState.smtpPort"
@@ -56,30 +56,30 @@
                             style="width: 150px"
                             :disabled="!formState.enabled"
                         />
-                        <div class="form-hint">常用的端口：25 (非加密), 465 (SSL), 587 (TLS)</div>
+                        <div class="form-hint">{{ $t('settings.mail.smtpPortHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="加密方式"
+                        :label="$t('settings.mail.encryption')"
                         name="encryption"
                     >
                         <a-radio-group
                             v-model:value="formState.encryption"
                             :disabled="!formState.enabled"
                         >
-                            <a-radio value="none">无加密</a-radio>
+                            <a-radio value="none">{{ $t('settings.mail.encryptionNone') }}</a-radio>
                             <a-radio value="ssl">SSL/TLS</a-radio>
                             <a-radio value="tls">STARTTLS</a-radio>
                         </a-radio-group>
-                        <div class="form-hint">与 SMTP 服务器通信的加密方式</div>
+                        <div class="form-hint">{{ $t('settings.mail.encryptionHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="发件人邮箱"
+                        :label="$t('settings.mail.senderEmail')"
                         name="fromEmail"
                         :rules="[
-                            { required: formState.enabled, message: '请输入发件人邮箱' },
-                            { type: 'email', message: '请输入有效的邮箱地址' }
+                            { required: formState.enabled, message: t('settings.mail.senderEmailRequired') },
+                            { type: 'email', message: t('profile.emailInvalid') }
                         ]"
                     >
                         <a-input
@@ -88,80 +88,80 @@
                             style="max-width: 400px"
                             :disabled="!formState.enabled"
                         />
-                        <div class="form-hint">系统发送邮件时使用的发件人地址</div>
+                        <div class="form-hint">{{ $t('settings.mail.senderEmailHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="发件人名称"
+                        :label="$t('settings.mail.senderName')"
                         name="fromName"
                     >
                         <a-input
                             v-model:value="formState.fromName"
-                            placeholder="例如：Confluence Lite"
+                            :placeholder="$t('settings.mail.senderNamePlaceholder')"
                             style="max-width: 400px"
                             :disabled="!formState.enabled"
                         />
-                        <div class="form-hint">系统发送邮件时显示的发件人名称</div>
+                        <div class="form-hint">{{ $t('settings.mail.senderNameHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="用户名"
+                        :label="$t('settings.mail.smtpUsername')"
                         name="username"
-                        :rules="[{ required: formState.enabled, message: '请输入 SMTP 登录用户名' }]"
+                        :rules="[{ required: formState.enabled, message: t('settings.mail.smtpUsernameRequired') }]"
                     >
                         <a-input
                             v-model:value="formState.username"
-                            placeholder="SMTP 登录用户名"
+                            :placeholder="$t('settings.mail.smtpUsernamePlaceholder')"
                             style="max-width: 400px"
                             :disabled="!formState.enabled"
                         />
-                        <div class="form-hint">SMTP 服务器的登录用户名（通常是邮箱地址）</div>
+                        <div class="form-hint">{{ $t('settings.mail.smtpUsernameHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="密码"
+                        :label="$t('settings.mail.smtpPassword')"
                         name="password"
                     >
                         <a-input-password
                             v-model:value="formState.password"
-                            placeholder="SMTP 登录密码（留空表示不修改）"
+                            :placeholder="$t('settings.mail.smtpPasswordPlaceholder')"
                             style="max-width: 400px"
                             :disabled="!formState.enabled"
                         />
-                        <div class="form-hint">SMTP 服务器的登录密码或应用专用密码</div>
+                        <div class="form-hint">{{ $t('settings.mail.smtpPasswordHint') }}</div>
                     </a-form-item>
                 </div>
 
                 <!-- 邮件模板 -->
                 <div class="form-section">
-                    <h3 class="section-title">邮件通知</h3>
+                    <h3 class="section-title">{{ $t('settings.mail.notificationSectionTitle') }}</h3>
 
-                    <a-form-item label="新用户注册" name="notifyOnRegister">
+                    <a-form-item :label="$t('settings.mail.notifyOnRegister')" name="notifyOnRegister">
                         <a-switch
                             v-model:checked="formState.notifyOnRegister"
-                            checked-children="通知"
-                            un-checked-children="不通知"
+                            :checked-children="$t('settings.mail.notify')"
+                            :un-checked-children="$t('settings.mail.noNotify')"
                         />
-                        <div class="form-hint">有新用户注册时发送邮件通知管理员</div>
+                        <div class="form-hint">{{ $t('settings.mail.notifyOnRegisterHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="通知接收邮箱" name="adminEmail">
+                    <a-form-item :label="$t('settings.mail.adminEmail')" name="adminEmail">
                         <a-input
                             v-model:value="formState.adminEmail"
                             placeholder="admin@example.com"
                             style="max-width: 400px"
                         />
-                        <div class="form-hint">接收系统通知的管理员邮箱地址</div>
+                        <div class="form-hint">{{ $t('settings.mail.adminEmailHint') }}</div>
                     </a-form-item>
 
-                    <a-form-item label="邮件签名" name="emailSignature">
+                    <a-form-item :label="$t('settings.mail.emailSignature')" name="emailSignature">
                         <a-textarea
                             v-model:value="formState.emailSignature"
-                            placeholder="邮件底部的签名信息"
+                            :placeholder="$t('settings.mail.emailSignaturePlaceholder')"
                             :rows="3"
                             style="max-width: 400px"
                         />
-                        <div class="form-hint">添加到所有系统邮件底部的签名信息</div>
+                        <div class="form-hint">{{ $t('settings.mail.emailSignatureHint') }}</div>
                     </a-form-item>
                 </div>
 
@@ -169,15 +169,15 @@
                 <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 120px">
                     <a-space>
                         <a-button type="primary" html-type="submit" :loading="saving">
-                            保存设置
+                            {{ $t('settings.saveSettings') }}
                         </a-button>
-                        <a-button @click="handleReset">重置</a-button>
+                        <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
                         <a-button
                             @click="handleTest"
                             :loading="testing"
                             :disabled="!formState.enabled"
                         >
-                            发送测试邮件
+                            {{ $t('settings.mail.testMail') }}
                         </a-button>
                     </a-space>
                 </a-form-item>
@@ -187,15 +187,15 @@
         <!-- 测试邮件对话框 -->
         <a-modal
             v-model:open="testModalVisible"
-            title="发送测试邮件"
+            :title="$t('settings.mail.testMail')"
             @ok="sendTestEmail"
             :confirm-loading="testing"
         >
             <a-form layout="vertical">
-                <a-form-item label="收件人邮箱">
+                <a-form-item :label="$t('settings.mail.recipientEmail')">
                     <a-input
                         v-model:value="testEmail"
-                        placeholder="输入用于接收测试邮件的邮箱地址"
+                        :placeholder="$t('settings.mail.recipientEmailPlaceholder')"
                     />
                 </a-form-item>
             </a-form>
@@ -206,7 +206,10 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { systemSettingApi } from '@/api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -289,10 +292,10 @@ const handleSubmit = async () => {
     saving.value = true
     try {
         await systemSettingApi.updateMailConfig(formState)
-        message.success('邮件设置保存成功')
+        message.success(t('settings.mail.saveSuccess'))
     } catch (error) {
         console.error('保存邮件设置失败:', error)
-        message.error('保存设置失败，请稍后重试')
+        message.error(t('settings.saveFailed'))
     } finally {
         saving.value = false
     }
@@ -301,7 +304,7 @@ const handleSubmit = async () => {
 // 重置表单
 const handleReset = () => {
     loadConfig()
-    message.info('已重置为服务器配置')
+    message.info(t('settings.resetToServer'))
 }
 
 // 打开测试邮件对话框
@@ -309,7 +312,7 @@ const handleTest = async () => {
     try {
         await formRef.value.validate()
     } catch (error) {
-        message.warning('请先填写完整的 SMTP 配置')
+        message.warning(t('settings.mail.smtpConfigRequired'))
         return
     }
 
@@ -321,7 +324,7 @@ const handleTest = async () => {
 // 发送测试邮件
 const sendTestEmail = async () => {
     if (!testEmail.value) {
-        message.warning('请输入收件人邮箱')
+        message.warning(t('settings.mail.recipientEmailRequired'))
         return
     }
 
@@ -331,11 +334,11 @@ const sendTestEmail = async () => {
             ...formState,
             testEmail: testEmail.value
         })
-        message.success(`测试邮件已发送到 ${testEmail.value}，请查收`)
+        message.success(t('settings.mail.testMailSent', { email: testEmail.value }))
         testModalVisible.value = false
     } catch (error) {
         console.error('发送测试邮件失败:', error)
-        message.error('发送测试邮件失败，请检查配置')
+        message.error(t('settings.mail.testMailFailed'))
     } finally {
         testing.value = false
     }

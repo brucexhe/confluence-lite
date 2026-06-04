@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>缓存管理</h1>
-            <p class="page-description">管理系统缓存和性能优化</p>
+            <h1>{{ $t('settings.cache.title') }}</h1>
+            <p class="page-description">{{ $t('settings.cache.description') }}</p>
         </div>
 
         <div class="page-content">
@@ -10,13 +10,13 @@
             <a-row :gutter="16" class="stats-row">
                 <a-col :span="8">
                     <a-card>
-                        <a-statistic title="缓存键数量" :value="cacheStats.keyCount" />
+                        <a-statistic :title="$t('settings.cache.keyCount')" :value="cacheStats.keyCount" />
                     </a-card>
                 </a-col>
                 <a-col :span="8">
                     <a-card>
                         <a-statistic
-                            title="内存使用"
+                            :title="$t('settings.cache.memoryUsage')"
                             :value="formatBytes(cacheStats.memoryUsed)"
                             :suffix="`/ ${formatBytes(cacheStats.memoryTotal)}`"
                         />
@@ -24,29 +24,29 @@
                 </a-col>
                 <a-col :span="8">
                     <a-card>
-                        <a-statistic title="命中率" :value="cacheStats.hitRate" suffix="%" />
+                        <a-statistic :title="$t('settings.cache.hitRate')" :value="cacheStats.hitRate" suffix="%" />
                     </a-card>
                 </a-col>
             </a-row>
 
             <!-- 缓存操作 -->
             <div class="section">
-                <h3 class="section-title">缓存操作</h3>
+                <h3 class="section-title">{{ $t('settings.cache.cacheOperations') }}</h3>
                 <a-space>
                     <a-button type="primary" danger @click="clearAllCache" :loading="clearing">
                         <Trash2 :size="14" style="vertical-align: middle" />
-                        清空所有缓存
+                        {{ $t('settings.cache.clearAllCache') }}
                     </a-button>
                     <a-button @click="refreshStats" :loading="loading">
                         <RotateCw :size="14" style="vertical-align: middle" />
-                        刷新统计
+                        {{ $t('settings.cache.refreshStats') }}
                     </a-button>
                 </a-space>
             </div>
 
             <!-- 缓存类型 -->
             <div class="section">
-                <h3 class="section-title">缓存分类</h3>
+                <h3 class="section-title">{{ $t('settings.cache.cacheCategories') }}</h3>
                 <a-table
                     :columns="cacheTypeColumns"
                     :data-source="cacheTypes"
@@ -60,10 +60,10 @@
                         <template v-else-if="column.key === 'action'">
                             <a-space>
                                 <a-button type="link" size="small" @click="clearCache(record.key)">
-                                    清空
+                                    {{ $t('settings.cache.clear') }}
                                 </a-button>
                                 <a-button type="link" size="small" @click="viewCacheKeys(record.key)">
-                                    查看键
+                                    {{ $t('settings.cache.viewKeys') }}
                                 </a-button>
                             </a-space>
                         </template>
@@ -74,7 +74,7 @@
             <!-- 缓存键列表 -->
             <div class="section" v-if="selectedCacheType">
                 <h3 class="section-title">
-                    {{ selectedCacheType.name }} - 缓存键
+                    {{ selectedCacheType.name }} - {{ $t('settings.cache.cacheKeys') }}
                     <a-button type="text" size="small" @click="selectedCacheType = null">
                         <X :size="14" style="vertical-align: middle" />
                     </a-button>
@@ -89,15 +89,15 @@
                 >
                     <template #bodyCell="{ column, record }">
                         <template v-if="column.key === 'ttl'">
-                            <span v-if="record.ttl === '-1' || record.ttl === -1">永久</span>
-                            <span v-else>{{ record.ttl }}秒</span>
+                            <span v-if="record.ttl === '-1' || record.ttl === -1">{{ $t('settings.cache.permanent') }}</span>
+                            <span v-else>{{ record.ttl }}{{ $t('settings.cache.seconds') }}</span>
                         </template>
                         <template v-else-if="column.key === 'action'">
                             <a-popconfirm
-                                title="确定要删除该缓存键吗？"
+                                :title="$t('settings.cache.confirmDeleteKey')"
                                 @confirm="deleteCacheKey(record.key)"
                             >
-                                <a-button type="link" size="small" danger>删除</a-button>
+                                <a-button type="link" size="small" danger>{{ $t('common.delete') }}</a-button>
                             </a-popconfirm>
                         </template>
                     </template>
@@ -108,14 +108,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import {
     Trash2,
     RotateCw,
     X
 } from 'lucide-vue-next'
 import { systemSettingApi } from '@/api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const clearing = ref(false)
@@ -174,21 +177,21 @@ const cacheTypes = ref([
 
 const cacheKeys = ref([])
 
-const cacheTypeColumns = [
-    { title: '缓存名称', dataIndex: 'name', key: 'name' },
-    { title: '描述', dataIndex: 'description', key: 'description' },
-    { title: '键数量', dataIndex: 'keyCount', key: 'keyCount' },
-    { title: '内存占用', key: 'memory' },
+const cacheTypeColumns = computed(() => [
+    { title: t('settings.cache.cacheName'), dataIndex: 'name', key: 'name' },
+    { title: t('common.description'), dataIndex: 'description', key: 'description' },
+    { title: t('settings.cache.keyCount'), dataIndex: 'keyCount', key: 'keyCount' },
+    { title: t('settings.cache.memoryUsage'), key: 'memory' },
     { title: 'TTL', dataIndex: 'ttl', key: 'ttl' },
-    { title: '操作', key: 'action', width: 150 }
-]
+    { title: t('common.actions'), key: 'action', width: 150 }
+])
 
-const keyColumns = [
-    { title: '缓存键', dataIndex: 'key', key: 'key', ellipsis: true },
-    { title: '大小', dataIndex: 'size', key: 'size' },
+const keyColumns = computed(() => [
+    { title: t('settings.cache.cacheKey'), dataIndex: 'key', key: 'key', ellipsis: true },
+    { title: t('settings.cache.size'), dataIndex: 'size', key: 'size' },
     { title: 'TTL', key: 'ttl' },
-    { title: '操作', key: 'action', width: 80 }
-]
+    { title: t('common.actions'), key: 'action', width: 80 }
+])
 
 const formatBytes = (bytes) => {
     if (!bytes) return '0 B'
@@ -230,7 +233,7 @@ const refreshStats = async () => {
         }
     } catch (error) {
         console.error('Failed to refresh cache stats:', error)
-        message.error('刷新统计失败')
+        message.error(t('settings.cache.refreshStatsFailed'))
     } finally {
         loading.value = false
     }
@@ -276,10 +279,10 @@ const clearAllCache = async () => {
     clearing.value = true
     try {
         await systemSettingApi.clearAllCache()
-        message.success('所有缓存已清空')
+        message.success(t('settings.cache.clearAllSuccess'))
         refreshStats()
     } catch (error) {
-        message.error('清空缓存失败')
+        message.error(t('settings.cache.clearAllFailed'))
     } finally {
         clearing.value = false
     }
@@ -288,10 +291,10 @@ const clearAllCache = async () => {
 const clearCache = async (type) => {
     try {
         await systemSettingApi.clearCache(type)
-        message.success('缓存已清空')
+        message.success(t('settings.cache.clearSuccess'))
         refreshStats()
     } catch (error) {
-        message.error('清空缓存失败')
+        message.error(t('settings.cache.clearFailed'))
     }
 }
 
@@ -319,10 +322,10 @@ const deleteCacheKey = async (key) => {
     try {
         const type = selectedCacheType.value.key
         await systemSettingApi.deleteCacheKey(type, key)
-        message.success('缓存键已删除')
+        message.success(t('settings.cache.keyDeleted'))
         viewCacheKeys(selectedCacheType.value.key)
     } catch (error) {
-        message.error('删除缓存键失败')
+        message.error(t('settings.cache.deleteKeyFailed'))
     }
 }
 

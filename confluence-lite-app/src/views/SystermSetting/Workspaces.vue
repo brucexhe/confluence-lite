@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>空间管理</h1>
-            <p class="page-description">管理系统所有空间</p>
+            <h1>{{ $t('settings.workspaces.title') }}</h1>
+            <p class="page-description">{{ $t('settings.workspaces.description') }}</p>
         </div>
 
         <div class="page-content">
@@ -10,14 +10,14 @@
                 <a-space>
                     <a-input-search
                         v-model:value="searchText"
-                        placeholder="搜索空间名称或Key"
+                        :placeholder="$t('settings.workspaces.searchPlaceholder')"
                         style="width: 250px"
                         @search="handleSearch"
                     />
                 </a-space>
                 <a-button type="primary" @click="$router.push('/spaces')">
                     <Plus :size="14" style="vertical-align: middle" />
-                    创建空间
+                    {{ $t('settings.workspaces.createSpace') }}
                 </a-button>
             </div>
 
@@ -39,11 +39,11 @@
                         <a @click="$router.push(`/${record.key}`)">{{ record.name }}</a>
                     </template>
                     <template v-else-if="column.key === 'pageCount'">
-                        <a-tag color="blue">{{ record.pageCount || 0 }} 页面</a-tag>
+                        <a-tag color="blue">{{ record.pageCount || 0 }} {{ $t('settings.workspaces.pages') }}</a-tag>
                     </template>
                     <template v-else-if="column.key === 'type'">
                         <a-tag :color="record.isPublic ? 'green' : 'default'">
-                            {{ record.isPublic ? '公开' : '私有' }}
+                            {{ record.isPublic ? $t('settings.workspaces.public') : $t('settings.workspaces.private') }}
                         </a-tag>
                     </template>
                     <template v-else-if="column.key === 'createdAt'">
@@ -51,10 +51,10 @@
                     </template>
                     <template v-else-if="column.key === 'action'">
                         <a-space>
-                            <a-button type="link" size="small" @click="$router.push(`/${record.key}`)">查看</a-button>
-                            <a-button type="link" size="small" @click="showEditModal(record)">编辑</a-button>
-                            <a-popconfirm title="确定要删除该空间吗？" @confirm="handleDelete(record.id)">
-                                <a-button type="link" size="small" danger>删除</a-button>
+                            <a-button type="link" size="small" @click="$router.push(`/${record.key}`)">{{ $t('common.view') }}</a-button>
+                            <a-button type="link" size="small" @click="showEditModal(record)">{{ $t('common.edit') }}</a-button>
+                            <a-popconfirm :title="$t('settings.workspaces.confirmDelete')" @confirm="handleDelete(record.id)">
+                                <a-button type="link" size="small" danger>{{ $t('common.delete') }}</a-button>
                             </a-popconfirm>
                         </a-space>
                     </template>
@@ -65,7 +65,7 @@
         <!-- 编辑空间弹窗 -->
         <a-modal
             v-model:open="editModalVisible"
-            title="编辑空间"
+            :title="$t('settings.workspaces.editSpace')"
             @ok="handleUpdate"
             :confirm-loading="updating"
             width="600px"
@@ -76,39 +76,39 @@
                 :label-col="{ span: 6 }"
                 :wrapper-col="{ span: 16 }"
             >
-                <a-form-item label="空间名称" name="name" :rules="[{ required: true, message: '请输入空间名称' }]">
-                    <a-input v-model:value="formState.name" placeholder="输入空间名称" />
+                <a-form-item :label="$t('settings.workspaces.spaceName')" name="name" :rules="[{ required: true, message: $t('settings.workspaces.spaceNameRequired') }]">
+                    <a-input v-model:value="formState.name" :placeholder="$t('settings.workspaces.spaceNamePlaceholder')" />
                 </a-form-item>
-                <a-form-item label="空间Key" name="key" :rules="[
-                    { required: true, message: '请输入空间Key' },
-                    { pattern: /^[a-z0-9_-]+$/, message: '只能包含小写字母、数字、下划线和连字符' }
+                <a-form-item :label="$t('settings.workspaces.spaceKey')" name="key" :rules="[
+                    { required: true, message: $t('settings.workspaces.spaceKeyRequired') },
+                    { pattern: /^[a-z0-9_-]+$/, message: $t('settings.workspaces.spaceKeyPattern') }
                 ]">
                     <a-input
                         v-model:value="formState.key"
-                        placeholder="小写字母、数字、下划线或连字符"
+                        :placeholder="$t('settings.workspaces.spaceKeyPlaceholder')"
                         :disabled="!!editingWorkspace"
                     />
                 </a-form-item>
-                <a-form-item label="描述" name="description">
-                    <a-textarea v-model:value="formState.description" :rows="3" placeholder="简要描述该空间的用途" />
+                <a-form-item :label="$t('settings.workspaces.description')" name="description">
+                    <a-textarea v-model:value="formState.description" :rows="3" :placeholder="$t('settings.workspaces.descriptionPlaceholder')" />
                 </a-form-item>
-                <a-form-item label="图标样式" name="iconStyle">
+                <a-form-item :label="$t('settings.workspaces.iconStyle')" name="iconStyle">
                     <a-select v-model:value="formState.iconStyle" style="width: 200px">
-                        <a-select-option value="green">绿色</a-select-option>
-                        <a-select-option value="blue">蓝色</a-select-option>
-                        <a-select-option value="purple">紫色</a-select-option>
-                        <a-select-option value="orange">橙色</a-select-option>
-                        <a-select-option value="red">红色</a-select-option>
-                        <a-select-option value="cyan">青色</a-select-option>
+                        <a-select-option value="green">{{ $t('settings.workspaces.colorGreen') }}</a-select-option>
+                        <a-select-option value="blue">{{ $t('settings.workspaces.colorBlue') }}</a-select-option>
+                        <a-select-option value="purple">{{ $t('settings.workspaces.colorPurple') }}</a-select-option>
+                        <a-select-option value="orange">{{ $t('settings.workspaces.colorOrange') }}</a-select-option>
+                        <a-select-option value="red">{{ $t('settings.workspaces.colorRed') }}</a-select-option>
+                        <a-select-option value="cyan">{{ $t('settings.workspaces.colorCyan') }}</a-select-option>
                     </a-select>
                 </a-form-item>
-                <a-form-item label="公开访问" name="isPublic">
+                <a-form-item :label="$t('settings.workspaces.publicAccess')" name="isPublic">
                     <a-switch
                         v-model:checked="formState.isPublic"
-                        checked-children="公开"
-                        un-checked-children="私有"
+                        :checked-children="$t('settings.workspaces.public')"
+                        :un-checked-children="$t('settings.workspaces.private')"
                     />
-                    <div class="form-hint">公开空间对所有用户可见，私有空间仅对成员可见</div>
+                    <div class="form-hint">{{ $t('settings.workspaces.publicAccessHint') }}</div>
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -118,10 +118,12 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { Plus } from 'lucide-vue-next'
 import { workspaceApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
 
+const { t } = useI18n()
 const loading = ref(false)
 const updating = ref(false)
 const searchText = ref('')
@@ -147,14 +149,14 @@ const formState = reactive({
 
 const columns = [
     { title: '', key: 'icon', width: 50 },
-    { title: '空间名称', dataIndex: 'name', key: 'name' },
+    { title: t('settings.workspaces.spaceName'), dataIndex: 'name', key: 'name' },
     { title: 'Key', dataIndex: 'key', key: 'key' },
-    // { title: '描述', dataIndex: 'description', key: 'description' },
-    { title: '页面数', key: 'pageCount' },
-    { title: '类型', key: 'type' },
-    { title: '创建者', dataIndex: 'creatorName', key: 'creatorName' },
-    { title: '创建时间', key: 'createdAt' },
-    { title: '操作', key: 'action', width: 150 }
+    // { title: t('settings.workspaces.description'), dataIndex: 'description', key: 'description' },
+    { title: t('settings.workspaces.pageCount'), key: 'pageCount' },
+    { title: t('settings.workspaces.type'), key: 'type' },
+    { title: t('settings.workspaces.creator'), dataIndex: 'creatorName', key: 'creatorName' },
+    { title: t('settings.workspaces.createdAt'), key: 'createdAt' },
+    { title: t('common.action'), key: 'action', width: 150 }
 ]
 
 const spaceColors = [
@@ -190,7 +192,7 @@ const loadWorkspaces = async () => {
         }))
         pagination.total = data?.total || 0
     } catch (error) {
-        message.error('加载空间列表失败')
+        message.error(t('settings.workspaces.loadFailed'))
     } finally {
         loading.value = false
     }
@@ -235,11 +237,11 @@ const handleUpdate = async () => {
             iconStyle: formState.iconStyle,
             isPublic: formState.isPublic
         })
-        message.success('空间更新成功')
+        message.success(t('settings.workspaces.updateSuccess'))
         editModalVisible.value = false
         loadWorkspaces()
     } catch (error) {
-        message.error('更新空间失败')
+        message.error(t('settings.workspaces.updateFailed'))
     } finally {
         updating.value = false
     }
@@ -248,10 +250,10 @@ const handleUpdate = async () => {
 const handleDelete = async (id) => {
     try {
         await workspaceApi.remove(id)
-        message.success('空间删除成功')
+        message.success(t('settings.workspaces.deleteSuccess'))
         loadWorkspaces()
     } catch (error) {
-        message.error('删除空间失败')
+        message.error(t('settings.workspaces.deleteFailed'))
     }
 }
 

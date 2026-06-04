@@ -7,6 +7,7 @@ import Setup from '../views/Setup.vue'
 import WorkspaceHome from '../views/Workspace/Index.vue'
 import {workspaceApi} from '../api'
 import { loadSiteInfo, useSiteInfo } from '../store/site'
+import i18n from '../i18n'
 
 const ErrorPage = {
     render() {
@@ -17,15 +18,15 @@ const ErrorPage = {
                 style: 'text-align:center;padding:48px;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);max-width:480px;'
             }, [
                 h('div', {style: 'font-size:48px;margin-bottom:16px;'}, '⚠'),
-                h('h2', {style: 'color:#172b4d;margin:0 0 8px;'}, '服务不可用'),
-                h('p', {style: 'color:#6b778c;font-size:14px;margin:0 0 24px;'}, '无法连接到后端服务，请检查服务是否已启动。'),
+                h('h2', {style: 'color:#172b4d;margin:0 0 8px;'}, i18n.global.t('error.title')),
+                h('p', {style: 'color:#6b778c;font-size:14px;margin:0 0 24px;'}, i18n.global.t('error.description')),
                 h('button', {
                     style: 'background:#0049b0;color:white;border:none;padding:10px 24px;border-radius:6px;cursor:pointer;font-size:14px;',
                     onClick: () => {
                         window.__resetInstallCheck();
                         window.location.href = '/'
                     }
-                }, '重试')
+                }, i18n.global.t('error.retry'))
             ])
         ])
     }

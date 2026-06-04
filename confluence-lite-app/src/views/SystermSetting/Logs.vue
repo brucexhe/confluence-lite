@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>系统日志</h1>
-            <p class="page-description">查看系统运行日志和审计记录</p>
+            <h1>{{ $t('settings.logsDetail.title') }}</h1>
+            <p class="page-description">{{ $t('settings.logsDetail.description') }}</p>
         </div>
 
         <div class="page-content">
@@ -17,7 +17,7 @@
                     <a-range-picker v-model:value="dateRange" @change="loadLogs" />
                     <a-input-search
                         v-model:value="searchText"
-                        placeholder="搜索日志内容"
+                        :placeholder="$t('settings.logsDetail.searchPlaceholder')"
                         style="width: 250px"
                         @search="loadLogs"
                     />
@@ -25,11 +25,11 @@
                 <a-space>
                     <a-button @click="loadLogs" :loading="loading">
                         <RotateCw :size="14" style="vertical-align: middle" />
-                        刷新
+                        {{ $t('common.refresh') }}
                     </a-button>
                     <a-button @click="exportLogs">
                         <Download :size="14" style="vertical-align: middle" />
-                        导出
+                        {{ $t('settings.logsDetail.exportLogs') }}
                     </a-button>
                 </a-space>
             </div>
@@ -47,7 +47,7 @@
                         <pre>{{ log.details }}</pre>
                     </div>
                 </div>
-                <a-empty v-if="logs.length === 0 && !loading" description="暂无日志" />
+                <a-empty v-if="logs.length === 0 && !loading" :description="$t('settings.logsDetail.noLogs')" />
             </div>
 
             <div class="pagination-wrapper">
@@ -56,7 +56,7 @@
                     v-model:pageSize="pagination.pageSize"
                     :total="pagination.total"
                     :show-size-changer="true"
-                    :show-total="(total) => `共 ${total} 条`"
+                    :show-total="(total) => t('common.total', { n: total })"
                     @change="loadLogs"
                 />
             </div>
@@ -65,11 +65,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { RotateCw, Download } from 'lucide-vue-next'
 import { systemSettingApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const logLevel = ref('')
@@ -83,13 +86,13 @@ const toggleLogDetail = (index) => {
     expandedLogs.value[index] = !expandedLogs.value[index]
 }
 
-const logLevelOptions = [
-    { label: '全部级别', value: '' },
+const logLevelOptions = computed(() => [
+    { label: t('settings.logsDetail.allLevels'), value: '' },
     { label: 'ERROR', value: 'ERROR' },
     { label: 'WARN', value: 'WARN' },
     { label: 'INFO', value: 'INFO' },
     { label: 'DEBUG', value: 'DEBUG' }
-]
+])
 
 const pagination = reactive({
     current: 1,
@@ -162,9 +165,9 @@ const exportLogs = async () => {
             endDate: dateRange.value?.[1]?.toISOString()
         }
         await systemSettingApi.exportLogs(params)
-        message.success('日志导出成功')
+        message.success(t('settings.logsDetail.exportSuccess'))
     } catch (error) {
-        message.error('导出日志失败')
+        message.error(t('settings.logsDetail.exportFailed'))
     }
 }
 

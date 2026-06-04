@@ -1,62 +1,62 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>备份与还原</h1>
-            <p class="page-description">管理系统数据备份和恢复</p>
+            <h1>{{ $t('settings.backup.title') }}</h1>
+            <p class="page-description">{{ $t('settings.backup.description') }}</p>
         </div>
 
         <div class="page-content">
             <!-- 自动备份配置 -->
             <div class="section">
-                <h3 class="section-title">自动备份配置</h3>
+                <h3 class="section-title">{{ $t('settings.backup.autoBackupConfig') }}</h3>
                 <a-spin :spinning="configLoading">
                     <a-form
                         :label-col="{ style: { width: '120px' } }"
                         :wrapper-col="{ span: 16 }"
                     >
-                        <a-form-item label="启用自动备份">
+                        <a-form-item :label="$t('settings.backup.enableAutoBackup')">
                             <a-switch
                                 v-model:checked="backupConfig.enabled"
-                                checked-children="开启"
-                                un-checked-children="关闭"
+                                :checked-children="$t('common.enabled')"
+                                :un-checked-children="$t('common.disabled')"
                             />
-                            <div class="form-hint">定期自动创建系统备份</div>
+                            <div class="form-hint">{{ $t('settings.backup.autoBackupHint') }}</div>
                         </a-form-item>
 
-                        <a-form-item label="备份间隔">
+                        <a-form-item :label="$t('settings.backup.backupInterval')">
                             <a-input-number
                                 v-model:value="backupConfig.intervalDays"
                                 :min="1"
                                 :max="365"
                                 style="width: 120px"
                             />
-                            <span style="margin-left: 8px">天</span>
-                            <div class="form-hint">自动备份的时间间隔</div>
+                            <span style="margin-left: 8px">{{ $t('settings.backup.days') }}</span>
+                            <div class="form-hint">{{ $t('settings.backup.backupIntervalHint') }}</div>
                         </a-form-item>
 
-                        <a-form-item label="备份内容">
+                        <a-form-item :label="$t('settings.backup.backupContent')">
                             <a-checkbox-group v-model:value="backupConfig.content">
-                                <a-checkbox value="database">数据库</a-checkbox>
-                                <a-checkbox value="attachments">附件文件</a-checkbox>
-                                <a-checkbox value="config">系统配置</a-checkbox>
+                                <a-checkbox value="database">{{ $t('settings.backup.database') }}</a-checkbox>
+                                <a-checkbox value="attachments">{{ $t('settings.backup.attachments') }}</a-checkbox>
+                                <a-checkbox value="config">{{ $t('settings.backup.systemConfig') }}</a-checkbox>
                             </a-checkbox-group>
-                            <div class="form-hint">选择自动备份时包含的内容</div>
+                            <div class="form-hint">{{ $t('settings.backup.backupContentHint') }}</div>
                         </a-form-item>
 
-                        <a-form-item label="保留天数">
+                        <a-form-item :label="$t('settings.backup.retentionDays')">
                             <a-input-number
                                 v-model:value="backupConfig.retentionDays"
                                 :min="1"
                                 :max="365"
                                 style="width: 120px"
                             />
-                            <span style="margin-left: 8px">天</span>
-                            <div class="form-hint">超过此天数的备份将自动删除</div>
+                            <span style="margin-left: 8px">{{ $t('settings.backup.days') }}</span>
+                            <div class="form-hint">{{ $t('settings.backup.retentionDaysHint') }}</div>
                         </a-form-item>
 
                         <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 120px">
                             <a-button type="primary" :loading="configSaving" @click="saveBackupConfig">
-                                保存配置
+                                {{ $t('settings.backup.saveConfig') }}
                             </a-button>
                         </a-form-item>
                     </a-form>
@@ -65,22 +65,22 @@
 
             <!-- 创建备份 -->
             <div class="section">
-                <h3 class="section-title">创建备份</h3>
+                <h3 class="section-title">{{ $t('settings.backup.createBackup') }}</h3>
                 <a-space direction="vertical" style="width: 100%">
                     <a-checkbox-group v-model:value="backupOptions">
-                        <a-checkbox value="database">数据库</a-checkbox>
-                        <a-checkbox value="attachments">附件文件</a-checkbox>
-                        <a-checkbox value="config">系统配置</a-checkbox>
+                        <a-checkbox value="database">{{ $t('settings.backup.database') }}</a-checkbox>
+                        <a-checkbox value="attachments">{{ $t('settings.backup.attachments') }}</a-checkbox>
+                        <a-checkbox value="config">{{ $t('settings.backup.systemConfig') }}</a-checkbox>
                     </a-checkbox-group>
                     <a-space>
                         <a-input
                             v-model:value="backupName"
-                            placeholder="备份名称（可选）"
+                            :placeholder="$t('settings.backup.backupNamePlaceholder')"
                             style="width: 250px"
                         />
                         <a-button type="primary" :loading="creating" @click="createBackup">
                             <Plus :size="14" style="vertical-align: middle" />
-                            创建备份
+                            {{ $t('settings.backup.createBackup') }}
                         </a-button>
                     </a-space>
                 </a-space>
@@ -89,10 +89,10 @@
             <!-- 备份列表 -->
             <div class="section">
                 <div class="section-title-row">
-                    <h3 class="section-title" style="margin: 0">备份列表</h3>
+                    <h3 class="section-title" style="margin: 0">{{ $t('settings.backup.backupList') }}</h3>
                     <a-button class="refresh" size="small" :loading="loading" @click="loadBackups">
                         <RefreshCw :size="14" style="vertical-align: middle" />
-                        刷新状态
+                        {{ $t('settings.backup.refreshStatus') }}
                     </a-button>
                 </div>
                 <a-table
@@ -128,7 +128,7 @@
                                     :disabled="record.status !== 'completed'"
                                     @click="restoreBackup(record)"
                                 >
-                                    还原
+                                    {{ $t('settings.backup.restore') }}
                                 </a-button>
                                 <a-button
                                     type="link"
@@ -136,13 +136,13 @@
                                     :disabled="record.status !== 'completed'"
                                     @click="downloadBackup(record)"
                                 >
-                                    下载
+                                    {{ $t('settings.backup.download') }}
                                 </a-button>
                                 <a-popconfirm
-                                    title="确定要删除该备份吗？"
+                                    :title="$t('settings.backup.confirmDelete')"
                                     @confirm="deleteBackup(record.id)"
                                 >
-                                    <a-button type="link" size="small" danger>删除</a-button>
+                                    <a-button type="link" size="small" danger>{{ $t('common.delete') }}</a-button>
                                 </a-popconfirm>
                             </a-space>
                         </template>
@@ -153,20 +153,20 @@
             <!-- 还原弹窗 -->
             <a-modal
                 v-model:open="restoreModalVisible"
-                title="还原备份"
+                :title="$t('settings.backup.restoreBackup')"
                 @ok="confirmRestoreBackup"
                 :confirm-loading="restoring"
             >
                 <a-alert
-                    message="警告"
-                    description="还原操作将覆盖当前数据，请确保已创建当前数据的备份。"
+                    :message="$t('settings.backup.warning')"
+                    :description="$t('settings.backup.restoreWarning')"
                     type="warning"
                     show-icon
                     style="margin-bottom: 16px"
                 />
-                <p>确定要还原备份 <strong>{{ selectedBackup?.name }}</strong> 吗？</p>
+                <p>{{ $t('settings.backup.confirmRestoreText') }} <strong>{{ selectedBackup?.name }}</strong>？</p>
                 <a-checkbox v-model:checked="confirmRestore">
-                    我已了解风险，确认还原
+                    {{ $t('settings.backup.confirmRestoreCheck') }}
                 </a-checkbox>
             </a-modal>
         </div>
@@ -174,11 +174,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { Plus, RefreshCw } from 'lucide-vue-next'
 import { systemSettingApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const creating = ref(false)
@@ -200,14 +203,14 @@ const backupConfig = ref({
 
 const backups = ref([])
 
-const columns = [
-    { title: '备份名称', dataIndex: 'name', key: 'name' },
-    { title: '类型', dataIndex: 'type', key: 'type' },
-    { title: '大小', key: 'size' },
-    { title: '状态', key: 'status' },
-    { title: '创建时间', key: 'createdAt' },
-    { title: '操作', key: 'action', width: 200 }
-]
+const columns = computed(() => [
+    { title: t('settings.backup.fileName'), dataIndex: 'name', key: 'name' },
+    { title: t('common.type'), dataIndex: 'type', key: 'type' },
+    { title: t('settings.backup.size'), key: 'size' },
+    { title: t('common.status'), key: 'status' },
+    { title: t('settings.backup.createdAt'), key: 'createdAt' },
+    { title: t('common.actions'), key: 'action', width: 200 }
+])
 
 const formatBytes = (bytes) => {
     if (!bytes) return '-'
@@ -223,7 +226,7 @@ const getStatusColor = (status) => {
 }
 
 const getStatusText = (status) => {
-    const texts = { completed: '完成', processing: '处理中', failed: '失败' }
+    const texts = { completed: t('common.success'), processing: t('settings.backup.processing'), failed: t('common.failed') }
     return texts[status] || status
 }
 
@@ -248,16 +251,16 @@ const loadBackupConfig = async () => {
 
 const saveBackupConfig = async () => {
     if (backupConfig.value.content.length === 0) {
-        message.warning('请至少选择一种备份内容')
+        message.warning(t('settings.backup.selectContentWarning'))
         return
     }
 
     configSaving.value = true
     try {
         await systemSettingApi.updateBackupConfig(backupConfig.value)
-        message.success('备份配置保存成功')
+        message.success(t('settings.backup.configSaveSuccess'))
     } catch (error) {
-        message.error('保存备份配置失败')
+        message.error(t('settings.backup.configSaveFailed'))
     } finally {
         configSaving.value = false
     }
@@ -272,7 +275,7 @@ const loadBackups = async () => {
                 ...item,
                 size: item.fileSize,
                 description: item.description || '',
-                type: item.type || '完整'
+                type: item.type || t('settings.backup.fullBackup')
             })) || []
         }
     } catch (error) {
@@ -285,7 +288,7 @@ const loadBackups = async () => {
 
 const createBackup = async () => {
     if (backupOptions.value.length === 0) {
-        message.warning('请至少选择一种备份类型')
+        message.warning(t('settings.backup.selectTypeWarning'))
         return
     }
 
@@ -295,11 +298,11 @@ const createBackup = async () => {
             name: backupName.value || undefined,
             options: backupOptions.value
         })
-        message.success('备份创建成功')
+        message.success(t('settings.backup.backupCreated'))
         backupName.value = ''
         loadBackups()
     } catch (error) {
-        message.error('创建备份失败')
+        message.error(t('settings.backup.backupCreateFailed'))
     } finally {
         creating.value = false
     }
@@ -313,7 +316,7 @@ const restoreBackup = (backup) => {
 
 const confirmRestoreBackup = async () => {
     if (!confirmRestore.value) {
-        message.warning('请确认还原操作')
+        message.warning(t('settings.backup.confirmRestoreWarning'))
         return
     }
 
@@ -322,12 +325,12 @@ const confirmRestoreBackup = async () => {
         await systemSettingApi.restoreBackup(selectedBackup.value.id, {
             confirmed: true
         })
-        message.success('备份还原成功，系统将重启')
+        message.success(t('settings.backup.restoreSuccess'))
         setTimeout(() => {
             window.location.href = '/'
         }, 2000)
     } catch (error) {
-        message.error('还原备份失败')
+        message.error(t('settings.backup.restoreFailed'))
     } finally {
         restoring.value = false
         restoreModalVisible.value = false
@@ -341,10 +344,10 @@ const downloadBackup = (backup) => {
 const deleteBackup = async (id) => {
     try {
         await systemSettingApi.deleteBackup(id)
-        message.success('备份删除成功')
+        message.success(t('settings.backup.deleteSuccess'))
         loadBackups()
     } catch (error) {
-        message.error('删除备份失败')
+        message.error(t('settings.backup.deleteFailed'))
     }
 }
 

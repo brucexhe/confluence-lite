@@ -1,14 +1,14 @@
 <template>
     <div class="profile-page">
         <div class="profile-header">
-            <h1 class="profile-title">个人中心</h1>
-            <p class="profile-desc">管理您的个人账号信息与安全设置</p>
+            <h1 class="profile-title">{{ $t('profile.title') }}</h1>
+            <p class="profile-desc">{{ $t('profile.description') }}</p>
         </div>
 
         <div class="profile-body">
             <a-tabs v-model:activeKey="activeTab" class="profile-tabs">
                 <!-- 基本资料 -->
-                <a-tab-pane key="basic" tab="基本资料">
+                <a-tab-pane key="basic" :tab="$t('profile.basicInfo')">
                     <div class="tab-content">
                         <a-spin :spinning="loading">
                             <div class="profile-layout">
@@ -18,7 +18,7 @@
                                         <UserAvatar :user="userForm" :size="120" shape="square" class="avatar-img" />
                                         <div class="avatar-overlay" @click="triggerAvatarUpload">
                                             <Camera :size="20" />
-                                            <span>更换头像</span>
+                                            <span>{{ $t('profile.changeAvatar') }}</span>
                                         </div>
                                     </div>
                                     <input
@@ -29,39 +29,39 @@
                                         @change="handleAvatarChange"
                                     />
                                     <div class="avatar-tips">
-                                        <p>支持 JPG, PNG 格式</p>
-                                        <p>建议尺寸 200x200，且不超过 2MB</p>
+                                        <p>{{ $t('profile.avatarTip1') }}</p>
+                                        <p>{{ $t('profile.avatarTip2') }}</p>
                                     </div>
                                 </div>
 
                                 <!-- 右侧表单 -->
                                 <div class="form-section">
                                     <a-form :model="userForm" layout="vertical" @finish="handleUpdateProfile">
-                                        <a-form-item label="用户名" name="username">
+                                        <a-form-item :label="$t('profile.username')" name="username">
                                             <a-input
                                                 v-model:value="userForm.username"
                                                 disabled
                                                 class="premium-input"
                                             ></a-input>
-                                            <div class="field-hint">用户名作为唯一标识，不可修改</div>
+                                            <div class="field-hint">{{ $t('profile.usernameHint') }}</div>
                                         </a-form-item>
 
                                         <a-form-item
-                                            label="昵称"
+                                            :label="$t('profile.displayName')"
                                             name="displayName"
-                                            :rules="[{ required: true, message: '请输入昵称' }]"
+                                            :rules="[{ required: true, message: t('profile.displayNameRequired') }]"
                                         >
                                             <a-input
                                                 v-model:value="userForm.displayName"
-                                                placeholder="起个好听的名字吧"
+                                                :placeholder="$t('profile.displayNamePlaceholder')"
                                                 class="premium-input"
                                             ></a-input>
                                         </a-form-item>
 
                                         <a-form-item
-                                            label="电子邮箱"
+                                            :label="$t('profile.email')"
                                             name="email"
-                                            :rules="[{ type: 'email', message: '请输入正确的邮箱格式' }]"
+                                            :rules="[{ type: 'email', message: t('profile.emailInvalid') }]"
                                         >
                                             <a-input
                                                 v-model:value="userForm.email"
@@ -77,7 +77,7 @@
                                                 :loading="saving"
                                                 class="premium-btn"
                                             >
-                                                保存基本信息
+                                                {{ $t('profile.saveBasicInfo') }}
                                             </a-button>
                                         </a-form-item>
                                     </a-form>
@@ -88,11 +88,11 @@
                 </a-tab-pane>
 
                 <!-- 安全设置 -->
-                <a-tab-pane key="security" tab="安全设置">
+                <a-tab-pane key="security" :tab="$t('profile.securitySettings')">
                     <div class="tab-content security-tab">
                         <div class="section-info">
-                            <h3>修改密码</h3>
-                            <p>定期更换密码有助于保护账户安全</p>
+                            <h3>{{ $t('profile.changePassword') }}</h3>
+                            <p>{{ $t('profile.changePasswordHint') }}</p>
                         </div>
 
                         <a-form
@@ -102,13 +102,13 @@
                             class="security-form"
                         >
                             <a-form-item
-                                label="当前密码"
+                                :label="$t('profile.currentPassword')"
                                 name="oldPassword"
-                                :rules="[{ required: true, message: '请输入当前密码' }]"
+                                :rules="[{ required: true, message: t('profile.currentPasswordRequired') }]"
                             >
                                 <a-input-password
                                     v-model:value="passwordForm.oldPassword"
-                                    placeholder="验证身份"
+                                    :placeholder="$t('profile.verifyIdentity')"
                                     class="premium-input"
                                 >
                                     <template #prefix><Lock :size="16" class="input-icon" /></template>
@@ -118,16 +118,16 @@
                             <a-divider />
 
                             <a-form-item
-                                label="新密码"
+                                :label="$t('profile.newPassword')"
                                 name="newPassword"
                                 :rules="[
-                                    { required: true, message: '请输入新密码' },
-                                    { min: 6, message: '密码长度至少 6 位' },
+                                    { required: true, message: t('profile.newPasswordRequired') },
+                                    { min: 6, message: t('profile.passwordMinLength') },
                                 ]"
                             >
                                 <a-input-password
                                     v-model:value="passwordForm.newPassword"
-                                    placeholder="设置新密码"
+                                    :placeholder="$t('profile.setNewPassword')"
                                     class="premium-input"
                                 >
                                     <template #prefix><Key :size="16" class="input-icon" /></template>
@@ -135,16 +135,16 @@
                             </a-form-item>
 
                             <a-form-item
-                                label="确认新密码"
+                                :label="$t('profile.confirmNewPassword')"
                                 name="confirmPassword"
                                 :rules="[
-                                    { required: true, message: '请再次确认新密码' },
+                                    { required: true, message: t('profile.confirmNewPasswordRequired') },
                                     { validator: validateConfirmPassword },
                                 ]"
                             >
                                 <a-input-password
                                     v-model:value="passwordForm.confirmPassword"
-                                    placeholder="重复新密码"
+                                    :placeholder="$t('profile.repeatNewPassword')"
                                     class="premium-input"
                                 >
                                     <template #prefix><Key :size="16" class="input-icon" /></template>
@@ -158,7 +158,7 @@
                                     :loading="changingPassword"
                                     class="premium-btn"
                                 >
-                                    更新登录密码
+                                    {{ $t('profile.updatePassword') }}
                                 </a-button>
                             </a-form-item>
                         </a-form>
@@ -172,11 +172,13 @@
 <script setup>
 import { ref, onMounted, reactive } from "vue";
 import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
 import { User, Mail, Lock, Key, Camera, Smile, Upload } from "lucide-vue-next";
 import { userApi, uploadApi } from "@/api";
 import { useAuthStore } from "@/store/auth";
 import UserAvatar from "@/components/UserAvatar.vue";
 
+const { t } = useI18n();
 const authStore = useAuthStore();
 const activeTab = ref("basic");
 const loading = ref(false);
@@ -214,8 +216,8 @@ const loadUserData = async () => {
             userForm.avatarUrl = data.avatarUrl || "";
         }
     } catch (error) {
-        console.error("加载用户信息失败:", error);
-        message.error("无法获取用户信息");
+        console.error("Failed to load user info:", error);
+        message.error(t('profile.loadUserFailed'));
     } finally {
         loading.value = false;
     }
@@ -240,10 +242,10 @@ const handleUpdateProfile = async () => {
             localStorage.setItem("auth_user", JSON.stringify(authStore.user));
         }
 
-        message.success("资料已更新");
+        message.success(t('profile.profileUpdated'));
     } catch (error) {
-        console.error("更新资料失败:", error);
-        message.error(error.message || "更新失败，请重试");
+        console.error("Failed to update profile:", error);
+        message.error(error.message || t('profile.updateFailed'));
     } finally {
         saving.value = false;
     }
@@ -257,14 +259,14 @@ const handleChangePassword = async () => {
             oldPassword: passwordForm.oldPassword,
             newPassword: passwordForm.newPassword,
         });
-        message.success("密码修改成功，请下次登录时使用新密码");
+        message.success(t('profile.passwordChanged'));
         // 重置表单
         passwordForm.oldPassword = "";
         passwordForm.newPassword = "";
         passwordForm.confirmPassword = "";
     } catch (error) {
-        console.error("修改密码失败:", error);
-        message.error(error.message || "原密码错误或更新失败");
+        console.error("Failed to change password:", error);
+        message.error(error.message || t('profile.passwordChangeFailed'));
     } finally {
         changingPassword.value = false;
     }
@@ -273,7 +275,7 @@ const handleChangePassword = async () => {
 // 密码确认验证
 const validateConfirmPassword = async (_rule, value) => {
     if (value && value !== passwordForm.newPassword) {
-        throw new Error("两次输入的密码不一致");
+        throw new Error(t('profile.passwordMismatch'));
     }
 };
 
@@ -288,12 +290,12 @@ const handleAvatarChange = async (event) => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-        message.error("请选择图片文件");
+        message.error(t('profile.selectImageFile'));
         return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-        message.error("图片过大，不能超过 2MB");
+        message.error(t('profile.imageTooLarge'));
         return;
     }
 
@@ -302,10 +304,10 @@ const handleAvatarChange = async (event) => {
         // 使用通用上传接口
         const url = await uploadApi.upload(file);
         userForm.avatarUrl = url;
-        message.success("头像上传成功，点击保存按钮生效");
+        message.success(t('profile.avatarUploadSuccess'));
     } catch (error) {
-        console.error("上传头像失败:", error);
-        message.error("头像上传失败");
+        console.error("Failed to upload avatar:", error);
+        message.error(t('profile.avatarUploadFailed'));
     } finally {
         uploading.value = false;
         // 清空 input 方便下次选择同一文件

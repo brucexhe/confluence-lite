@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>站点设置</h1>
-            <p class="page-description">配置站点的基本信息和默认选项</p>
+            <h1>{{ $t('settings.siteSettings') }}</h1>
+            <p class="page-description">{{ $t('settings.siteSettingsDescription') }}</p>
         </div>
 
         <a-spin :spinning="loading">
@@ -14,30 +14,30 @@
                 @finish="handleSubmit"
             >
                 <!-- 站点名称 -->
-                <a-form-item label="站点名称" name="siteName" :rules="[{ required: true, message: '请输入站点名称' }]">
+                <a-form-item :label="$t('settings.siteName')" name="siteName" :rules="[{ required: true, message: $t('settings.siteNameRequired') }]">
                     <a-input
                         v-model:value="formState.siteName"
-                        placeholder="例如：我的知识库"
+                        :placeholder="$t('settings.siteNamePlaceholder')"
                         style="max-width: 400px"
                     />
-                    <div class="form-hint">显示在浏览器标题和页面头部的名称</div>
+                    <div class="form-hint">{{ $t('settings.siteNameHint') }}</div>
                 </a-form-item>
 
                 <!-- 站点LOGO -->
-                <a-form-item label="站点LOGO" name="siteLogo">
+                <a-form-item :label="$t('settings.siteLogo')" name="siteLogo">
                     <div class="logo-upload-container">
                         <div v-if="formState.siteLogo" class="logo-preview">
-                            <img :src="formState.siteLogo" alt="站点LOGO" />
+                            <img :src="formState.siteLogo" :alt="$t('settings.siteLogo')" />
                             <div class="logo-preview-overlay">
                                 <a-space>
-                                    <a-button type="primary" size="small" @click="triggerUpload">更换</a-button>
-                                    <a-button danger size="small" @click="removeLogo">删除</a-button>
+                                    <a-button type="primary" size="small" @click="triggerUpload">{{ $t('settings.change') }}</a-button>
+                                    <a-button danger size="small" @click="removeLogo">{{ $t('common.delete') }}</a-button>
                                 </a-space>
                             </div>
                         </div>
                         <div v-else class="logo-upload-placeholder" @click="triggerUpload">
                             <Plus :size="24" />
-                            <span>上传LOGO</span>
+                            <span>{{ $t('settings.uploadLogo') }}</span>
                         </div>
                         <input
                             ref="fileInputRef"
@@ -47,71 +47,71 @@
                             @change="handleFileChange"
                         />
                     </div>
-                    <div class="form-hint">建议尺寸：200x200像素，支持PNG、JPG、GIF格式，文件大小不超过2MB</div>
+                    <div class="form-hint">{{ $t('settings.logoHint') }}</div>
                 </a-form-item>
                 <!-- 站点描述 -->
-                <a-form-item label="站点描述" name="siteDescription">
+                <a-form-item :label="$t('settings.siteDescription')" name="siteDescription">
                     <a-textarea
                         v-model:value="formState.siteDescription"
-                        placeholder="简要描述您的站点用途"
+                        :placeholder="$t('settings.siteDescriptionPlaceholder')"
                         :rows="2"
                         style="max-width: 400px"
                     />
-                    <div class="form-hint">用于 SEO 和站点说明</div>
+                    <div class="form-hint">{{ $t('settings.siteDescriptionHint') }}</div>
                 </a-form-item>
 
                 <!-- 域名 -->
-                <a-form-item label="站点域名" name="siteDomain">
+                <a-form-item :label="$t('settings.siteDomain')" name="siteDomain">
                     <a-input
                         v-model:value="formState.siteDomain"
-                        placeholder="例如：wiki.example.com"
+                        :placeholder="$t('settings.siteDomainPlaceholder')"
                         style="max-width: 400px"
                     />
-                    <div class="form-hint">用于生成链接和通知邮件</div>
+                    <div class="form-hint">{{ $t('settings.siteDomainHint') }}</div>
                 </a-form-item>
 
                 <!-- 默认语言 -->
-                <a-form-item label="默认语言" name="defaultLanguage">
+                <a-form-item :label="$t('settings.defaultLanguage')" name="defaultLanguage">
                     <a-select
                         v-model:value="formState.defaultLanguage"
                         style="max-width: 200px"
                         :options="languageOptions"
                     ></a-select>
-                    <div class="form-hint">新用户的默认界面语言</div>
+                    <div class="form-hint">{{ $t('settings.defaultLanguageHint') }}</div>
                 </a-form-item>
 
                 <!-- 默认空 -->
-                <a-form-item label="默认空间" name="defaultHomePage">
+                <a-form-item :label="$t('settings.defaultSpace')" name="defaultHomePage">
                     <a-select
                         v-model:value="formState.defaultHomePage"
-                        placeholder="选择默认空"
+                        :placeholder="$t('settings.selectDefaultSpace')"
                         style="max-width: 400px"
                         :options="homePageOptions"
                         :field-names="{ label: 'name', value: 'id' }"
                         show-search
                         :filter-option="filterHomePage"
                     ></a-select>
-                    <div class="form-hint">用户登录后默认显示的空间</div>
+                    <div class="form-hint">{{ $t('settings.defaultSpaceHint') }}</div>
                 </a-form-item>
 
                 <!-- 时区设置 -->
-                <a-form-item label="时区" name="timezone">
+                <a-form-item :label="$t('settings.timezone')" name="timezone">
                     <a-select
                         v-model:value="formState.timezone"
                         show-search
-                        placeholder="选择时区"
+                        :placeholder="$t('settings.selectTimezone')"
                         style="max-width: 400px"
                         :options="timezoneOptions"
                         :filter-option="filterTimezone"
                     ></a-select>
-                    <div class="form-hint">用于显示日期和时间的时区</div>
-                </a-form-item> 
+                    <div class="form-hint">{{ $t('settings.timezoneHint') }}</div>
+                </a-form-item>
 
                 <!-- 提交按钮 -->
                 <a-form-item style="margin-left: 100px">
                     <a-space>
-                        <a-button type="primary" html-type="submit" :loading="saving">保存设置</a-button>
-                        <a-button @click="handleReset">重置</a-button>
+                        <a-button type="primary" html-type="submit" :loading="saving">{{ $t('settings.saveSettings') }}</a-button>
+                        <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
                     </a-space>
                 </a-form-item>
             </a-form>
@@ -122,9 +122,11 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
 import { Plus } from "lucide-vue-next";
 import { systemSettingApi, workspaceApi, pageApi, attachmentApi, uploadApi } from "@/api";
 
+const { t } = useI18n();
 const loading = ref(false);
 const saving = ref(false);
 const fileInputRef = ref();
@@ -232,10 +234,10 @@ const handleSubmit = async () => {
     saving.value = true;
     try {
         await systemSettingApi.updateSiteConfig(formState.value);
-        message.success("设置保存成功");
+        message.success(t('settings.saveSuccess'));
     } catch (error) {
         console.error("保存设置失败:", error);
-        message.error("保存设置失败，请稍后重试");
+        message.error(t('settings.saveFailed'));
     } finally {
         saving.value = false;
     }
@@ -244,7 +246,7 @@ const handleSubmit = async () => {
 // 重置表单
 const handleReset = () => {
     loadConfig();
-    message.info("已重置为服务器配置");
+    message.info(t('settings.resetToServer'));
 };
 
 // 触发文件选择
@@ -259,13 +261,13 @@ const handleFileChange = async (event) => {
 
     // 验证文件类型
     if (!file.type.startsWith("image/")) {
-        message.error("请选择图片文件");
+        message.error(t('settings.selectImageFile'));
         return;
     }
 
     // 验证文件大小（2MB）
     if (file.size > 2 * 1024 * 1024) {
-        message.error("图片大小不能超过2MB");
+        message.error(t('settings.imageSizeLimit'));
         return;
     }
 
@@ -273,10 +275,10 @@ const handleFileChange = async (event) => {
     try {
         const result = await uploadApi.upload(file);
         formState.value.siteLogo = result;
-        message.success("LOGO上传成功");
+        message.success(t('settings.logoUploadSuccess'));
     } catch (error) {
         console.error("上传LOGO失败:", error);
-        message.error("上传LOGO失败，请稍后重试");
+        message.error(t('settings.logoUploadFailed'));
     } finally {
         uploadingLogo.value = false;
         // 清空文件输入
@@ -289,7 +291,7 @@ const handleFileChange = async (event) => {
 // 删除LOGO
 const removeLogo = () => {
     formState.value.siteLogo = "";
-    message.info("已删除LOGO");
+    message.info(t('settings.logoDeleted'));
 };
 
 onMounted(() => {

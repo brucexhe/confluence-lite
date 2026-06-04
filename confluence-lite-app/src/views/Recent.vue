@@ -1,8 +1,8 @@
 <template>
   <div class="recent-page">
     <div class="header">
-      <h1>最近浏览</h1>
-      <p class="subtitle">查看您最近访问过的页面</p>
+      <h1>{{ $t('recent.title') }}</h1>
+      <p class="subtitle">{{ $t('recent.description') }}</p>
     </div>
 
     <div class="content">
@@ -23,9 +23,9 @@
                 </template>
                 <template #description>
                   <div class="item-meta">
-                    <span class="author">由 {{ item.creatorName }} 创建</span>
+                    <span class="author">{{ $t('recent.createdBy', { name: item.creatorName }) }}</span>
                     <span class="divider">•</span>
-                    <span class="visit-time">最近访问于 {{ formatTime(item.visitedAt) }}</span>
+                    <span class="visit-time">{{ $t('recent.lastVisited', { time: formatTime(item.visitedAt) }) }}</span>
                   </div>
                 </template>
                 <template #avatar>
@@ -41,7 +41,7 @@
           </template>
           <template #empty>
             <div class="empty-state">
-              <a-empty description="暂无最近浏览记录" />
+              <a-empty :description="$t('recent.empty')" />
             </div>
           </template>
         </a-list>
@@ -55,10 +55,12 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { recentApi } from '../api';
 import { message } from 'ant-design-vue';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
 const recentPages = ref([]);
 const loading = ref(true);
+const { t, locale } = useI18n();
 
 const fetchRecents = async () => {
   try {
@@ -67,7 +69,7 @@ const fetchRecents = async () => {
     recentPages.value = data || [];
   } catch (err) {
     console.error('获取最近访问失败:', err);
-    message.error('获取最近访问列表失败');
+    message.error(t('recent.loadFailed'));
   } finally {
     loading.value = false;
   }
@@ -84,16 +86,16 @@ const formatTime = (dateStr) => {
   const diff = now - date;
   
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return '刚刚';
-  if (minutes < 60) return `${minutes} 分钟前`;
+  if (minutes < 1) return t('common.justNow');
+  if (minutes < 60) return t('common.minutesAgo', { n: minutes });
   
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours} 小时前`;
+  if (hours < 24) return t('common.hoursAgo', { n: hours });
   
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} 天前`;
+  if (days < 7) return t('common.daysAgo', { n: days });
   
-  return date.toLocaleDateString('zh-CN', { 
+  return date.toLocaleDateString(locale.value, {
     month: 'long', 
     day: 'numeric',
     hour: '2-digit',

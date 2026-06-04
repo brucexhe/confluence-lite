@@ -12,7 +12,7 @@
           </div>
           <h1>{{ siteName }}</h1>
         </div>
-        <p class="tagline">Your modern team workspace.</p>
+        <p class="tagline">{{ $t('login.tagline') }}</p>
       </div>
     </div>
 
@@ -21,8 +21,8 @@
         <!-- Login methods selection -->
         <div v-if="!showPasswordForm" class="login-options-view">
           <div class="card-header">
-            <h2>Welcome Back</h2>
-            <p class="subtitle">选择一种方式登录你的工作空间</p>
+            <h2>{{ $t('login.welcomeBack') }}</h2>
+            <p class="subtitle">{{ $t('login.chooseMethod') }}</p>
           </div>
 
           <div class="login-options">
@@ -37,8 +37,8 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke="currentColor" stroke-width="1.5"/><path d="M12 6v12M6 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
               </div>
               <div class="option-btn-text">
-                <span class="option-title">使用 {{ authConfig.oidcProviderName }} 登录</span>
-                <span class="option-desc">通过企业身份认证</span>
+                <span class="option-title">{{ $t('login.loginWith', { provider: authConfig.oidcProviderName }) }}</span>
+                <span class="option-desc">{{ $t('login.enterpriseAuth') }}</span>
               </div>
               <svg class="option-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
@@ -53,8 +53,8 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.74 5.87L11 18H9v2H7v2H4a1 1 0 01-1-1v-2.59a1 1 0 01.29-.7l7.42-7.43A6 6 0 1121 9z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
               <div class="option-btn-text">
-                <span class="option-title">使用账号密码登录</span>
-                <span class="option-desc">输入用户名和密码</span>
+                <span class="option-title">{{ $t('login.passwordLogin') }}</span>
+                <span class="option-desc">{{ $t('login.enterCredentials') }}</span>
               </div>
               <svg class="option-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
@@ -65,12 +65,12 @@
         <form v-else @submit.prevent="handleLogin" class="login-form-view">
           <button type="button" @click="showPasswordForm = false" class="back-link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <span>返回</span>
+            <span>{{ $t('login.back') }}</span>
           </button>
 
           <div class="card-header">
-            <h2>账号密码登录</h2>
-            <p class="subtitle">请输入你的用户名和密码</p>
+            <h2>{{ $t('login.passwordLogin') }}</h2>
+            <p class="subtitle">{{ $t('login.enterCredentials') }}</p>
           </div>
 
           <div class="alert-error" v-if="errorMsg">
@@ -79,14 +79,14 @@
           </div>
 
           <div class="form-field">
-            <label for="username">用户名</label>
+            <label for="username">{{ $t('login.username') }}</label>
             <div class="input-wrapper">
               <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 3a4 4 0 110 8 4 4 0 010-8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <input
                 id="username"
                 v-model="username"
                 type="text"
-                placeholder="请输入用户名"
+                :placeholder="$t('login.enterUsername')"
                 required
                 autocomplete="username"
               />
@@ -94,14 +94,14 @@
           </div>
 
           <div class="form-field">
-            <label for="password">密码</label>
+            <label for="password">{{ $t('login.password') }}</label>
             <div class="input-wrapper">
               <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               <input
                 id="password"
                 v-model="password"
                 type="password"
-                placeholder="请输入密码"
+                :placeholder="$t('login.enterPassword')"
                 required
                 autocomplete="current-password"
               />
@@ -109,7 +109,7 @@
           </div>
 
           <button type="submit" class="submit-btn" :disabled="loading">
-            <span v-if="!loading">登 录</span>
+            <span v-if="!loading">{{ $t('login.loginBtn') }}</span>
             <span v-else class="loading-spinner"></span>
           </button>
         </form>
@@ -122,6 +122,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '../store/auth'
 import { useSiteInfo } from '../store/site'
+import { useI18n } from 'vue-i18n'
 
 const { siteName, siteLogo, authConfig } = useSiteInfo()
 
@@ -131,6 +132,7 @@ const loading = ref(false)
 const errorMsg = ref('')
 const showPasswordForm = ref(false)
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const handleLogin = async () => {
   if (!username.value || !password.value) return
@@ -139,10 +141,10 @@ const handleLogin = async () => {
   try {
     const ok = await authStore.login(username.value, password.value)
     if (!ok) {
-      errorMsg.value = '用户名或密码错误'
+      errorMsg.value = t('login.wrongCredentials')
     }
   } catch {
-    errorMsg.value = '登录失败，请检查网络连接'
+    errorMsg.value = t('login.loginFailed')
   } finally {
     loading.value = false
   }

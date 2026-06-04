@@ -1,8 +1,8 @@
 <template>
     <div class="settings-page">
         <div class="page-header">
-            <h1>Office 预览</h1>
-            <p class="page-description">配置 Office 文档在线预览服务（依赖 Gotenberg）</p>
+            <h1>{{ $t('settings.officePreview.title') }}</h1>
+            <p class="page-description">{{ $t('settings.officePreview.description') }}</p>
         </div>
 
         <a-spin :spinning="loading">
@@ -15,33 +15,33 @@
                 @finish="handleSubmit"
             >
                 <div class="form-section">
-                    <h3 class="section-title">服务配置</h3>
+                    <h3 class="section-title">{{ $t('settings.officePreview.serviceConfig') }}</h3>
 
-                    <a-form-item label="启用预览" name="enabled">
+                    <a-form-item :label="$t('settings.officePreview.enablePreview')" name="enabled">
                         <a-switch
                             v-model:checked="formState.enabled"
-                            checked-children="开启"
-                            un-checked-children="关闭"
+                            :checked-children="$t('common.enabled')"
+                            :un-checked-children="$t('common.disabled')"
                         />
-                        <div class="form-hint">启用后，点击文章中的 Office 文件链接将显示 PDF 预览</div>
+                        <div class="form-hint">{{ $t('settings.officePreview.enablePreviewHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="服务地址"
+                        :label="$t('settings.officePreview.serviceUrl')"
                         name="baseUrl"
-                        :rules="[{ required: formState.enabled, message: '请输入 Gotenberg 服务地址' }]"
+                        :rules="[{ required: formState.enabled, message: t('settings.officePreview.serviceUrlRequired') }]"
                     >
                         <a-input
                             v-model:value="formState.baseUrl"
-                            placeholder="例如: http://gotenberg:3000"
+                            :placeholder="$t('settings.officePreview.serviceUrlPlaceholder')"
                             style="max-width: 400px"
                             :disabled="!formState.enabled"
                         />
-                        <div class="form-hint">Gotenberg 服务地址，Docker 环境中使用容器名访问</div>
+                        <div class="form-hint">{{ $t('settings.officePreview.serviceUrlHint') }}</div>
                     </a-form-item>
 
                     <a-form-item
-                        label="超时时间"
+                        :label="$t('settings.officePreview.timeout')"
                         name="timeoutSeconds"
                     >
                         <a-input-number
@@ -51,23 +51,23 @@
                             style="width: 150px"
                             :disabled="!formState.enabled"
                         />
-                        <span style="margin-left: 8px; color: #6b778c; font-size: 13px">秒</span>
-                        <div class="form-hint">文档转换的最大等待时间，大文件建议设置更长时间</div>
+                        <span style="margin-left: 8px; color: #6b778c; font-size: 13px">{{ $t('settings.officePreview.seconds') }}</span>
+                        <div class="form-hint">{{ $t('settings.officePreview.timeoutHint') }}</div>
                     </a-form-item>
                 </div>
 
                 <a-form-item :wrapper-col="{ span: 16 }" style="margin-left: 120px">
                     <a-space>
                         <a-button type="primary" html-type="submit" :loading="saving">
-                            保存设置
+                            {{ $t('settings.saveSettings') }}
                         </a-button>
-                        <a-button @click="handleReset">重置</a-button>
+                        <a-button @click="handleReset">{{ $t('common.reset') }}</a-button>
                         <a-button
                             @click="handleTest"
                             :loading="testing"
                             :disabled="!formState.enabled || !formState.baseUrl"
                         >
-                            测试连接
+                            {{ $t('settings.officePreview.testConnection') }}
                         </a-button>
                     </a-space>
                 </a-form-item>
@@ -79,7 +79,10 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { systemSettingApi } from '@/api'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -116,10 +119,10 @@ const handleSubmit = async () => {
     saving.value = true
     try {
         await systemSettingApi.updateOfficePreviewConfig(formState)
-        message.success('Office 预览设置已保存')
+        message.success(t('settings.officePreview.saveSuccess'))
     } catch (error) {
         console.error('保存设置失败:', error)
-        message.error('保存设置失败')
+        message.error(t('settings.saveFailed'))
     } finally {
         saving.value = false
     }
@@ -127,7 +130,7 @@ const handleSubmit = async () => {
 
 const handleReset = () => {
     loadConfig()
-    message.info('已重置为服务器配置')
+    message.info(t('settings.resetToServer'))
 }
 
 const handleTest = async () => {
@@ -135,11 +138,11 @@ const handleTest = async () => {
     try {
         const result = await systemSettingApi.testOfficePreviewConfig(formState)
         if (result === true) {
-            message.success('连接成功')
+            message.success(t('settings.officePreview.connectionSuccess'))
         }
     } catch (error) {
         console.error('测试连接失败:', error)
-        message.error('测试连接失败')
+        message.error(t('settings.officePreview.connectionFailed'))
     } finally {
         testing.value = false
     }

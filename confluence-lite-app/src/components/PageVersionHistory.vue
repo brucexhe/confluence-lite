@@ -2,7 +2,7 @@
     <a-drawer
         :open="open"
         @update:open="$emit('update:open', $event)"
-        title="版本历史"
+        :title="$t('versionHistory.title')"
         width="520"
         :body-style="{ padding: '0' }"
     >
@@ -21,14 +21,14 @@
             <div class="version-content" v-html="viewingVersion.content"></div>
 
             <div class="version-actions" v-if="!isCurrentVersion(viewingVersion)">
-                <a-button type="link" size="small" @click="viewingVersion = null">← 返回列表</a-button>
+                <a-button type="link" size="small" @click="viewingVersion = null">{{ $t('versionHistory.backToList') }}</a-button>
                 <a-button type="primary" @click="restoreVersion" :loading="restoring">
-                    恢复此版本
+                    {{ $t('versionHistory.restoreThisVersion') }}
                 </a-button>
             </div>
         </template>
         <template v-else>
-            <div v-if="versions.length === 0" style="padding:2rem;text-align:center;color:#6b778c;">暂无历史版本</div>
+            <div v-if="versions.length === 0" style="padding:2rem;text-align:center;color:#6b778c;">{{ $t('versionHistory.noVersions') }}</div>
             <div v-for="v in versions" :key="v.id" class="version-item">
                 <div class="version-item-main" @click="viewVersion(v.id)">
                     <span class="version-number">v{{ v.versionNumber }}</span>
@@ -40,7 +40,7 @@
                         </span>
                     </div>
                 </div>
-                <a-button type="text" size="small" danger @click="deleteVersion(v.id)">删除</a-button>
+                <a-button type="text" size="small" danger @click="deleteVersion(v.id)">{{ $t('common.delete') }}</a-button>
             </div>
         </template>
     </a-drawer>
@@ -49,7 +49,10 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
 import { pageApi } from '../api'
+
+const { t, locale } = useI18n()
 
 const props = defineProps({
     open: { type: Boolean, default: false },
@@ -78,13 +81,13 @@ function formatTime(dateStr) {
     const now = new Date()
     const diff = now - date
     const minutes = Math.floor(diff / 60000)
-    if (minutes < 1) return '刚刚'
-    if (minutes < 60) return `${minutes} 分钟前`
+    if (minutes < 1) return t('common.justNow')
+    if (minutes < 60) return t('common.minutesAgo', { n: minutes })
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours} 小时前`
+    if (hours < 24) return t('common.hoursAgo', { n: hours })
     const days = Math.floor(hours / 24)
-    if (days < 30) return `${days} 天前`
-    return date.toLocaleDateString('zh-CN')
+    if (days < 30) return t('common.daysAgo', { n: days })
+    return date.toLocaleDateString(locale.value)
 }
 
 async function loadVersions() {
@@ -94,7 +97,7 @@ async function loadVersions() {
         const data = await pageApi.getVersions(props.pageId)
         versions.value = data || []
     } catch (e) {
-        console.error('加载版本历史失败:', e)
+        console.error('Failed to load version history:', e)
     } finally {
         loading.value = false
     }
@@ -105,17 +108,17 @@ async function viewVersion(versionId) {
         const data = await pageApi.getVersion(versionId)
         viewingVersion.value = data
     } catch (e) {
-        console.error('加载版本详情失败:', e)
+        console.error('Failed to load version detail:', e)
     }
 }
 
 async function deleteVersion(versionId) {
-    if (!confirm('确定要删除此版本吗？')) return
+    if (!confirm(t('versionHistory.confirmDelete'))) return
     try {
         await pageApi.deleteVersion(versionId)
         await loadVersions()
     } catch (e) {
-        console.error('删除版本失败:', e)
+        console.error('Failed to delete version:', e)
     }
 }
 
@@ -127,12 +130,12 @@ async function restoreVersion() {
             title: viewingVersion.value.title,
             content: viewingVersion.value.content,
         })
-        message.success('已恢复到该版本')
+        message.success(t('versionHistory.restored'))
         emit('update:open', false)
         emit('restored')
     } catch (e) {
-        console.error('恢复版本失败:', e)
-        message.error('恢复版本失败')
+        console.error('Failed to restore version:', e)
+        message.error(t('versionHistory.restoreFailed'))
     } finally {
         restoring.value = false
     }

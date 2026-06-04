@@ -12,7 +12,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="handleDownload"
-                        title="下载原文件"
+                        :title="$t('officePreview.downloadOriginal')"
                     >
                         <template #icon><DownloadIcon :size="16" /></template>
                     </a-button>
@@ -21,7 +21,7 @@
                         size="small"
                         class="toolbar-btn"
                         @click.stop="close"
-                        title="关闭 (ESC)"
+                        :title="$t('officePreview.close')"
                     >
                         <template #icon><XIcon :size="16" /></template>
                     </a-button>
@@ -33,17 +33,17 @@
         <div class="preview-content">
             <!-- 加载中 -->
             <div v-if="loading" class="preview-loading">
-                <a-spin size="large" tip="正在转换文档..." />
+                <a-spin size="large" :tip="$t('officePreview.converting')" />
             </div>
 
             <!-- 未配置 -->
             <div v-else-if="notConfigured" class="preview-error">
                 <SettingsIcon :size="48" />
-                <p class="error-text">转换 API 未配置</p>
-                <p class="error-sub-text">请联系管理员在系统设置中启用 Office 预览功能</p>
+                <p class="error-text">{{ $t('officePreview.apiNotConfigured') }}</p>
+                <p class="error-sub-text">{{ $t('officePreview.apiNotConfiguredHint') }}</p>
                 <a-button type="primary" @click="handleDownload">
                     <template #icon><DownloadIcon :size="14" /></template>
-                    下载原文件
+                    {{ $t('officePreview.downloadOriginal') }}
                 </a-button>
             </div>
 
@@ -53,7 +53,7 @@
                 <p class="error-text">{{ error }}</p>
                 <a-button type="primary" @click="handleDownload">
                     <template #icon><DownloadIcon :size="14" /></template>
-                    下载原文件
+                    {{ $t('officePreview.downloadOriginal') }}
                 </a-button>
             </div>
 
@@ -68,8 +68,11 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import VuePdfEmbed from 'vue-pdf-embed';
+import { useI18n } from 'vue-i18n';
 import { XIcon, DownloadIcon, FileXIcon, SettingsIcon } from 'lucide-vue-next';
 import { systemSettingApi } from '@/api';
+
+const { t } = useI18n();
 
 const props = defineProps({
     open: Boolean,
@@ -104,7 +107,7 @@ const loadPdf = async () => {
             const response = await fetch(props.filePath);
 
             if (!response.ok) {
-                throw new Error(`加载失败 (HTTP ${response.status})`);
+                throw new Error(t('officePreview.loadFailed', { status: response.status }));
             }
 
             const arrayBuffer = await response.arrayBuffer();
@@ -125,15 +128,15 @@ const loadPdf = async () => {
 
             if (!response.ok) {
                 throw new Error(response.status === 503
-                    ? '文档转换服务不可用，请稍后再试'
-                    : `加载失败 (HTTP ${response.status})`);
+                    ? t('officePreview.serviceUnavailable')
+                    : t('officePreview.loadFailed', { status: response.status }));
             }
 
             const arrayBuffer = await response.arrayBuffer();
             pdfData.value = new Uint8Array(arrayBuffer);
         }
     } catch (e) {
-        error.value = e.message || '文档加载失败';
+        error.value = e.message || t('officePreview.loadDocumentFailed');
     } finally {
         loading.value = false;
     }

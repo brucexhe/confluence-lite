@@ -3,11 +3,11 @@
         <!-- 上传进度提示 -->
         <div v-if="uploadProgress.show" class="upload-progress">
             <a-spin />
-            <span>上传中... {{ uploadProgress.percent }}%</span>
+            <span>{{ $t('editor.uploading', { percent: uploadProgress.percent }) }}</span>
         </div>
 
         <editor v-if="editorReady" v-model="pageContent" :init="editorConfig" api-key="no-api-key" @init="onEditorInit" />
-        <div v-else class="editor-loading">Loading editor...</div>
+        <div v-else class="editor-loading">{{ $t('editor.loadingEditor') }}</div>
 
         <!-- Breadcrumb + Title: will be teleported inside TinyMCE after toolbar -->
         <div id="teleport-below-toolbar">
@@ -22,18 +22,18 @@
                 </a-breadcrumb>
             </div>
             <div id="teleport-title-dest">
-                <input type="text" class="editor-title-input" v-model="pageTitle" placeholder="Page Title" />
+                <input type="text" class="editor-title-input" v-model="pageTitle" :placeholder="$t('editor.pageTitlePlaceholder')" />
             </div>
         </div>
 
         <div class="editor-actions">
-            <span v-if="autoSaveStatus === 'saving'" class="auto-save-hint">保存中...</span>
-            <span v-else-if="autoSaveStatus === 'saved'" class="auto-save-hint">已自动保存</span>
+            <span v-if="autoSaveStatus === 'saving'" class="auto-save-hint">{{ $t('editor.saving') }}</span>
+            <span v-else-if="autoSaveStatus === 'saved'" class="auto-save-hint">{{ $t('editor.autoSaved') }}</span>
             <div class="spacer"></div>
             <a-button type="primary" @click="savePage" style="margin-right: 8px; background-color: #0052cc">
-                {{ isCreating ? 'Create' : 'Update' }}
+                {{ isCreating ? $t('editor.createBtn') : $t('editor.updateBtn') }}
             </a-button>
-            <a-button @click="cancelEdit">Cancel</a-button>
+            <a-button @click="cancelEdit">{{ $t('editor.cancelBtn') }}</a-button>
         </div>
     </div>
 </template>
@@ -42,6 +42,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
 import Editor from "@tinymce/tinymce-vue";
 import { pageApi, attachmentApi } from "../../api";
 import { usePageTreeStore } from "../../store/pageTree";
@@ -57,6 +58,7 @@ function checkMobile() {
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 const pageTreeStore = usePageTreeStore();
 const pageId = computed(() => route.params.id);
 const isCreating = computed(() => !pageId.value);
@@ -209,7 +211,7 @@ async function uploadFile(file, comment) {
         return { url: fileUrl, fileName: result.fileName };
     } catch (error) {
         uploadProgress.value = { show: false, percent: 0 };
-        message.error(`上传失败: ${error.message || '未知错误'}`);
+        message.error(t('editor.uploadFailed', { message: error.message || '' }));
         throw error;
     }
 }
@@ -241,7 +243,7 @@ async function handleFileInsert(file) {
     const supportedExtensions = /\.(md|txt|json|xml|zip|pptx|pdf|docx|xlsx|mp4|mp3)$/i;
 
     if (!isImage && !file.name.toLowerCase().match(supportedExtensions)) {
-        message.warning('暂不支持此文件类型');
+        message.warning(t('editor.unsupportedFileType'));
         return;
     }
 
@@ -259,7 +261,7 @@ async function handleFileInsert(file) {
             editor.insertContent(`<p><a class="file" href="${url}" target="_blank">${file.name}</a></p>`);
         }
     } catch (error) {
-        message.warning('文件插入失败');
+        message.warning(t('editor.fileInsertFailed'));
         console.error('文件插入失败:', error);
     }
 }
@@ -347,7 +349,7 @@ const editorConfig = computed(() => {
                 if (imageTypes.includes(file.type) || file.name.match(supportedExtensions)) {
                     handleFileInsert(file);
                 } else {
-                    message.warning('暂不支持此文件类型');
+                    message.warning(t('editor.unsupportedFileType'));
                 }
             }
         });
@@ -409,7 +411,7 @@ const onEditorInit = () => {
 
 const savePage = async () => {
     if (!pageTitle.value.trim()) {
-        message.warning('请输入页面标题');
+        message.warning(t('editor.enterTitle'));
         return;
     }
     try {
@@ -435,7 +437,7 @@ const savePage = async () => {
         }
     } catch (e) {
         console.error("保存页面失败:", e);
-        message.error('保存失败，请重试');
+        message.error(t('editor.savePageFailed'));
     }
 };
 

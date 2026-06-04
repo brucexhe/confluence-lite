@@ -16,7 +16,7 @@
             <nav v-if="!isMobile" class="nav-links">
                 <a-dropdown :trigger="['click']" placement="bottomLeft">
                     <a class="nav-link dropdown-link" @click.prevent>
-                        Spaces
+                        {{ $t('nav.spaces') }}
                         <svg
                             width="14"
                             height="14"
@@ -51,7 +51,7 @@
                                     text-transform: uppercase;
                                 "
                             >
-                                Recent Spaces
+                                {{ $t('nav.recentSpaces') }}
                             </div>
                             <a-menu-item
                                 v-for="space in spaces"
@@ -98,17 +98,17 @@
                                 </div>
                             </a-menu-item>
                             <a-menu-item v-if="spaces.length === 0" disabled style="padding: 8px 16px">
-                                <span style="color: #6b778c; font-size: 13px">暂无空间</span>
+                                <span style="color: #6b778c; font-size: 13px">{{ $t('nav.noSpaces') }}</span>
                             </a-menu-item>
                             <a-menu-divider v-if="spaces.length > 0" />
                             <a-menu-item key="view-all" style="padding: 4px 16px" @click="navigateTo('/spaces')">
-                                <span style="color: #0052cc; font-size: 14px; font-weight: 500">View all spaces</span>
+                                <span style="color: #0052cc; font-size: 14px; font-weight: 500">{{ $t('nav.viewAllSpaces') }}</span>
                             </a-menu-item>
                         </a-menu>
                     </template>
                 </a-dropdown>
-                <a href="/recent" class="nav-link">Recent</a>
-                <a href="/people" class="nav-link">People</a>
+                <a href="/recent" class="nav-link">{{ $t('nav.recent') }}</a>
+                <a href="/people" class="nav-link">{{ $t('nav.people') }}</a>
             </nav>
         </div>
         <div class="nav-right">
@@ -129,13 +129,13 @@
                         @select="handleSelect"
                     >
                         <a-input-search
-                            placeholder="Search..."
+                            :placeholder="$t('nav.searchPlaceholder')"
                             class="confluence-search"
                             @search="onFullSearch"
                             autofocus
                         />
                     </a-auto-complete>
-                    <button class="mobile-search-cancel" @click="searchExpanded = false; searchText = ''">取消</button>
+                    <button class="mobile-search-cancel" @click="searchExpanded = false; searchText = ''">{{ $t('common.cancel') }}</button>
                 </div>
             </template>
 
@@ -149,7 +149,7 @@
                     @select="handleSelect"
                 >
                     <a-input-search
-                        placeholder="Search..."
+                        :placeholder="$t('nav.searchPlaceholder')"
                         class="confluence-search"
                         @search="onFullSearch"
                     />
@@ -168,7 +168,7 @@
                     </template>
                 </a-auto-complete>
             </div>
-            <button v-if="!isMobile" class="create-btn" @click="handleCreate">Create</button>
+            <button v-if="!isMobile" class="create-btn" @click="handleCreate">{{ $t('nav.create') }}</button>
             <a-dropdown :trigger="['click']">
                 <UserAvatar
                     :user="authStore.user"
@@ -179,27 +179,27 @@
                 <template #overlay>
                     <a-menu style="min-width: 120px; padding: 4px 0">
                         <a-menu-item v-if="isMobile" @click="handleCreate">
-                            <span style="font-size: 14px; color: #0052cc; font-weight: 500">+ Create Page</span>
+                            <span style="font-size: 14px; color: #0052cc; font-weight: 500">{{ $t('nav.createPage') }}</span>
                         </a-menu-item>
                         <a-menu-divider v-if="isMobile" />
                         <a-menu-item @click="navigateTo('/spaces')">
-                            <span style="font-size: 14px; color: #172b4d">空间列表</span>
+                            <span style="font-size: 14px; color: #172b4d">{{ $t('nav.spaceList') }}</span>
                         </a-menu-item>
                         <a-menu-item @click="navigateTo('/recent')">
-                            <span style="font-size: 14px; color: #172b4d">最近浏览</span>
+                            <span style="font-size: 14px; color: #172b4d">{{ $t('nav.recentBrowse') }}</span>
                         </a-menu-item>
                          <a-menu-item @click="navigateTo('/shares')">
-                            <span style="font-size: 14px; color: #172b4d">分享管理</span>
+                            <span style="font-size: 14px; color: #172b4d">{{ $t('nav.shareManage') }}</span>
                         </a-menu-item>
                         <a-menu-item @click="navigateTo('/profile')">
-                            <span style="font-size: 14px; color: #172b4d">用户信息</span>
+                            <span style="font-size: 14px; color: #172b4d">{{ $t('nav.userInfo') }}</span>
                         </a-menu-item>
                         <a-menu-item @click="navigateTo('/settings')">
-                            <span style="font-size: 14px; color: #172b4d">系统设置</span>
+                            <span style="font-size: 14px; color: #172b4d">{{ $t('nav.systemSettings') }}</span>
                         </a-menu-item>
                         <a-menu-divider />
                         <a-menu-item @click="handleLogout">
-                            <span style="font-size: 14px; color: #ef4444">退出登录</span>
+                            <span style="font-size: 14px; color: #ef4444">{{ $t('nav.logout') }}</span>
                         </a-menu-item>
                     </a-menu>
                 </template>

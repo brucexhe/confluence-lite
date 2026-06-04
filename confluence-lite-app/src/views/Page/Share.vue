@@ -10,8 +10,8 @@
                 </a>
             </div>
             <div class="share-header-right">
-                <a v-if="!isLoggedIn" href="/login" class="share-header-link">登录</a>
-                <a v-else href="/" class="share-header-link">进入主页</a>
+                <a v-if="!isLoggedIn" href="/login" class="share-header-link">{{ $t('sharePage.login') }}</a>
+                <a v-else href="/" class="share-header-link">{{ $t('sharePage.enterMainPage') }}</a>
             </div>
         </header>
 
@@ -20,7 +20,7 @@
             <!-- Loading -->
             <div v-if="loading" class="share-loading">
                 <a-spin size="large" />
-                <p>加载中...</p>
+                <p>{{ $t('sharePage.loading') }}</p>
             </div>
 
             <!-- Expired -->
@@ -31,8 +31,8 @@
                         <polyline points="12 6 12 12 16 14"/>
                     </svg>
                 </div>
-                <h2>分享已过期</h2>
-                <p>此分享链接已过期，请联系分享者获取新的链接。</p>
+                <h2>{{ $t('sharePage.expired') }}</h2>
+                <p>{{ $t('sharePage.expiredDesc') }}</p>
             </div>
 
             <!-- No access -->
@@ -43,9 +43,9 @@
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
                 </div>
-                <h2>没有访问权限</h2>
-                <p>此分享仅限特定用户访问，请确认您已登录正确的账号。</p>
-                <a href="/login" class="share-error-btn">登录账号</a>
+                <h2>{{ $t('sharePage.noAccess') }}</h2>
+                <p>{{ $t('sharePage.noAccessDesc') }}</p>
+                <a href="/login" class="share-error-btn">{{ $t('sharePage.loginAccount') }}</a>
             </div>
 
             <!-- Not found -->
@@ -57,8 +57,8 @@
                         <line x1="8" y1="11" x2="14" y2="11"/>
                     </svg>
                 </div>
-                <h2>分享不存在</h2>
-                <p>此分享链接无效或已被删除。</p>
+                <h2>{{ $t('sharePage.notFound') }}</h2>
+                <p>{{ $t('sharePage.notFoundDesc') }}</p>
             </div>
 
             <!-- Password form -->
@@ -70,12 +70,12 @@
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         </svg>
                     </div>
-                    <h2>需要密码访问</h2>
-                    <p>此分享需要输入密码才能查看。</p>
+                    <h2>{{ $t('sharePage.passwordRequired') }}</h2>
+                    <p>{{ $t('sharePage.passwordRequiredDesc') }}</p>
                     <div class="share-password-input">
                         <a-input-password
                             v-model:value="passwordInput"
-                            placeholder="请输入访问密码"
+                            :placeholder="$t('sharePage.enterPassword')"
                             size="large"
                             @pressEnter="handlePasswordSubmit"
                         />
@@ -89,7 +89,7 @@
                         @click="handlePasswordSubmit"
                         style="background-color: #0052cc"
                     >
-                        验证
+                        {{ $t('sharePage.verify') }}
                     </a-button>
                 </div>
             </div>
@@ -100,13 +100,13 @@
                     <input type="text" class="share-edit-title" v-model="editTitle" placeholder="Page Title" />
                     <div class="share-edit-actions">
                         <a-button type="primary" @click="handleSaveEdit" :loading="saveLoading" style="background-color: #0052cc">
-                            保存
+                            {{ $t('sharePage.saveBtn') }}
                         </a-button>
-                        <a-button @click="cancelEdit">取消</a-button>
+                        <a-button @click="cancelEdit">{{ $t('sharePage.cancelBtn') }}</a-button>
                     </div>
                 </div>
                 <editor v-if="editorReady" v-model="editContent" :init="editorConfig" api-key="no-api-key" />
-                <div v-else class="editor-loading">Loading editor...</div>
+                <div v-else class="editor-loading">{{ $t('editor.loadingEditor') }}</div>
             </div>
 
             <!-- Page content -->
@@ -114,11 +114,11 @@
                 <div class="share-page-header">
                     <h1 class="share-page-title">{{ pageData.title }}</h1>
                     <a-button v-if="shareInfo?.allowEdit" @click="enterEditMode" class="share-edit-btn">
-                        <span style="font-size: 14px">Edit</span>
+                        <span style="font-size: 14px">{{ $t('sharePage.edit') }}</span>
                     </a-button>
                 </div>
                 <div class="share-page-meta">
-                    <span>由&nbsp;{{ pageData.creator?.displayName || 'Unknown' }}&nbsp;创建于&nbsp;</span>
+                    <span>{{ $t('sharePage.createdBy', { name: pageData.creator?.displayName || 'Unknown' }) }}</span>
                     <span class="date">{{ formatTime(pageData.createdAt) }}</span>
                 </div>
                 <div class="share-page-body" ref="contentRef" v-html="pageData.content"></div>
@@ -131,6 +131,7 @@
 import { ref, computed, onMounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
 import Editor from "@tinymce/tinymce-vue";
 import { shareApi } from "../../api";
 import { useSiteInfo } from "../../store/site";
@@ -150,6 +151,7 @@ import "prismjs/components/prism-json";
 
 const route = useRoute();
 const router = useRouter();
+const { t, locale } = useI18n();
 const { siteName, siteLogo } = useSiteInfo();
 const shareCode = computed(() => route.params.code);
 
@@ -235,9 +237,9 @@ async function loadPageContent() {
             initImagePreview();
         });
     } catch (e) {
-        if (e.message?.includes("没有访问权限")) {
+        if (e.message?.includes("没有访问权限") || e.message?.includes("No access")) {
             errorState.value = "no_access";
-        } else if (e.message?.includes("已过期")) {
+        } else if (e.message?.includes("已过期") || e.message?.includes("expired")) {
             errorState.value = "expired";
         } else {
             errorState.value = "not_found";
@@ -261,7 +263,7 @@ const handlePasswordSubmit = async () => {
             initImagePreview();
         });
     } catch (e) {
-        passwordError.value = e.message || "密码错误";
+        passwordError.value = e.message || t('sharePage.passwordError');
     }
     passwordVerifying.value = false;
 };
@@ -288,13 +290,13 @@ async function handleSaveEdit() {
         );
         pageData.value = result;
         isEditing.value = false;
-        message.success("保存成功");
+        message.success(t('sharePage.saveSuccess'));
         nextTick(() => {
             highlightCode();
             initImagePreview();
         });
     } catch (e) {
-        message.error(e.message || "保存失败");
+        message.error(e.message || t('sharePage.saveFailed'));
     }
     saveLoading.value = false;
 }
@@ -346,13 +348,13 @@ function formatTime(dateStr) {
     const now = new Date();
     const diff = now - date;
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return "刚刚";
-    if (minutes < 60) return `${minutes} 分钟前`;
+    if (minutes < 1) return t('common.justNow');
+    if (minutes < 60) return t('common.minutesAgo', { n: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours} 小时前`;
+    if (hours < 24) return t('common.hoursAgo', { n: hours });
     const days = Math.floor(hours / 24);
-    if (days < 30) return `${days} 天前`;
-    return date.toLocaleDateString("zh-CN");
+    if (days < 30) return t('common.daysAgo', { n: days });
+    return date.toLocaleDateString(locale.value);
 }
 </script>
 

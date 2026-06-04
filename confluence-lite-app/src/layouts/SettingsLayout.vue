@@ -7,71 +7,71 @@
             <!-- Sidebar Navigation -->
             <aside class="settings-sidebar">
                 <div class="sidebar-header">
-                    <h2>系统设置</h2>
-                    <p class="breadcrumb">配置和管理您的系统</p>
+                    <h2>{{ $t('settings.title') }}</h2>
+                    <p class="breadcrumb">{{ $t('settings.description') }}</p>
                 </div>
                 <nav class="sidebar-nav">
                     <div class="nav-group">
-                        <div class="nav-group-title">基本设置</div>
+                        <div class="nav-group-title">{{ $t('settings.basicSettings') }}</div>
                         <router-link to="/settings" class="nav-item" :class="{ active: route.path === '/settings' }">
-                            站点设置
+                            {{ $t('settings.siteSettings') }}
                         </router-link>
                         <router-link to="/settings/security" class="nav-item" :class="{ active: route.path === '/settings/security' }">
-                            安全设置
+                            {{ $t('settings.securitySettings') }}
                         </router-link>
                         <router-link to="/settings/display" class="nav-item" :class="{ active: route.path === '/settings/display' }">
-                            显示设置
+                            {{ $t('settings.displaySettings') }}
                         </router-link>
                         <router-link to="/settings/mail" class="nav-item" :class="{ active: route.path === '/settings/mail' }">
-                            邮件设置
+                            {{ $t('settings.mailSettings') }}
                         </router-link>
                         <router-link to="/settings/authentication" class="nav-item" :class="{ active: route.path === '/settings/authentication' }">
-                            身份验证
+                            {{ $t('settings.authentication') }}
                         </router-link>
                     </div>
 
                     <div class="nav-group">
-                        <div class="nav-group-title">用户与权限</div>
+                        <div class="nav-group-title">{{ $t('settings.usersPermissions') }}</div>
                         <router-link to="/settings/users" class="nav-item" :class="{ active: route.path === '/settings/users' }">
-                            用户管理
+                            {{ $t('settings.userManagement') }}
                         </router-link>
                         <router-link to="/settings/groups" class="nav-item" :class="{ active: route.path === '/settings/groups' }">
-                            用户组管理
+                            {{ $t('settings.groupManagement') }}
                         </router-link>
                     </div>
 
                     <div class="nav-group">
-                        <div class="nav-group-title">内容管理</div>
+                        <div class="nav-group-title">{{ $t('settings.contentManagement') }}</div>
                         <router-link to="/settings/workspaces" class="nav-item" :class="{ active: route.path === '/settings/workspaces' }">
-                            空间管理
+                            {{ $t('settings.workspaceManagement') }}
                         </router-link>
                         <router-link to="/settings/pages" class="nav-item" :class="{ active: route.path === '/settings/pages' }">
-                            页面管理
+                            {{ $t('settings.pageManagement') }}
                         </router-link>
                         <router-link to="/settings/office-preview" class="nav-item" :class="{ active: route.path === '/settings/office-preview' }">
-                            Office 预览
+                            {{ $t('settings.officePreviewSetting') }}
                         </router-link>
                     </div>
 
                     <div class="nav-group">
-                        <div class="nav-group-title">系统管理</div>
+                        <div class="nav-group-title">{{ $t('settings.systemManagement') }}</div>
                         <router-link to="/settings/system-info" class="nav-item" :class="{ active: route.path === '/settings/system-info' }">
-                            系统信息
+                            {{ $t('settings.systemInfo') }}
                         </router-link>
                         <router-link to="/settings/logs" class="nav-item" :class="{ active: route.path === '/settings/logs' }">
-                            日志
+                            {{ $t('settings.logs') }}
                         </router-link>
                         <router-link to="/settings/backup" class="nav-item" :class="{ active: route.path === '/settings/backup' }">
-                            备份与还原
+                            {{ $t('settings.backupRestore') }}
                         </router-link>
                         <router-link to="/settings/confluence-import" class="nav-item" :class="{ active: route.path === '/settings/confluence-import' }">
-                            从 Confluence 导入
+                            {{ $t('settings.confluenceImport') }}
                         </router-link>
                         <router-link to="/settings/jobs" class="nav-item" :class="{ active: route.path === '/settings/jobs' }">
-                            作业管理
+                            {{ $t('settings.jobManagement') }}
                         </router-link>
                         <router-link to="/settings/cache" class="nav-item" :class="{ active: route.path === '/settings/cache' }">
-                            缓存管理
+                            {{ $t('settings.cacheManagement') }}
                         </router-link>
                     </div>
                 </nav>

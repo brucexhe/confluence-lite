@@ -155,6 +155,7 @@
     "delete": "Delete",
     "confirmDelete": "确定要删除此页面吗？",
     "createdBy": "由 {name} 创建于",
+    "updatedBy": "由 {name} 更新于",
     "backToTop": "回到顶部",
     "noPages": "暂无页面",
     "unsavedChanges": "未保存的更改",

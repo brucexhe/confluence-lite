@@ -41,7 +41,7 @@
             <h1 class="page-title bold">{{ pageTitle }}</h1>
 
             <div class="page-meta">
-                <span>{{ $t('page.createdBy', { name: pageCreatorName }) }}</span>
+                <span>{{ $t('page.updatedBy', { name: pageCreatorName }) }}</span>
                 <span class="date">{{ pageUpdatedTime }}</span>
             </div>
 

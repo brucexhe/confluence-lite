@@ -155,6 +155,7 @@
     "delete": "Delete",
     "confirmDelete": "Are you sure you want to delete this page?",
     "createdBy": "Created by {name} at",
+    "updatedBy": "Updated by {name} at",
     "backToTop": "Back to top",
     "noPages": "No pages",
     "unsavedChanges": "Unsaved Changes",

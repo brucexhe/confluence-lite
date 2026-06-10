@@ -42,7 +42,7 @@
 
             <div class="page-meta">
                 <span>{{ $t('page.updatedBy', { name: pageCreatorName }) }}</span>
-                <span class="date">{{ pageUpdatedTime }}</span>
+                <span class="date"> {{ pageUpdatedTime }}</span>
             </div>
 
             <div class="page-content" ref="contentRef" v-html="pageContent"></div>
@@ -865,8 +865,8 @@ onUnmounted(() => {
     padding-right: 24px;
 }
 
-:deep(.page-content table th[data-sortable]) {
-    user-select: none;
+:deep(.page-content table th) {
+    user-select: auto;
     white-space: nowrap;
     position: relative;
 }

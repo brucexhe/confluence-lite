@@ -7,6 +7,9 @@ import router from './router'
 import i18n from './i18n'
 
 import './assets/main.css'
+import {version} from "@/version.js";
+
+console.log(`🚀 confluence-lite@${version}`);
 
 const app = createApp(App)
 

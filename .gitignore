@@ -13,3 +13,4 @@ appsettings.runtime.json
 temp
 backups
 cache
+/confluence-lite-app/src/version.js

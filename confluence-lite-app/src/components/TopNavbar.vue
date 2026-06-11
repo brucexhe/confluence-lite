@@ -216,7 +216,7 @@ import { useSiteInfo } from "../store/site";
 import { getSpaceColorById, getSpaceInitial } from "../utils/workspace";
 import UserAvatar from "./UserAvatar.vue";
 import { searchApi } from "../api";
-import { FileText, Paperclip, Image } from "@lucide/vue";
+import { FileText, Paperclip, Image } from "lucide-vue-next";
 
 defineEmits(['toggle-sidebar']);
 

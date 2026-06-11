@@ -109,6 +109,7 @@
                 </a-dropdown>
                 <a href="/recent" class="nav-link">{{ $t('nav.recent') }}</a>
                 <a href="/people" class="nav-link">{{ $t('nav.people') }}</a>
+                <button v-if="!isMobile" class="create-btn" @click="handleCreate">{{ $t('nav.create') }}</button>
             </nav>
         </div>
         <div class="nav-right">
@@ -167,8 +168,7 @@
                         </div>
                     </template>
                 </a-auto-complete>
-            </div>
-            <button v-if="!isMobile" class="create-btn" @click="handleCreate">{{ $t('nav.create') }}</button>
+            </div> 
             <a-dropdown :trigger="['click']">
                 <UserAvatar
                     :user="authStore.user"
@@ -216,7 +216,7 @@ import { useSiteInfo } from "../store/site";
 import { getSpaceColorById, getSpaceInitial } from "../utils/workspace";
 import UserAvatar from "./UserAvatar.vue";
 import { searchApi } from "../api";
-import { FileText, Paperclip, Image } from "lucide-vue-next";
+import { FileText, Paperclip, Image } from "@lucide/vue";
 
 defineEmits(['toggle-sidebar']);
 

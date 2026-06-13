@@ -101,6 +101,8 @@ public static class DatabaseInitializer
         AddColumnIfNotExists(db, "users", "isadmin", "BOOLEAN NOT NULL DEFAULT FALSE");
         AddColumnIfNotExists(db, "users", "isdeleted", "BOOLEAN NOT NULL DEFAULT FALSE");
         AddColumnIfNotExists(db, "users", "deletedat", "TIMESTAMP");
+        AddColumnIfNotExists(db, "users", "failedloginattempts", "INT NOT NULL DEFAULT 0");
+        AddColumnIfNotExists(db, "users", "lockeduntil", "TIMESTAMP");
 
         // workspaces 新增字段
         AddColumnIfNotExists(db, "workspaces", "icon", "VARCHAR(500)");

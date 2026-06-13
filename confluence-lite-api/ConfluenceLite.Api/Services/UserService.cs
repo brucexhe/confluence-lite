@@ -32,10 +32,40 @@ public class UserService
             return (null, "用户名或密码错误");
         }
 
+        // 检查账户是否锁定
+        if (user.LockedUntil.HasValue && user.LockedUntil.Value > DateTime.Now)
+        {
+            var remaining = user.LockedUntil.Value - DateTime.Now;
+            return (null, $"账户已锁定，请 {(int)Math.Ceiling(remaining.TotalMinutes)} 分钟后再试");
+        }
+
         if (!PasswordService.VerifyPassword(request.Password, user.PasswordHash))
         {
+            // 密码错误，增加失败计数
+            user.FailedLoginAttempts++;
+
+            // 连续失败 5 次锁定 15 分钟
+            if (user.FailedLoginAttempts >= 10)
+            {
+                user.LockedUntil = DateTime.Now.AddMinutes(15);
+            }
+
+            user.UpdatedAt = DateTime.Now;
+            await _db.Db.Updateable(user)
+                .UpdateColumns(u => new { u.FailedLoginAttempts, u.LockedUntil, u.UpdatedAt })
+                .ExecuteCommandAsync();
+
             return (null, "用户名或密码错误");
         }
+
+        // 登录成功，重置失败计数
+        user.FailedLoginAttempts = 0;
+        user.LockedUntil = null;
+        user.LastLoginAt = DateTime.Now;
+        user.UpdatedAt = DateTime.Now;
+        await _db.Db.Updateable(user)
+            .UpdateColumns(u => new { u.FailedLoginAttempts, u.LockedUntil, u.LastLoginAt, u.UpdatedAt })
+            .ExecuteCommandAsync();
 
         return (MapToDto(user), null);
     }

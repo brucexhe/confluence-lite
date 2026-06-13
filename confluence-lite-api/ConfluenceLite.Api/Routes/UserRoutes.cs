@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Middleware;
 using ConfluenceLite.Api.Services;
@@ -56,7 +57,7 @@ public static class UserRoutes
             };
 
             return Results.Ok(ApiResponse<LoginResponse>.Ok(response, "登录成功"));
-        });
+        }).RequireRateLimiting("login");
 
         group.MapPost("/logout", async (HttpContext context) =>
         {
@@ -73,7 +74,7 @@ public static class UserRoutes
                 return Results.BadRequest(ApiResponse<UserDto>.Fail(error ?? "创建用户失败"));
 
             return Results.Ok(ApiResponse<UserDto>.Ok(user, "用户创建成功"));
-        });
+        }).RequireRateLimiting("login");
 
         group.MapGet("/list", async (
             int page,

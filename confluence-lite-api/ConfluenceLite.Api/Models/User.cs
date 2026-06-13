@@ -74,6 +74,17 @@ public class User
     public DateTime? LastLoginAt { get; set; }
 
     /// <summary>
+    /// 连续登录失败次数
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public int FailedLoginAttempts { get; set; } = 0;
+
+    /// <summary>
+    /// 账户锁定截止时间
+    /// </summary>
+    public DateTime? LockedUntil { get; set; }
+
+    /// <summary>
     /// 是否管理员
     /// </summary>
     [SugarColumn(IsNullable = false)]

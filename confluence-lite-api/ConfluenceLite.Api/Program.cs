@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -164,6 +166,20 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication()
     .AddJwtBearer();
 
+// ========== 速率限制 ==========
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+
+    options.AddFixedWindowLimiter("login", opt =>
+    {
+        opt.PermitLimit = 10;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+});
+
 // ========== 配置 Kestrel 服务器限制 ==========
 builder.Services.Configure<KestrelServerOptions>(options =>
 {
@@ -227,6 +243,9 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 
 // CORS
 app.UseCors("AllowSpecificOrigins");
+
+// 速率限制
+app.UseRateLimiter();
 
 // JWT 认证中间件
 app.UseMiddleware<JwtAuthMiddleware>();

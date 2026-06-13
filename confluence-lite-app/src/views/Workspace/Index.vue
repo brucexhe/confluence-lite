@@ -231,7 +231,7 @@ function createPage() {
 }
 
 function goToSettings() {
-    router.push("/settings/workspaces");
+    router.push("/spaces");
 }
 
 onMounted(() => {

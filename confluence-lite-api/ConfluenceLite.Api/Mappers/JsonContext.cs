@@ -169,6 +169,7 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(OidcUserInfo))]
 // Auth Middleware
 [JsonSerializable(typeof(UnauthorizedResponse))]
+[JsonSerializable(typeof(ForbiddenResponse))]
 // Search
 [JsonSerializable(typeof(SearchSuggestionDto))]
 [JsonSerializable(typeof(List<SearchSuggestionDto>))]

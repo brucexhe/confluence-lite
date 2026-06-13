@@ -24,13 +24,15 @@ public class TokenService
     /// </summary>
     /// <param name="userId">用户ID</param>
     /// <param name="username">用户名</param>
+    /// <param name="isAdmin">是否管理员</param>
     /// <returns>JWT Token字符串</returns>
-    public string GenerateToken(long userId, string username)
+    public string GenerateToken(long userId, string username, bool isAdmin = false)
     {
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(ClaimTypes.Name, username),
+            new Claim("IsAdmin", isAdmin.ToString()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 

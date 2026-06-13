@@ -15,6 +15,7 @@ public class CurrentUser
     public long UserId { get; set; }
     public string Username { get; set; } = string.Empty;
     public bool IsAuthenticated { get; set; }
+    public bool IsAdmin { get; set; }
 }
 
 /// <summary>
@@ -25,6 +26,16 @@ public class UnauthorizedResponse
     public bool Success { get; set; } = false;
     public string Message { get; set; } = "未授权，请先登录";
     public int ErrorCode { get; set; } = 401;
+}
+
+/// <summary>
+/// 禁止访问错误响应
+/// </summary>
+public class ForbiddenResponse
+{
+    public bool Success { get; set; } = false;
+    public string Message { get; set; } = "需要管理员权限";
+    public int ErrorCode { get; set; } = 403;
 }
 
 /// <summary>
@@ -97,6 +108,9 @@ public class JwtAuthMiddleware
                     currentUser.UserId = userId;
                     currentUser.Username = nameClaim?.Value ?? string.Empty;
                     currentUser.IsAuthenticated = true;
+
+                    var isAdminClaim = principal.FindFirst("IsAdmin");
+                    currentUser.IsAdmin = isAdminClaim?.Value == "True";
                 }
             }
             catch
@@ -127,6 +141,17 @@ public class JwtAuthMiddleware
             context.Response.ContentType = "application/json";
             var response = new UnauthorizedResponse();
             await context.Response.WriteAsync(JsonSerializer.Serialize(response, AppJsonContext.Default.UnauthorizedResponse));
+            return;
+        }
+
+        // 管理接口需要管理员权限
+        if (path.StartsWith("/api/system/", StringComparison.OrdinalIgnoreCase)
+            && !currentUser.IsAdmin)
+        {
+            context.Response.StatusCode = 403;
+            context.Response.ContentType = "application/json";
+            var forbiddenResponse = new ForbiddenResponse();
+            await context.Response.WriteAsync(JsonSerializer.Serialize(forbiddenResponse, AppJsonContext.Default.ForbiddenResponse));
             return;
         }
 

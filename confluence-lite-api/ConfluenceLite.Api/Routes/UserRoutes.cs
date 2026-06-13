@@ -28,7 +28,7 @@ public static class UserRoutes
 
             var workspaces = await workspaceService.GetUserWorkspacesAsync(user.Id);
 
-            var tokenValue = tokenService.GenerateToken(user.Id, user.Username);
+            var tokenValue = tokenService.GenerateToken(user.Id, user.Username, user.IsAdmin);
 
             // 设置 Cookie（根据环境动态设置 Secure 属性）
             var isHttps = context.Request.IsHttps;

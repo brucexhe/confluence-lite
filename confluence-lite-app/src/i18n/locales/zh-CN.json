@@ -390,7 +390,7 @@
     "title": "Pages",
     "welcome": "欢迎来到 {name}",
     "welcomeDesc": "这是您的团队知识库，开始创建和分享知识吧。",
-    "createPage": "Create Page",
+    "createPage": "创建页面",
     "noPages": "此空间暂无页面",
     "noPagesDesc": "点击上方按钮创建您的第一个页面。",
     "createdBy": "由 {name} 创建",

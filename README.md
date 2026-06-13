@@ -91,8 +91,8 @@ docker-compose up -d
 - [x] 系统备份
 - [x] 页面排序
 - [x] 适配手机端访问
+- [x] 多语言支持（zh-CN/en）
 - [ ] 系统恢复
-- [ ] 多语言支持（zh-CN/en）
 
 
  

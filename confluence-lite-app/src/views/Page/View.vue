@@ -12,10 +12,10 @@
             </a-breadcrumb>
             <div class="page-actions">
                 <a-button @click="enterEditMode">
-                    <span style="font-size: 14px">{{ $t('page.edit') }}</span>
+                    <span style="font-size: 14px">{{ $t("page.edit") }}</span>
                 </a-button>
                 <a-button @click="handleShare">
-                    <span style="font-size: 14px">{{ $t('page.share') }}</span>
+                    <span style="font-size: 14px">{{ $t("page.share") }}</span>
                 </a-button>
                 <a-dropdown>
                     <a-button>
@@ -23,13 +23,15 @@
                     </a-button>
                     <template #overlay>
                         <a-menu>
-                            <a-menu-item @click="handleViewHistory">{{ $t('page.viewHistory') }}</a-menu-item>
-                            <a-menu-item @click="handleViewAttachments">{{ $t('page.attachments') }}({{ attachmentCount }})</a-menu-item>
-                            <a-menu-item @click="handleViewSource">{{ $t('page.viewSource') }}</a-menu-item>
-                            <a-menu-item @click="handleExportPdf">{{ $t('page.exportPdf') }}</a-menu-item>
-                            <a-menu-item @click="handleMove">{{ $t('page.moveTo') }}</a-menu-item>
+                            <a-menu-item @click="handleViewHistory">{{ $t("page.viewHistory") }}</a-menu-item>
+                            <a-menu-item @click="handleViewAttachments">
+                                {{ $t("page.attachments") }}({{ attachmentCount }})
+                            </a-menu-item>
+                            <a-menu-item @click="handleViewSource">{{ $t("page.viewSource") }}</a-menu-item>
+                            <a-menu-item @click="handleExportPdf">{{ $t("page.exportPdf") }}</a-menu-item>
+                            <a-menu-item @click="handleMove">{{ $t("page.moveTo") }}</a-menu-item>
                             <a-menu-divider />
-                            <a-menu-item @click="handleDelete" danger>{{ $t('page.delete') }}</a-menu-item>
+                            <a-menu-item @click="handleDelete" danger>{{ $t("page.delete") }}</a-menu-item>
                         </a-menu>
                     </template>
                 </a-dropdown>
@@ -38,14 +40,20 @@
 
         <!-- Viewing Mode -->
         <div class="page-view">
-            <h1 class="page-title bold">{{ pageTitle }}</h1>
+            <a-skeleton active :loading="loading" :title="{ width: '30%' }" :paragraph="false">
+                <h1 class="page-title bold">{{ pageTitle }}</h1>
+            </a-skeleton>
 
-            <div class="page-meta">
-                <span>{{ $t('page.updatedBy', { name: pageCreatorName }) }}</span>
-                <span class="date"> {{ pageUpdatedTime }}</span>
-            </div>
+            <a-skeleton active :loading="loading" :title="{ width: '10%' }" :paragraph="false">
+                <div class="page-meta">
+                    <span>{{ $t("page.updatedBy", { name: pageCreatorName }) }}</span>
+                    <span class="date">{{ pageUpdatedTime }}</span>
+                </div>
+            </a-skeleton>
 
-            <div class="page-content" ref="contentRef" v-html="pageContent"></div>
+            <a-skeleton active :loading="loading" :title="false" :paragraph="{ rows: 1 }">
+                <div class="page-content" ref="contentRef" v-html="pageContent"></div>
+            </a-skeleton>
 
             <!-- Comments Section -->
             <PageComments :pageId="pageId" />
@@ -58,7 +66,12 @@
         <PageAttachments v-model:open="attachmentsVisible" :pageId="pageId" @changed="loadAttachmentCount" />
 
         <!-- View Source Modal -->
-        <a-modal v-model:open="sourceVisible" :title="$t('page.viewSource')" :width="isMobile ? '95%' : 800" :footer="null">
+        <a-modal
+            v-model:open="sourceVisible"
+            :title="$t('page.viewSource')"
+            :width="isMobile ? '95%' : 800"
+            :footer="null"
+        >
             <div class="source-viewer">
                 <pre><code>{{ pageContent }}</code></pre>
             </div>
@@ -91,8 +104,8 @@
                 <a-form layout="vertical">
                     <a-form-item :label="$t('page.shareType')">
                         <a-radio-group v-model:value="shareForm.shareType">
-                            <a-radio value="anonymous">{{ $t('page.anyoneWithLink') }}</a-radio>
-                            <a-radio value="user">{{ $t('page.specificUser') }}</a-radio>
+                            <a-radio value="anonymous">{{ $t("page.anyoneWithLink") }}</a-radio>
+                            <a-radio value="user">{{ $t("page.specificUser") }}</a-radio>
                         </a-radio-group>
                     </a-form-item>
 
@@ -112,7 +125,10 @@
                     </a-form-item>
 
                     <a-form-item :label="$t('page.accessPassword')">
-                        <a-input-password v-model:value="shareForm.visitPassword" :placeholder="$t('page.leaveBlankNoPassword')" />
+                        <a-input-password
+                            v-model:value="shareForm.visitPassword"
+                            :placeholder="$t('page.leaveBlankNoPassword')"
+                        />
                     </a-form-item>
 
                     <a-form-item :label="$t('page.expirationTime')">
@@ -128,8 +144,14 @@
                         <a-switch v-model:checked="shareForm.allowEdit" />
                     </a-form-item>
 
-                    <a-button type="primary" block :loading="shareLoading" @click="handleCreateShare" style="background-color: #0052cc">
-                        {{ $t('page.createShareLink') }}
+                    <a-button
+                        type="primary"
+                        block
+                        :loading="shareLoading"
+                        @click="handleCreateShare"
+                        style="background-color: #0052cc"
+                    >
+                        {{ $t("page.createShareLink") }}
                     </a-button>
                 </a-form>
             </div>
@@ -138,21 +160,23 @@
             <div v-else class="share-result">
                 <div class="share-result-icon">
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#36b37e" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                 </div>
-                <h3 style="color: #172b4d; margin: 12px 0 8px">{{ $t('page.shareLinkCreated') }}</h3>
+                <h3 style="color: #172b4d; margin: 12px 0 8px">{{ $t("page.shareLinkCreated") }}</h3>
                 <div class="share-link-box">
                     <input type="text" readonly :value="shareLink" class="share-link-input" />
                     <a-button type="primary" size="small" @click="copyShareLink" style="background-color: #0052cc">
-                        {{ $t('page.copyLink') }}
+                        {{ $t("page.copyLink") }}
                     </a-button>
                 </div>
                 <div class="share-link-info">
-                    <span v-if="createdShare.hasPassword">{{ $t('page.passwordProtected') }}</span>
-                    <span v-if="createdShare.expireAt">{{ $t('page.validUntil', { time: new Date(createdShare.expireAt).toLocaleString(locale) }) }}</span>
-                    <span v-if="!createdShare.expireAt">{{ $t('page.neverExpires') }}</span>
+                    <span v-if="createdShare.hasPassword">{{ $t("page.passwordProtected") }}</span>
+                    <span v-if="createdShare.expireAt">
+                        {{ $t("page.validUntil", { time: new Date(createdShare.expireAt).toLocaleString(locale) }) }}
+                    </span>
+                    <span v-if="!createdShare.expireAt">{{ $t("page.neverExpires") }}</span>
                 </div>
             </div>
         </a-modal>
@@ -161,7 +185,7 @@
         <transition name="fade-up">
             <button v-if="showScrollTop" class="scroll-top-btn" @click="scrollToTop" :title="$t('page.backToTop')">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 4L4 10h4v6h4v-6h4L10 4z" fill="currentColor"/>
+                    <path d="M10 4L4 10h4v6h4v-6h4L10 4z" fill="currentColor" />
                 </svg>
             </button>
         </transition>
@@ -212,6 +236,7 @@ const pageTreeStore = usePageTreeStore();
 const { t, locale } = useI18n();
 const pageId = computed(() => route.params.id);
 const contentRef = ref(null);
+const loading = ref(true);
 
 // 页面数据
 const pageTitle = ref("");
@@ -271,6 +296,7 @@ const resetPageData = () => {
 
 // 加载页面数据
 const loadPageData = async () => {
+    loading.value = true;
     resetPageData();
     try {
         const data = await pageApi.getById(pageId.value);
@@ -282,12 +308,14 @@ const loadPageData = async () => {
             pageUpdatedTime.value = formatTime(data.updatedAt);
             nextTick(() => highlightCode());
             // 异步记录最近访问
-            recentApi.add(pageId.value).catch(err => console.error("记录最近访问失败:", err));
+            recentApi.add(pageId.value).catch((err) => console.error("记录最近访问失败:", err));
         }
     } catch (e) {
         console.error("加载页面失败:", e);
 
         setNotFound(true);
+    } finally {
+        loading.value = false;
     }
 };
 
@@ -308,12 +336,12 @@ function formatTime(dateStr) {
     const now = new Date();
     const diff = now - date;
     const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return t('common.justNow');
-    if (minutes < 60) return t('common.minutesAgo', { n: minutes });
+    if (minutes < 1) return t("common.justNow");
+    if (minutes < 60) return t("common.minutesAgo", { n: minutes });
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) return t('common.hoursAgo', { n: hours });
+    if (hours < 24) return t("common.hoursAgo", { n: hours });
     const days = Math.floor(hours / 24);
-    if (days < 30) return t('common.daysAgo', { n: days });
+    if (days < 30) return t("common.daysAgo", { n: days });
     return date.toLocaleDateString(locale.value);
 }
 
@@ -495,7 +523,7 @@ const enterEditMode = () => {
 };
 
 const handleDelete = async () => {
-    if (!confirm(t('page.confirmDelete'))) return;
+    if (!confirm(t("page.confirmDelete"))) return;
     try {
         await pageApi.remove(pageId.value);
         // Invalidate cache so the tree reflects the deletion
@@ -514,11 +542,11 @@ const handleShare = () => {
     shareVisible.value = true;
     createdShare.value = null;
     shareForm.value = {
-        shareType: 'anonymous',
+        shareType: "anonymous",
         sharedWithId: null,
-        visitPassword: '',
+        visitPassword: "",
         expireAt: null,
-        allowEdit: false
+        allowEdit: false,
     };
 };
 
@@ -526,60 +554,65 @@ const handleShare = () => {
 const shareVisible = ref(false);
 const shareLoading = ref(false);
 const shareForm = ref({
-    shareType: 'anonymous',
+    shareType: "anonymous",
     sharedWithId: null,
-    visitPassword: '',
+    visitPassword: "",
     expireAt: null,
-    allowEdit: false
+    allowEdit: false,
 });
 const createdShare = ref(null);
 const userList = ref([]);
 const userSearchLoading = ref(false);
 
 const shareLink = computed(() => {
-    if (!createdShare.value) return '';
+    if (!createdShare.value) return "";
     return `${window.location.origin}/share/${createdShare.value.code}`;
 });
 
 const handleUserSearch = async (query) => {
-    if (!query || query.length < 1) { userList.value = []; return; }
+    if (!query || query.length < 1) {
+        userList.value = [];
+        return;
+    }
     userSearchLoading.value = true;
     try {
         const { userApi } = await import("../../api");
         const data = await userApi.getList(1, 20);
         userList.value = (data?.items || [])
-            .filter(u => u.username.includes(query) || (u.displayName && u.displayName.includes(query)))
-            .map(u => ({ value: u.id, label: u.displayName || u.username }));
-    } catch { userList.value = []; }
+            .filter((u) => u.username.includes(query) || (u.displayName && u.displayName.includes(query)))
+            .map((u) => ({ value: u.id, label: u.displayName || u.username }));
+    } catch {
+        userList.value = [];
+    }
     userSearchLoading.value = false;
 };
 
 const handleCreateShare = async () => {
-    if (shareForm.value.shareType === 'user' && !shareForm.value.sharedWithId) {
-        message.warning(t('page.pleaseSelectUser'));
+    if (shareForm.value.shareType === "user" && !shareForm.value.sharedWithId) {
+        message.warning(t("page.pleaseSelectUser"));
         return;
     }
     shareLoading.value = true;
     try {
         const payload = {
             pageId: Number(pageId.value),
-            sharedWithId: shareForm.value.shareType === 'user' ? shareForm.value.sharedWithId : null,
+            sharedWithId: shareForm.value.shareType === "user" ? shareForm.value.sharedWithId : null,
             visitPassword: shareForm.value.visitPassword || null,
             expireAt: shareForm.value.expireAt ? shareForm.value.expireAt.toISOString() : null,
-            allowEdit: shareForm.value.allowEdit
+            allowEdit: shareForm.value.allowEdit,
         };
         const data = await shareApi.create(payload);
         createdShare.value = data;
-        message.success(t('page.shareCreated'));
+        message.success(t("page.shareCreated"));
     } catch (e) {
-        message.error(e.message || t('page.createShareFailed'));
+        message.error(e.message || t("page.createShareFailed"));
     }
     shareLoading.value = false;
 };
 
 const copyShareLink = () => {
     navigator.clipboard.writeText(shareLink.value).then(() => {
-        message.success(t('page.linkCopied'));
+        message.success(t("page.linkCopied"));
     });
 };
 
@@ -950,7 +983,9 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.2s, transform 0.2s;
+    transition:
+        background-color 0.2s,
+        transform 0.2s;
     z-index: 1000;
 }
 
@@ -961,7 +996,9 @@ onUnmounted(() => {
 
 .fade-up-enter-active,
 .fade-up-leave-active {
-    transition: opacity 0.3s, transform 0.3s;
+    transition:
+        opacity 0.3s,
+        transform 0.3s;
 }
 
 .fade-up-enter-from,

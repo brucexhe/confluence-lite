@@ -306,7 +306,7 @@ const loadPageData = async () => {
             pageCreator.value = data.creator;
             pageCreatorName.value = data.creator?.displayName || data.creator?.username || "Unknown";
             pageUpdatedTime.value = formatTime(data.updatedAt);
-            nextTick(() => highlightCode());
+            //nextTick(() => highlightCode());
             // 异步记录最近访问
             recentApi.add(pageId.value).catch((err) => console.error("记录最近访问失败:", err));
         }
@@ -443,6 +443,18 @@ function initVideoPreview() {
     });
 }
 
+// 为 v-html 渲染内容中的 a 标签设置新窗口打开
+function initExternalLinks() {
+    nextTick(() => {
+        const el = contentRef.value;
+        if (!el) return;
+        el.querySelectorAll("a").forEach((link) => {
+            link.setAttribute("target", "_blank");
+            link.setAttribute("rel", "noopener noreferrer");
+        });
+    });
+}
+
 // 表格排序
 function initTableSort() {
     nextTick(() => {
@@ -506,6 +518,7 @@ watch(pageContent, () => {
     initImagePreview();
     initOfficePreview();
     initVideoPreview();
+    initExternalLinks();
 });
 
 onMounted(() => {

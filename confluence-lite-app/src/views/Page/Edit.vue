@@ -519,7 +519,9 @@ const cancelEdit = () => {
     align-items: center;
     justify-content: flex-end;
 }
-
+.spacer{
+    width: 5px;
+}
 .auto-save-hint {
     font-size: 12px;
     color: #6b778c;

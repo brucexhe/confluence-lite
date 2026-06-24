@@ -215,6 +215,12 @@ public class PageService
             return (null, "无权限编辑此页面");
         }
 
+        // 先判断标题/正文是否真的变化（用于决定是否生成新版本）
+        var titleChanged = request.Title != null
+            && !string.Equals(request.Title, page.Title, StringComparison.Ordinal);
+        var contentChanged = request.Content != null
+            && !string.Equals(request.Content, page.Content, StringComparison.Ordinal);
+
         if (request.Title != null)
         {
             page.Title = request.Title;
@@ -250,8 +256,11 @@ public class PageService
 
         page.UpdatedAt = DateTime.Now;
 
-        // 保存更新前版本
-        await SaveVersionAsync(id, page, userId);
+        // 仅当标题或正文确实变化时才记录新版本，避免相同内容重复生成版本
+        if (titleChanged || contentChanged)
+        {
+            await SaveVersionAsync(id, page, userId);
+        }
 
         await _db.Pages.UpdateAsync(page);
 

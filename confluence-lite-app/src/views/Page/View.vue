@@ -819,7 +819,7 @@ onUnmounted(() => {
 }
 :deep(.page-content p) {
     font-size: 14px;
-    margin-bottom: 12px;
+    margin: 0;
     line-height: 1.714;
     color: #172b4d;
     word-break: break-word;

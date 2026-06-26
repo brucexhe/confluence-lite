@@ -124,7 +124,7 @@ const loadPdf = async () => {
             const relativePath = props.filePath.replace(/^\//, '');
             const url = `/api/office/preview?path=${encodeURIComponent(relativePath)}`;
 
-            const response = await fetch(url, { headers });
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(response.status === 503

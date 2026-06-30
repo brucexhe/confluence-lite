@@ -17,13 +17,15 @@
         <!-- 内容区域 -->
         <div class="content-section">
             <div class="activity-section">
-                <a-card class="activity-card" :bordered="false">
-                    <template #title>
-                        <span class="card-title">{{ $t('workspace.recentActivity') }}</span>
-                    </template>
-                    <template #extra>
-                        <a-button type="link" size="small" @click="loadActivities">{{ $t('common.refresh') }}</a-button>
-                    </template>
+                <div class="activity-card" :bordered="false">
+                   <div class="flex activity-card-header">
+                        <div class="title">
+                            <span class="card-title">{{ $t('workspace.recentActivity') }}</span>
+                        </div>
+                        <div class="extra">
+                            <a-button type="link" size="small" @click="loadActivities">{{ $t('common.refresh') }}</a-button>
+                        </div> 
+                   </div>
 
                     <a-spin :spinning="loading">
                         <a-list
@@ -75,7 +77,7 @@
                             </template>
                         </a-empty>
                     </a-spin>
-                </a-card>
+                </div>
             </div>
 
             <!-- 快速操作 -->
@@ -337,18 +339,22 @@ onMounted(() => {
 .quick-card {
     border-radius: 4px;
     box-shadow: none !important;
+} 
+.activity-card-header{
+    margin-bottom: 10px;
+    justify-content: space-between;
 }
 
 .activity-card :deep(.ant-card-head),
 .quick-card :deep(.ant-card-head) {
-    padding: 12px 16px;
+    padding: 0 0 12px 0px;
     min-height: auto;
     border-bottom: 1px solid #dfe1e6;
 }
 
 .activity-card :deep(.ant-card-body),
 .quick-card :deep(.ant-card-body) {
-    padding: 12px 6px;
+    padding: 12px 0px;
 }
 
 .card-title {
@@ -379,7 +385,7 @@ onMounted(() => {
 .activity-content {
     flex: 1;
     min-width: 0;
-    padding-left: 8px;
+    padding-left: 0px;
 }
 
 .activity-page {
@@ -391,7 +397,7 @@ onMounted(() => {
     color: #0052cc;
     text-decoration: none;
     font-weight: 400;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
 }

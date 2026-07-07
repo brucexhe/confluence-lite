@@ -115,31 +115,6 @@ public static class AuthRoutes
                 """;
 
             return Results.Text(html, "text/html");
-        });
-
-        group.MapGet("/config", (AppConfiguration config) =>
-        {
-            var authConfig = new AuthConfigDto
-            {
-                PasswordEnabled = config.AuthSettings.PasswordEnabled,
-                EmailLoginEnabled = config.AuthSettings.EmailLoginEnabled,
-                OidcEnabled = config.AuthSettings.OidcEnabled,
-                OidcProviderName = config.AuthSettings.OidcProviderName,
-                OidcDiscoveryUrl = config.AuthSettings.OidcDiscoveryUrl,
-                OidcClientId = config.AuthSettings.OidcClientId,
-                OidcClientSecret = config.AuthSettings.OidcClientSecret,
-                OidcScopes = config.AuthSettings.OidcScopes,
-                OidcAutoCreateUser = config.AuthSettings.OidcAutoCreateUser,
-                OidcDefaultRole = config.AuthSettings.OidcDefaultRole,
-                LdapEnabled = config.AuthSettings.LdapEnabled,
-                LdapUrl = config.AuthSettings.LdapUrl,
-                LdapBindDn = config.AuthSettings.LdapBindDn,
-                LdapBindPassword = config.AuthSettings.LdapBindPassword,
-                LdapBaseDn = config.AuthSettings.LdapBaseDn,
-                LdapUserFilter = config.AuthSettings.LdapUserFilter
-            };
-
-            return Results.Ok(ApiResponse<AuthConfigDto>.Ok(authConfig));
-        });
+        });          
     }
 }

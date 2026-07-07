@@ -50,8 +50,7 @@ public class JwtAuthMiddleware
 
     // 公开路径白名单（无需认证）
     private static readonly HashSet<string> PublicPaths = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "/api/auth/config",
+    { 
         "/api/auth/oidc/login",
         "/api/auth/oidc/callback",
         "/api/user/login",

@@ -229,7 +229,7 @@ if (!Directory.Exists(attachmentUploadPath))
 app.Use(async (context, next) =>
 {
     var path = context.Request.Path.Value ?? "";
-    if (path.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+    if (path.StartsWith("/uploads/attachments/", StringComparison.OrdinalIgnoreCase))
     {
         var jwtOptions = context.RequestServices.GetRequiredService<JwtOptions>();
         var configuration = context.RequestServices.GetRequiredService<IConfiguration>();

@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.RateLimiting;
+﻿using Microsoft.AspNetCore.RateLimiting;
+using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Middleware;
 using ConfluenceLite.Api.Services;
@@ -67,8 +68,15 @@ public static class UserRoutes
 
         group.MapPost("/register", async (
             CreateUserRequest request,
+            AppConfiguration config,
             UserService userService) =>
         {
+            if (config.SecuritySettings == null || !config.SecuritySettings.AllowPublicRegistration)
+            {
+                return Results.BadRequest(ApiResponse<UserDto>.Fail("系统未开放自助注册"));
+            }
+              
+
             var (user, error) = await userService.CreateUserAsync(request);
             if (user == null || error != null)
                 return Results.BadRequest(ApiResponse<UserDto>.Fail(error ?? "创建用户失败"));

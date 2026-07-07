@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.RateLimiting;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
+using ConfluenceLite.Api.Mappers;
 using ConfluenceLite.Api.Middleware;
 using ConfluenceLite.Api.Services;
 
@@ -87,15 +88,32 @@ public static class UserRoutes
         group.MapGet("/list", async (
             int page,
             int pageSize,
+            HttpContext context,
             UserService userService) =>
         {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+            if (!currentUser.IsAdmin)
+                return Results.Json(new ForbiddenResponse(), AppJsonContext.Default.ForbiddenResponse, statusCode: 403);
+
             var pagedRequest = new PagedRequest { Page = page, PageSize = pageSize };
             var result = await userService.GetUserListAsync(pagedRequest);
             return Results.Ok(ApiResponse<PagedResponse<UserDto>>.Ok(result));
         });
 
-        group.MapGet("/{id}", async (long id, UserService userService) =>
+        group.MapGet("/{id}", async (
+            long id,
+            HttpContext context,
+            UserService userService) =>
         {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+            // 普通用户只能查看自己，管理员可查看任意用户
+            if (!currentUser.IsAdmin && id != currentUser.UserId)
+                return Results.Json(new ForbiddenResponse(), AppJsonContext.Default.ForbiddenResponse, statusCode: 403);
+
             var user = await userService.GetUserByIdAsync(id);
             if (user == null)
                 return Results.NotFound(ApiResponse<UserDto>.Fail("用户不存在"));
@@ -121,8 +139,26 @@ public static class UserRoutes
         group.MapPut("/{id}", async (
             long id,
             UpdateUserRequest request,
+            HttpContext context,
             UserService userService) =>
         {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            if (!currentUser.IsAdmin)
+            {
+                // 普通用户只能修改自己的资料，且不能修改 Status（防止禁用他人/管理员）
+                if (id != currentUser.UserId)
+                    return Results.Json(new ForbiddenResponse(), AppJsonContext.Default.ForbiddenResponse, statusCode: 403);
+                request.Status = null;
+            }
+            else if (id == currentUser.UserId && request.Status == 0)
+            {
+                // 管理员不能禁用当前登录的自己
+                return Results.BadRequest(ApiResponse<UserDto>.Fail("不能禁用当前登录账户"));
+            }
+
             var (user, error) = await userService.UpdateUserAsync(id, request);
             if (user == null || error != null)
                 return Results.BadRequest(ApiResponse<UserDto>.Fail(error ?? "更新用户失败"));
@@ -130,9 +166,18 @@ public static class UserRoutes
             return Results.Ok(ApiResponse<UserDto>.Ok(user, "用户更新成功"));
         });
 
-        group.MapDelete("/{id}", async (long id, UserService userService) =>
+        group.MapDelete("/{id}", async (
+            long id,
+            HttpContext context,
+            UserService userService) =>
         {
-            var (success, error) = await userService.DeleteUserAsync(id);
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+            if (!currentUser.IsAdmin)
+                return Results.Json(new ForbiddenResponse(), AppJsonContext.Default.ForbiddenResponse, statusCode: 403);
+
+            var (success, error) = await userService.DeleteUserAsync(id, currentUser.UserId);
             if (!success || error != null)
                 return Results.BadRequest(ApiResponse<bool>.Fail(error ?? "删除用户失败"));
 

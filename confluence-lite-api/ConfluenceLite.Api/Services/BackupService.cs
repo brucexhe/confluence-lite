@@ -2,6 +2,7 @@ using System.Data;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.DTOs;
 using ConfluenceLite.Api.Models;
@@ -102,7 +103,7 @@ public class BackupService
     /// </summary>
     public async Task<(BackupDto?, string?)> CreateBackupAsync(CreateBackupRequest request, long userId)
     {
-        var backupName = request.Name ?? $"backup-{DateTime.Now:yyyyMMdd-HHmmss}";
+        var backupName = SanitizeBackupName(request.Name);
         var backup = new SystemBackup
         {
             Name = backupName,
@@ -164,6 +165,12 @@ public class BackupService
         {
             var fileName = $"{backup.Name}.zip";
             var filePath = Path.Combine(_backupPath, fileName);
+
+            // 边界校验：确保最终路径未逃逸 _backupPath（纵深防御）
+            var fullBackupRoot = Path.GetFullPath(_backupPath) + Path.DirectorySeparatorChar;
+            var fullFilePath = Path.GetFullPath(filePath);
+            if (!fullFilePath.StartsWith(fullBackupRoot, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("非法备份文件路径");
 
             if (!Directory.Exists(_backupPath))
                 Directory.CreateDirectory(_backupPath);
@@ -297,17 +304,107 @@ public class BackupService
     }
 
     /// <summary>
-    /// 备份配置到 ZIP
+    /// 备份配置到 ZIP（敏感字段脱敏）
     /// </summary>
     private void BackupConfigToArchive(ZipArchive archive)
     {
         var runtimeConfigPath = Path.Combine(_env.ContentRootPath, "data", "appsettings.runtime.json");
         if (!File.Exists(runtimeConfigPath)) return;
 
+        var json = File.ReadAllText(runtimeConfigPath);
+        var redacted = RedactSensitiveConfig(json);
+
         var entry = archive.CreateEntry("config/appsettings.runtime.json");
         using var entryStream = entry.Open();
-        using var fileStream = File.OpenRead(runtimeConfigPath);
-        fileStream.CopyTo(entryStream);
+        using var writer = new StreamWriter(entryStream, Encoding.UTF8);
+        writer.Write(redacted);
+    }
+
+    /// <summary>
+    /// 脱敏配置中的敏感字段（JWT Secret、数据库密码、OIDC/LDAP/SMTP 密钥）
+    /// </summary>
+    private static string RedactSensitiveConfig(string json)
+    {
+        try
+        {
+            var node = JsonNode.Parse(json);
+            if (node == null) return json;
+
+            var app = node["App"]?.AsObject();
+            if (app == null) return json;
+
+            if (app["Jwt"]?.AsObject() is { } jwt)
+                jwt["Secret"] = "***REDACTED***";
+
+            if (app["Database"]?.AsObject() is { } db)
+            {
+                var conn = db["ConnectionString"]?.GetValue<string>();
+                if (!string.IsNullOrEmpty(conn))
+                    db["ConnectionString"] = RedactConnectionStringPassword(conn);
+            }
+
+            if (app["AuthSettings"]?.AsObject() is { } auth)
+            {
+                if (auth.ContainsKey("OidcClientSecret")) auth["OidcClientSecret"] = "***REDACTED***";
+                if (auth.ContainsKey("LdapBindPassword")) auth["LdapBindPassword"] = "***REDACTED***";
+            }
+
+            if (app["MailSettings"]?.AsObject() is { } mail)
+            {
+                if (mail.ContainsKey("Password")) mail["Password"] = "***REDACTED***";
+            }
+
+            return node.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        }
+        catch
+        {
+            Console.WriteLine("[Backup] 配置脱敏失败，返回原始配置");
+            return json;
+        }
+    }
+
+    /// <summary>
+    /// 脱敏连接字符串中的 Password/Pwd 字段
+    /// </summary>
+    private static string RedactConnectionStringPassword(string connStr)
+    {
+        var parts = connStr.Split(';');
+        for (int i = 0; i < parts.Length; i++)
+        {
+            var trimmed = parts[i].Trim();
+            if (trimmed.StartsWith("Password=", StringComparison.OrdinalIgnoreCase) ||
+                trimmed.StartsWith("Pwd=", StringComparison.OrdinalIgnoreCase))
+            {
+                var eq = parts[i].IndexOf('=');
+                parts[i] = parts[i].Substring(0, eq + 1) + "***REDACTED***";
+            }
+        }
+        return string.Join(";", parts);
+    }
+
+    /// <summary>
+    /// 净化备份名称，防止路径遍历
+    /// </summary>
+    private static string SanitizeBackupName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return $"backup-{DateTime.Now:yyyyMMdd-HHmmss}";
+
+        // 仅取文件名部分，剥离任何目录路径
+        var safe = Path.GetFileName(name);
+
+        // 移除非法文件名字符
+        var invalid = Path.GetInvalidFileNameChars();
+        var sb = new StringBuilder();
+        foreach (var c in safe)
+        {
+            if (Array.IndexOf(invalid, c) < 0)
+                sb.Append(c);
+        }
+        var cleaned = sb.ToString().Trim();
+        return string.IsNullOrWhiteSpace(cleaned)
+            ? $"backup-{DateTime.Now:yyyyMMdd-HHmmss}"
+            : cleaned;
     }
 
     /// <summary>
@@ -457,6 +554,8 @@ public class BackupService
         var uploadPath = Path.Combine(_env.ContentRootPath, "wwwroot",
             _config.GetValue<string>("App:Attachment:UploadPath") ?? "uploads");
 
+        var fullBase = Path.GetFullPath(uploadPath) + Path.DirectorySeparatorChar;
+
         foreach (var entry in archive.Entries)
         {
             if (!entry.FullName.StartsWith("attachments/")) continue;
@@ -465,6 +564,15 @@ public class BackupService
             if (string.IsNullOrEmpty(relativePath)) continue;
 
             var targetPath = Path.Combine(uploadPath, relativePath);
+            var fullTarget = Path.GetFullPath(targetPath);
+
+            // Zip Slip 防护：拒绝逃逸 uploadPath 的条目
+            if (!fullTarget.StartsWith(fullBase, StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine($"[Restore] 跳过越界附件条目: {entry.FullName}");
+                continue;
+            }
+
             var targetDir = Path.GetDirectoryName(targetPath);
             if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
                 Directory.CreateDirectory(targetDir);
@@ -476,18 +584,14 @@ public class BackupService
     }
 
     /// <summary>
-    /// 从 ZIP 还原配置
+    /// 从 ZIP 还原配置（跳过——保护敏感密钥不被覆盖）
     /// </summary>
     private void RestoreConfigFromArchive(ZipArchive archive)
     {
-        var entry = archive.GetEntry("config/appsettings.runtime.json");
-        if (entry == null) return;
-
-        var targetPath = Path.Combine(_env.ContentRootPath, "data", "appsettings.runtime.json");
-
-        using var entryStream = entry.Open();
-        using var fileStream = File.Create(targetPath);
-        entryStream.CopyTo(fileStream);
+        // 备份中的 config 已脱敏（JWT Secret、DB 密码、OIDC/LDAP/SMTP 密钥为占位符），
+        // 自动还原会覆盖当前运行的真实密钥导致系统不可用，故不自动还原。
+        // 如需恢复配置，请管理员手动处理。
+        Console.WriteLine("[Restore] 配置文件不自动还原（保护敏感密钥），如需恢复请手动处理。");
     }
 
     /// <summary>

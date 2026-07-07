@@ -14,7 +14,7 @@
                     <FileIcon :content-type="item.contentType" />
                 </div>
                 <div class="attachment-info">
-                    <a :href="`/${item.storagePath}`" target="_blank" class="attachment-name">{{ item.fileName }}</a>
+                    <a :href="`/api/attachment/${item.id}/download`" target="_blank" class="attachment-name">{{ item.fileName }}</a>
                     <span class="attachment-meta">
                         {{ formatSize(item.fileSize) }} · {{ formatTime(item.createdAt) }}
                     </span>

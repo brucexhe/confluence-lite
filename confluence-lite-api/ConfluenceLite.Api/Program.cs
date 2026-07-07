@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -195,6 +196,19 @@ builder.Services.Configure<IISServerOptions>(options =>
 // ========== 应用构建 ==========
 var app = builder.Build();
 
+// ========== 安全校验：JWT Secret ==========
+var defaultJwtSecret = "YourSuperSecretKeyHereThatIsAtLeast32CharactersLong!";
+if (string.Equals(appConfig.Jwt.Secret, defaultJwtSecret, StringComparison.Ordinal))
+{
+    if (app.Environment.IsProduction())
+    {
+        Console.WriteLine("[Security][FATAL] 检测到默认 JWT Secret，生产环境拒绝启动。");
+        Console.WriteLine("[Security] 请通过安装向导初始化，或在 data/appsettings.runtime.json 中配置 App:Jwt:Secret。");
+        return;
+    }
+    Console.WriteLine("[Security][WARNING] 检测到默认 JWT Secret，存在 token 伪造风险，生产环境将拒绝启动。");
+}
+
 // ========== 中间件配置 ==========
 
 // 静态文件服务（用于附件下载）
@@ -210,6 +224,26 @@ if (!Directory.Exists(attachmentUploadPath))
 {
     Directory.CreateDirectory(attachmentUploadPath);
 }
+
+// 附件静态资源鉴权：/uploads 下的附件/图片要求登录，匿名访问返回 401
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? "";
+    if (path.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+    {
+        var jwtOptions = context.RequestServices.GetRequiredService<JwtOptions>();
+        var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
+        var user = JwtAuthMiddleware.ResolveUser(context, jwtOptions, configuration);
+        if (!user.IsAuthenticated)
+        {
+            context.Response.StatusCode = 401;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync("{\"success\":false,\"message\":\"未授权，请先登录\",\"errorCode\":401}");
+            return;
+        }
+    }
+    await next();
+});
 
 // 默认文件（index.html）- 必须在 UseStaticFiles 之前
 app.UseDefaultFiles(new DefaultFilesOptions

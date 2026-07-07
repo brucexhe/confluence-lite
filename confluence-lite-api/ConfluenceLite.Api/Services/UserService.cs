@@ -228,12 +228,29 @@ public class UserService
     /// <summary>
     /// 删除用户
     /// </summary>
-    public async Task<(bool success, string? error)> DeleteUserAsync(long id)
+    public async Task<(bool success, string? error)> DeleteUserAsync(long id, long currentUserId)
     {
         var user = await _db.Users.GetByIdAsync(id);
         if (user == null)
         {
             return (false, "用户不存在");
+        }
+
+        if (id == currentUserId)
+        {
+            return (false, "不能删除当前登录账户");
+        }
+
+        // 保护最后一个管理员账户，避免系统失去管理权限
+        if (user.IsAdmin)
+        {
+            var adminCount = await _db.Db.Queryable<User>()
+                .Where(u => u.IsAdmin && u.Status == 1)
+                .CountAsync();
+            if (adminCount <= 1)
+            {
+                return (false, "不能删除最后一个管理员账户");
+            }
         }
 
         await _db.Users.DeleteAsync(user);

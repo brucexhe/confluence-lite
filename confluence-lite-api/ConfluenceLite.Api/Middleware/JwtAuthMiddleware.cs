@@ -45,12 +45,11 @@ public class JwtAuthMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly JwtOptions _jwtOptions;
-    private readonly string _issuer;
-    private readonly string _audience;
+    private readonly IConfiguration _configuration;
 
     // 公开路径白名单（无需认证）
     private static readonly HashSet<string> PublicPaths = new(StringComparer.OrdinalIgnoreCase)
-    { 
+    {
         "/api/auth/oidc/login",
         "/api/auth/oidc/callback",
         "/api/user/login",
@@ -68,55 +67,60 @@ public class JwtAuthMiddleware
     {
         _next = next;
         _jwtOptions = jwtOptions;
-        _issuer = configuration["Jwt:Issuer"] ?? "ConfluenceLite";
-        _audience = configuration["Jwt:Audience"] ?? "ConfluenceLiteUsers";
+        _configuration = configuration;
+    }
+
+    /// <summary>
+    /// 从请求 Cookie 解析当前用户（供中间件与静态文件鉴权复用）
+    /// </summary>
+    public static CurrentUser ResolveUser(HttpContext context, JwtOptions jwtOptions, IConfiguration configuration)
+    {
+        var currentUser = new CurrentUser();
+        var token = context.Request.Cookies["Authorization"];
+        if (string.IsNullOrEmpty(token))
+            return currentUser;
+
+        try
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = System.Text.Encoding.UTF8.GetBytes(jwtOptions.Secret);
+
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = true,
+                ValidIssuer = configuration["Jwt:Issuer"] ?? "ConfluenceLite",
+                ValidateAudience = true,
+                ValidAudience = configuration["Jwt:Audience"] ?? "ConfluenceLiteUsers",
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+
+            var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
+
+            var nameIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier);
+            var nameClaim = principal.FindFirst(ClaimTypes.Name);
+
+            if (nameIdClaim != null && long.TryParse(nameIdClaim.Value, out var userId))
+            {
+                currentUser.UserId = userId;
+                currentUser.Username = nameClaim?.Value ?? string.Empty;
+                currentUser.IsAuthenticated = true;
+                currentUser.IsAdmin = principal.FindFirst("IsAdmin")?.Value == "True";
+            }
+        }
+        catch
+        {
+            // Token 无效，忽略
+        }
+
+        return currentUser;
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
-        var currentUser = new CurrentUser();
-
-        // 从 Cookie 获取 token
-        var token = context.Request.Cookies["Authorization"];
-        if (!string.IsNullOrEmpty(token))
-        {
-            try
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = System.Text.Encoding.UTF8.GetBytes(_jwtOptions.Secret);
-
-                var validationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = true,
-                    ValidIssuer = _issuer,
-                    ValidateAudience = true,
-                    ValidAudience = _audience,
-                    ValidateLifetime = true,
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
-
-                var nameIdClaim = principal.FindFirst(ClaimTypes.NameIdentifier);
-                var nameClaim = principal.FindFirst(ClaimTypes.Name);
-
-                if (nameIdClaim != null && long.TryParse(nameIdClaim.Value, out var userId))
-                {
-                    currentUser.UserId = userId;
-                    currentUser.Username = nameClaim?.Value ?? string.Empty;
-                    currentUser.IsAuthenticated = true;
-
-                    var isAdminClaim = principal.FindFirst("IsAdmin");
-                    currentUser.IsAdmin = isAdminClaim?.Value == "True";
-                }
-            }
-            catch
-            {
-                // Token 无效，忽略
-            }
-        }
+        var currentUser = ResolveUser(context, _jwtOptions, _configuration);
 
         // 将当前用户信息存储到 HttpContext 中
         context.Items["CurrentUser"] = currentUser;

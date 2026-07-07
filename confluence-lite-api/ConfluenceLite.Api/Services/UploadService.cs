@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Models;
+using ConfluenceLite.Api.Middleware;
 using ConfluenceLite.Api.DTOs;
 
 namespace ConfluenceLite.Api.Services;
@@ -265,6 +266,47 @@ public class UploadService
         // storagePath 格式: attachments/2026/04/xxx.jpg
         var fullPath = Path.Combine(_uploadRootPath, attachment.StoragePath);
         return File.Exists(fullPath) ? fullPath : null;
+    }
+
+    /// <summary>
+    /// 校验当前用户是否可访问指定页面（管理员 / 页面创建者 / 空间所有者）
+    /// </summary>
+    public async Task<bool> CanAccessPageAsync(long pageId, CurrentUser user)
+    {
+        if (user.IsAdmin)
+            return true;
+
+        var page = await _db.Pages.GetByIdAsync(pageId);
+        if (page == null)
+            return false;
+        if (page.CreatorId == user.UserId)
+            return true;
+
+        var workspace = await _db.Db.Queryable<Workspace>()
+            .Where(w => w.Id == page.WorkspaceId)
+            .FirstAsync();
+        return workspace != null && workspace.OwnerId == user.UserId;
+    }
+
+    /// <summary>
+    /// 获取附件下载流（校验页面访问权）
+    /// </summary>
+    public async Task<(Stream? stream, string? contentType, string? fileName, string? error)> GetAttachmentDownloadAsync(
+        long id, CurrentUser user)
+    {
+        var attachment = await _db.Attachments.GetByIdAsync(id);
+        if (attachment == null || attachment.IsDeleted)
+            return (null, null, null, "附件不存在");
+
+        if (!await CanAccessPageAsync(attachment.PageId, user))
+            return (null, null, null, "无权访问此附件");
+
+        var fullPath = Path.Combine(_uploadRootPath, attachment.StoragePath);
+        if (!File.Exists(fullPath))
+            return (null, null, null, "文件不存在");
+
+        var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+        return (stream, attachment.ContentType, attachment.FileName, null);
     }
 
     /// <summary>

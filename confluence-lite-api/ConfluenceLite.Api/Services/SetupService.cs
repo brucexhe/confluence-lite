@@ -16,17 +16,20 @@ public class SetupService
     private readonly TokenService _tokenService;
     private readonly IConfiguration _configuration;
     private readonly IHostEnvironment _env;
+    private readonly JwtOptions _jwtOptions;
 
     public SetupService(
         AppDbContext db,
         TokenService tokenService,
         IConfiguration configuration,
-        IHostEnvironment env)
+        IHostEnvironment env,
+        JwtOptions jwtOptions)
     {
         _db = db;
         _tokenService = tokenService;
         _configuration = configuration;
         _env = env;
+        _jwtOptions = jwtOptions;
     }
 
     /// <summary>
@@ -109,15 +112,19 @@ public class SetupService
             return (null, $"数据库连接失败: {ex.Message}");
         }
 
-        // 3. 保存配置到 appsettings.json
+        // 3. 保存配置到 appsettings.runtime.json（含随机生成的 JWT Secret）
+        var jwtSecret = TokenService.GenerateSecureKey();
         try
         {
-            await SaveConfigAsync(request.Database);
+            await SaveConfigAsync(request.Database, jwtSecret);
         }
         catch (Exception ex)
         {
             return (null, $"保存配置失败: {ex.Message}");
         }
+
+        // 刷新当前进程的 JwtOptions，使后续签发 token 立即使用新 Secret
+        _jwtOptions.Secret = jwtSecret;
 
         // 4. 创建新的数据库连接执行安装
         var installDb = AppDbContext.CreateClient(connectionString);
@@ -253,9 +260,9 @@ public class SetupService
     }
 
     /// <summary>
-    /// 保存数据库配置到 appsettings.runtime.json
+    /// 保存数据库配置与 JWT Secret 到 appsettings.runtime.json
     /// </summary>
-    private async Task SaveConfigAsync(DatabaseConfigRequest config)
+    private async Task SaveConfigAsync(DatabaseConfigRequest config, string jwtSecret)
     {
         var dataDir = GetDataDirectory();
         var runtimeConfigPath = Path.Combine(dataDir, "appsettings.runtime.json");
@@ -277,6 +284,12 @@ public class SetupService
                   "DbType": {{dbType}},
                   "AutoCreateTables": true,
                   "EnableSqlLog": true
+                },
+                "Jwt": {
+                  "Secret": "{{jwtSecret}}",
+                  "Issuer": "ConfluenceLite",
+                  "Audience": "ConfluenceLiteUsers",
+                  "ExpirationMinutes": 10080
                 }
               }
             }

@@ -1,4 +1,5 @@
 using ConfluenceLite.Api.DTOs;
+using ConfluenceLite.Api.Mappers;
 using ConfluenceLite.Api.Services;
 using ConfluenceLite.Api.Middleware;
 
@@ -49,20 +50,57 @@ public static class AttachmentRoutes
         .DisableAntiforgery(); // 允许文件上传
 
         // ========== 获取页面附件列表 ==========
-        group.MapGet("/page/{pageId}", async (long pageId, UploadService uploadService) =>
+        group.MapGet("/page/{pageId}", async (
+            long pageId,
+            HttpContext context,
+            UploadService uploadService) =>
         {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            if (!await uploadService.CanAccessPageAsync(pageId, currentUser))
+                return Results.Json(new ForbiddenResponse(), AppJsonContext.Default.ForbiddenResponse, statusCode: 403);
+
             var attachments = await uploadService.GetPageAttachmentsAsync(pageId);
             return Results.Ok(ApiResponse<List<AttachmentListItemDto>>.Ok(attachments));
         });
 
         // ========== 获取附件详情 ==========
-        group.MapGet("/{id}", async (long id, UploadService uploadService) =>
+        group.MapGet("/{id}", async (
+            long id,
+            HttpContext context,
+            UploadService uploadService) =>
         {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
             var attachment = await uploadService.GetAttachmentByIdAsync(id);
             if (attachment == null)
                 return Results.NotFound(ApiResponse<AttachmentDto>.Fail("附件不存在"));
 
+            if (!await uploadService.CanAccessPageAsync(attachment.PageId, currentUser))
+                return Results.Json(new ForbiddenResponse(), AppJsonContext.Default.ForbiddenResponse, statusCode: 403);
+
             return Results.Ok(ApiResponse<AttachmentDto>.Ok(attachment));
+        });
+
+        // ========== 鉴权下载附件 ==========
+        group.MapGet("/{id}/download", async (
+            long id,
+            HttpContext context,
+            UploadService uploadService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            var (stream, contentType, fileName, error) = await uploadService.GetAttachmentDownloadAsync(id, currentUser);
+            if (stream == null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error ?? "附件不存在或无权访问"));
+
+            return Results.File(stream, contentType, fileName);
         });
 
         // ========== 删除附件 ==========

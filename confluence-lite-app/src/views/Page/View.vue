@@ -443,12 +443,13 @@ function initVideoPreview() {
     });
 }
 
-// 为 v-html 渲染内容中的 a 标签设置新窗口打开
+// 为 v-html 渲染内容中的普通 a 标签设置新窗口打开
+// 注意：a.file、a.video 走各自的预览逻辑，不应添加 _blank
 function initExternalLinks() {
     nextTick(() => {
         const el = contentRef.value;
         if (!el) return;
-        el.querySelectorAll("a").forEach((link) => {
+        el.querySelectorAll("a:not(.file):not(.video)").forEach((link) => {
             link.setAttribute("target", "_blank");
             link.setAttribute("rel", "noopener noreferrer");
         });

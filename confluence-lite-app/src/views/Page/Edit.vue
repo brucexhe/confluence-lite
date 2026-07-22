@@ -258,7 +258,7 @@ async function handleFileInsert(file) {
             editor.insertContent(`<img class="image" src="${url}" alt="${file.name}" style="max-width: 100%;">`);
         } else {
             // 插入文件链接
-            editor.insertContent(`<p><a class="file" href="${url}" target="_blank">${file.name}</a></p>`);
+            editor.insertContent(`<p><a class="file" href="${url}">${file.name}</a></p>`);
         }
     } catch (error) {
         message.warning(t('editor.fileInsertFailed'));

@@ -70,9 +70,14 @@ public static class UserRoutes
         group.MapPost("/register", async (
             CreateUserRequest request,
             AppConfiguration config,
+            HttpContext context,
             UserService userService) =>
         {
-            if (config.SecuritySettings == null || !config.SecuritySettings.AllowPublicRegistration)
+            // 管理员后台创建用户不受“公开自助注册”开关限制
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            var isAdminCaller = currentUser != null && currentUser.IsAuthenticated && currentUser.IsAdmin;
+
+            if (!isAdminCaller && (config.SecuritySettings == null || !config.SecuritySettings.AllowPublicRegistration))
             {
                 return Results.BadRequest(ApiResponse<UserDto>.Fail("系统未开放自助注册"));
             }

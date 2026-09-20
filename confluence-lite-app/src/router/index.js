@@ -134,6 +134,11 @@ const router = createRouter({
                     component: WorkspaceHome
                 },
                 {
+                    path: 'members',
+                    name: 'space-members',
+                    component: () => import('../views/Workspace/Members.vue')
+                },
+                {
                     path: 'page/new',
                     name: 'page-create',
                     component: () => import('../views/Page/Edit.vue')
@@ -326,7 +331,8 @@ router.beforeEach(async (to, from, next) => {
                     ))
                     next({path: `/${data[0].key.toUpperCase()}`})
                 } else {
-                    next({name: 'login'})
+                    // 没有任何空间 → 进入空间目录页（可创建/加入公开空间），而非踢回登录页
+                    next({path: '/spaces'})
                 }
             } catch {
                 // API error - request.js will handle 401 and redirect

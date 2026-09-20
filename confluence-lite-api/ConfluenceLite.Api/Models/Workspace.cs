@@ -68,6 +68,12 @@ public class Workspace
     public bool IsPersonal { get; set; }
 
     /// <summary>
+    /// 是否公开空间（公开空间出现在空间目录，任何登录用户可自助加入）
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public bool IsPublic { get; set; }
+
+    /// <summary>
     /// 是否为用户的默认空间（每个用户只能有一个默认空间）
     /// </summary>
     [SugarColumn(IsNullable = false)]

@@ -45,6 +45,7 @@ public class WorkspaceService
             OwnerId = ownerId,
             Status = 1,
             IsDefault = request.IsDefault,
+            IsPublic = request.IsPublic,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
         };
@@ -127,12 +128,18 @@ public class WorkspaceService
     }
 
     /// <summary>
-    /// 获取用户的工作空间列表（按默认空间优先、创建时间排序）
+    /// 获取用户的工作空间列表（Owner 的空间 ∪ 被 ViewSpace 授权的空间，默认空间优先、创建时间排序）
     /// </summary>
     public async Task<List<WorkspaceDto>> GetUserWorkspacesAsync(long userId)
     {
+        // 被 ViewSpace 授权的空间 id（用户粒度权限记录）
+        var permittedIds = await _db.Db.Queryable<WorkspacePermission>()
+            .Where(p => p.TargetType == 2 && p.TargetId == userId && p.ViewSpace)
+            .Select(p => p.WorkspaceId)
+            .ToListAsync();
+
         var workspaces = await _db.Db.Queryable<Workspace>()
-            .Where(w => w.OwnerId == userId && !w.IsDeleted)
+            .Where(w => !w.IsDeleted && (w.OwnerId == userId || permittedIds.Contains(w.Id)))
             .OrderByDescending(w => w.IsDefault)  // 默认空间优先
             .OrderBy(w => w.CreatedAt)             // 然后按创建时间
             .ToListAsync();
@@ -203,6 +210,12 @@ public class WorkspaceService
             }
         }
 
+        // 处理公开空间设置
+        if (request.IsPublic.HasValue)
+        {
+            workspace.IsPublic = request.IsPublic.Value;
+        }
+
         workspace.UpdatedAt = DateTime.Now;
 
         await _db.Workspaces.UpdateAsync(workspace);
@@ -254,6 +267,7 @@ public class WorkspaceService
             OwnerId = workspace.OwnerId,
             Status = workspace.Status,
             IsDefault = workspace.IsDefault,
+            IsPublic = workspace.IsPublic,
             CreatedAt = workspace.CreatedAt,
             UpdatedAt = workspace.UpdatedAt,
             Owner = owner == null ? null : new UserSummaryDto

@@ -2,71 +2,117 @@
     <div class="space-list-container">
         <div class="header-actions">
             <h2>Space Directory</h2>
-            <a-button @click="showCreateModal" class="light-btn">Create space</a-button>
+            <a-button type="primary" @click="showCreateModal">Create space</a-button>
         </div>
 
-        <!-- Search/Filter -->
+        <!-- Search -->
         <div class="filter-bar">
-            <a-input-search v-model:value="searchText" placeholder="Filter by space name..." style="width: 300px" />
+            <a-input-search
+                v-model:value="searchText"
+                placeholder="Search public spaces..."
+                style="width: 300px"
+                allow-clear
+                @search="loadDiscover"
+            />
         </div>
 
-        <!-- Data Table -->
-        <a-table
-            :dataSource="filteredSpaces"
-            :columns="columns"
-            :pagination="pagination"
-            :rowKey="(record) => record.id"
-            :loading="loading"
-        >
-            <template #bodyCell="{ column, record }">
-                <template v-if="column.key === 'name'">
-                    <div class="space-name-cell">
-                        <img
-                            v-if="record.icon && isImageUrl(record.icon)"
-                            class="space-icon-img"
-                            :src="record.icon"
-                            alt=""
-                        />
-                        <div
-                            v-else
-                            class="space-icon"
-                            :style="{
-                                background: record.icon || getSpaceColorById(record.id)
-                            }"
-                        >
-                            <span>{{ getSpaceInitial(record) }}</span>
-                        </div>
-                        <div>
-                            <div class="space-name">
-                                <router-link :to="`/${record.key}`">{{ record.name }}</router-link>
+        <!-- My Spaces -->
+        <div class="section">
+            <div class="section-title">My spaces</div>
+            <a-spin :spinning="loadingMine">
+                <div v-if="mySpaces.length > 0" class="space-grid">
+                    <div v-for="space in mySpaces" :key="space.id" class="space-card">
+                        <div class="space-card-head" @click="goSpace(space)">
+                            <img
+                                v-if="space.icon && isImageUrl(space.icon)"
+                                class="space-icon-img"
+                                :src="space.icon"
+                                alt=""
+                            />
+                            <div
+                                v-else
+                                class="space-icon"
+                                :style="{ background: space.icon || getSpaceColorById(space.id) }"
+                            >
+                                <span>{{ getSpaceInitial(space) }}</span>
                             </div>
-                            <span class="space-desc" v-if="record.description">{{ record.description }}</span>
+                            <div class="space-card-title">
+                                <div class="space-name">{{ space.name }}</div>
+                                <code class="space-key">{{ space.key }}</code>
+                            </div>
+                        </div>
+                        <div class="space-desc" v-if="space.description">{{ space.description }}</div>
+                        <div class="space-card-foot">
+                            <span class="page-count">{{ space.pageCount || 0 }} pages</span>
+                            <a-tag v-if="space.isPublic" color="green">Public</a-tag>
+                            <a-tag v-if="space.isDefault" color="blue">Default</a-tag>
+                            <span class="foot-actions">
+                                <a-button v-if="isOwnerOf(space)" type="link" size="small" @click="showEditModal(space)">Edit</a-button>
+                                <a-popconfirm
+                                    v-if="isOwnerOf(space)"
+                                    title="Are you sure you want to delete this space?"
+                                    ok-text="Yes"
+                                    cancel-text="No"
+                                    @confirm="deleteSpace(space.id)"
+                                >
+                                    <a-button type="link" danger size="small">Delete</a-button>
+                                </a-popconfirm>
+                                <a-popconfirm
+                                    v-else
+                                    title="Leave this space?"
+                                    ok-text="Yes"
+                                    cancel-text="No"
+                                    @confirm="leaveSpace(space)"
+                                >
+                                    <a-button type="link" size="small">Leave</a-button>
+                                </a-popconfirm>
+                            </span>
                         </div>
                     </div>
-                </template>
-                <template v-else-if="column.key === 'key'">
-                    <code class="space-key">{{ record.key }}</code>
-                </template>
-                <template v-else-if="column.key === 'pages'">
-                    <span class="page-count">{{ record.pageCount || 0 }} pages</span>
-                </template>
-                <template v-else-if="column.key === 'isDefault'">
-                    <a-tag v-if="record.isDefault" color="blue">Default</a-tag>
-                    <span v-else style="color: #dfe1e6">-</span>
-                </template>
-                <template v-else-if="column.key === 'action'">
-                    <a-button type="link" size="small" @click="showEditModal(record)">Edit</a-button>
-                    <a-popconfirm
-                        title="Are you sure you want to delete this space?"
-                        ok-text="Yes"
-                        cancel-text="No"
-                        @confirm="deleteSpace(record.id)"
-                    >
-                        <a-button type="link" danger size="small">Delete</a-button>
-                    </a-popconfirm>
-                </template>
-            </template>
-        </a-table>
+                </div>
+                <a-empty v-else-if="!loadingMine" description="You have no spaces yet. Create one or join a public space below." />
+            </a-spin>
+        </div>
+
+        <!-- Discover Public Spaces -->
+        <div class="section">
+            <div class="section-title">Discover public spaces</div>
+            <a-spin :spinning="loadingDiscover">
+                <div v-if="discoverSpaces.length > 0" class="space-grid">
+                    <div v-for="space in discoverSpaces" :key="space.id" class="space-card">
+                        <div class="space-card-head" @click="space.isJoined && goSpace(space)">
+                            <img
+                                v-if="space.icon && isImageUrl(space.icon)"
+                                class="space-icon-img"
+                                :src="space.icon"
+                                alt=""
+                            />
+                            <div
+                                v-else
+                                class="space-icon"
+                                :style="{ background: space.icon || getSpaceColorById(space.id) }"
+                            >
+                                <span>{{ getSpaceInitial(space) }}</span>
+                            </div>
+                            <div class="space-card-title">
+                                <div class="space-name">{{ space.name }}</div>
+                                <code class="space-key">{{ space.key }}</code>
+                            </div>
+                        </div>
+                        <div class="space-desc" v-if="space.description">{{ space.description }}</div>
+                        <div class="space-card-foot">
+                            <span class="page-count">{{ space.memberCount }} members · {{ space.pageCount || 0 }} pages</span>
+                            <span class="foot-actions">
+                                <a-tag v-if="space.isOwner" color="geekblue">Owner</a-tag>
+                                <a-tag v-else-if="space.isJoined" color="cyan">Joined</a-tag>
+                                <a-button v-else type="primary" size="small" :loading="joiningId === space.id" @click="joinSpace(space)">Join</a-button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <a-empty v-else-if="!loadingDiscover" description="No public spaces found" />
+            </a-spin>
+        </div>
 
         <!-- Create Modal -->
         <a-modal
@@ -147,6 +193,10 @@
                         </div>
                     </div>
                 </a-form-item>
+                <a-form-item label="Visibility">
+                    <a-switch v-model:checked="newSpace.isPublic" />
+                    <span class="form-hint">Public spaces appear in the directory and can be joined by anyone</span>
+                </a-form-item>
                 <a-form-item label="Set as default space">
                     <a-switch v-model:checked="newSpace.isDefault" />
                     <span class="form-hint">This will be your primary space</span>
@@ -191,46 +241,9 @@
                         showCount
                     />
                 </a-form-item>
-                <a-form-item label="Icon">
-                    <div class="icon-selector">
-                        <div class="icon-type-tabs">
-                            <a-radio-group v-model:value="editSpace.iconType" button-style="solid">
-                                <a-radio-button value="gradient">Color</a-radio-button>
-                                <a-radio-button value="image">Image</a-radio-button>
-                            </a-radio-group>
-                        </div>
-                        <div v-if="editSpace.iconType === 'gradient'" class="color-picker">
-                            <div
-                                v-for="color in presetColors"
-                                :key="color.value"
-                                class="color-option"
-                                :class="{ selected: editSpace.iconGradient === color.value }"
-                                :style="{ background: color.value }"
-                                @click="editSpace.iconGradient = color.value"
-                            ></div>
-                        </div>
-                        <div v-else class="image-uploader">
-                            <a-upload
-                                :before-upload="handleBeforeUpload"
-                                :show-upload-list="false"
-                                accept="image/*"
-                            >
-                                <div v-if="editSpace.iconUrl" class="image-preview">
-                                    <img :src="editSpace.iconUrl" alt="Space icon" />
-                                    <div class="image-overlay">
-                                        <span>Change</span>
-                                    </div>
-                                </div>
-                                <div v-else class="upload-placeholder">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                    </svg>
-                                    <span>Upload Image</span>
-                                </div>
-                            </a-upload>
-                            <a-button v-if="editSpace.iconUrl" danger size="small" @click="editSpace.iconUrl = ''">Remove</a-button>
-                        </div>
-                    </div>
+                <a-form-item label="Visibility">
+                    <a-switch v-model:checked="editSpace.isPublic" />
+                    <span class="form-hint">Public spaces appear in the directory and can be joined by anyone</span>
                 </a-form-item>
                 <a-form-item label="Set as default space">
                     <a-switch v-model:checked="editSpace.isDefault" />
@@ -245,7 +258,8 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
-import { workspaceApi, uploadApi } from "../../api";
+import { workspaceApi } from "../../api";
+import { useAuthStore } from "../../store/auth";
 import { getSpaceColorById, getSpaceInitial } from "../../utils/workspace";
 
 // Mobile detection
@@ -262,11 +276,16 @@ function isImageUrl(icon) {
 }
 
 const router = useRouter();
-const spaces = ref([]);
-const loading = ref(false);
+const authStore = useAuthStore();
+
+const mySpaces = ref([]);
+const discoverSpaces = ref([]);
+const loadingMine = ref(false);
+const loadingDiscover = ref(false);
 const creating = ref(false);
 const editing = ref(false);
 const searchText = ref("");
+const joiningId = ref(null);
 const isCreateModalVisible = ref(false);
 const isEditModalVisible = ref(false);
 
@@ -279,16 +298,6 @@ const presetColors = [
     { name: "Cyan", value: "linear-gradient(135deg, #06b6d4, #0891b2)" },
 ];
 
-const columns = [
-    { title: "Space", dataIndex: "name", key: "name" },
-    { title: "Key", dataIndex: "key", key: "key", width: "15%" },
-    { title: "Pages", dataIndex: "pages", key: "pages", width: "12%" },
-    { title: "Default", dataIndex: "isDefault", key: "isDefault", width: "10%" },
-    { title: "Action", key: "action", width: "20%" },
-];
-
-const pagination = { pageSize: 15 };
-
 const newSpace = ref({
     name: "",
     key: "",
@@ -296,7 +305,8 @@ const newSpace = ref({
     iconType: "gradient",
     iconGradient: presetColors[0].value,
     iconUrl: "",
-    isDefault: false
+    isDefault: false,
+    isPublic: false
 });
 
 const editSpace = ref({
@@ -307,59 +317,76 @@ const editSpace = ref({
     iconType: "gradient",
     iconGradient: presetColors[0].value,
     iconUrl: "",
-    isDefault: false
+    isDefault: false,
+    isPublic: false
 });
 
-const filteredSpaces = computed(() => {
-    if (!searchText.value) return spaces.value;
-    return spaces.value.filter(
-        (s) =>
-            s.name.toLowerCase().includes(searchText.value.toLowerCase()) ||
-            s.key.toLowerCase().includes(searchText.value.toLowerCase()),
-    );
-});
+const currentUserId = computed(() => authStore.user?.id || null);
 
-// 判断 icon 是图片URL还是颜色渐变
-const getIconType = (icon) => {
-    if (!icon) return 'none';
-    // 检查是否是URL（http/https 或 base64）
-    if (icon.startsWith('http') || icon.startsWith('data:image') || icon.startsWith('/')) {
-        return 'image';
-    }
-    // 否则是颜色渐变
-    return 'gradient';
+const isOwnerOf = (space) => {
+    return currentUserId.value != null && space.ownerId === currentUserId.value;
 };
 
-// Load workspaces from API
-const loadWorkspaces = async () => {
-    loading.value = true;
+// 加载"我的空间"（Owner ∪ 被授权空间）
+const loadMySpaces = async () => {
+    loadingMine.value = true;
     try {
-        const response = await workspaceApi.getList(1, 100);
-        console.log('Workspace list response:', response);
-        if (response?.items && Array.isArray(response.items)) {
-            spaces.value = response.items.map(ws => ({
-                ...ws,
-                iconType: getIconType(ws.icon),
-                iconUrl: ws.icon || '',
-                iconGradient: ws.icon || ''
-            }));
-        } else if (Array.isArray(response)) {
-            spaces.value = response.map(ws => ({
-                ...ws,
-                iconType: getIconType(ws.icon),
-                iconUrl: ws.icon || '',
-                iconGradient: ws.icon || ''
-            }));
-        } else {
-            console.warn('Unexpected response format:', response);
-            spaces.value = [];
-        }
+        const data = await workspaceApi.getMy();
+        mySpaces.value = (data || []).map((ws) => ({
+            ...ws,
+            key: ws.key?.toUpperCase() || ""
+        }));
     } catch (error) {
-        console.error("Failed to load workspaces:", error);
-        message.error("Failed to load workspaces");
-        spaces.value = [];
+        console.error("Failed to load my workspaces:", error);
+        mySpaces.value = [];
     } finally {
-        loading.value = false;
+        loadingMine.value = false;
+    }
+};
+
+// 加载公开空间目录
+const loadDiscover = async () => {
+    loadingDiscover.value = true;
+    try {
+        const response = await workspaceApi.discover(1, 60, searchText.value || "");
+        discoverSpaces.value = (response?.items || []).map((ws) => ({
+            ...ws,
+            key: ws.key?.toUpperCase() || ""
+        }));
+    } catch (error) {
+        console.error("Failed to load public spaces:", error);
+        discoverSpaces.value = [];
+    } finally {
+        loadingDiscover.value = false;
+    }
+};
+
+const goSpace = (space) => {
+    router.push(`/${space.key}`);
+};
+
+// 加入公开空间
+const joinSpace = async (space) => {
+    joiningId.value = space.id;
+    try {
+        await workspaceApi.join(space.id);
+        message.success(`Joined "${space.name}"`);
+        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
+    } catch (error) {
+        message.error(error?.response?.data?.message || "Failed to join space");
+    } finally {
+        joiningId.value = null;
+    }
+};
+
+// 退出空间
+const leaveSpace = async (space) => {
+    try {
+        await workspaceApi.leave(space.id);
+        message.success(`Left "${space.name}"`);
+        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
+    } catch (error) {
+        message.error(error?.response?.data?.message || "Failed to leave space");
     }
 };
 
@@ -371,48 +398,50 @@ const showCreateModal = () => {
         iconType: "gradient",
         iconGradient: presetColors[0].value,
         iconUrl: "",
-        isDefault: false
+        isDefault: false,
+        isPublic: false
     };
     isCreateModalVisible.value = true;
 };
 
 const showEditModal = (space) => {
-    const iconType = getIconType(space.icon);
+    const iconType = isImageUrl(space.icon) ? "image" : "gradient";
     editSpace.value = {
         id: space.id,
         name: space.name,
         key: space.key,
         description: space.description || "",
-        iconType: iconType,
-        iconUrl: iconType === 'image' ? space.icon || '' : '',
-        iconGradient: iconType === 'gradient' ? space.icon : presetColors[0].value,
-        isDefault: space.isDefault || false
+        iconType: space.icon ? iconType : "gradient",
+        iconUrl: iconType === "image" ? space.icon || "" : "",
+        iconGradient: iconType === "gradient" ? space.icon || presetColors[0].value : presetColors[0].value,
+        isDefault: space.isDefault || false,
+        isPublic: space.isPublic || false
     };
     isEditModalVisible.value = true;
 };
 
 const handleBeforeUpload = async (file) => {
-    const isImage = file.type.startsWith('image/');
+    const isImage = file.type.startsWith("image/");
     if (!isImage) {
-        message.error('You can only upload image files!');
+        message.error("You can only upload image files!");
         return false;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-        message.error('Image must smaller than 2MB!');
+        message.error("Image must smaller than 2MB!");
         return false;
     }
 
-    // Upload to server
     try {
+        const { uploadApi } = await import("../../api");
         const filePath = await uploadApi.upload(file);
         const target = isCreateModalVisible.value ? newSpace.value : editSpace.value;
         target.iconUrl = filePath;
-        target.iconType = 'image';
-        message.success('Image uploaded successfully');
+        target.iconType = "image";
+        message.success("Image uploaded successfully");
     } catch (error) {
-        console.error('Upload failed:', error);
-        message.error('Failed to upload image');
+        console.error("Upload failed:", error);
+        message.error("Failed to upload image");
     }
     return false; // Prevent auto upload
 };
@@ -436,20 +465,21 @@ const handleCreateSpace = async () => {
             name: newSpace.value.name,
             key: newSpace.value.key,
             description: newSpace.value.description,
-            isDefault: newSpace.value.isDefault
+            isDefault: newSpace.value.isDefault,
+            isPublic: newSpace.value.isPublic
         };
 
         // Handle icon
-        if (newSpace.value.iconType === 'image' && newSpace.value.iconUrl) {
+        if (newSpace.value.iconType === "image" && newSpace.value.iconUrl) {
             data.icon = newSpace.value.iconUrl;
-        } else if (newSpace.value.iconType === 'gradient') {
+        } else if (newSpace.value.iconType === "gradient") {
             data.icon = newSpace.value.iconGradient;
         }
 
         await workspaceApi.create(data);
         message.success("Space created successfully");
         isCreateModalVisible.value = false;
-        await loadWorkspaces();
+        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
     } catch (error) {
         console.error("Failed to create workspace:", error);
         message.error(error?.response?.data?.message || "Failed to create space");
@@ -469,20 +499,21 @@ const handleEditSpace = async () => {
         const data = {
             name: editSpace.value.name,
             description: editSpace.value.description,
-            isDefault: editSpace.value.isDefault
+            isDefault: editSpace.value.isDefault,
+            isPublic: editSpace.value.isPublic
         };
 
         // Handle icon
-        if (editSpace.value.iconType === 'image' && editSpace.value.iconUrl) {
+        if (editSpace.value.iconType === "image" && editSpace.value.iconUrl) {
             data.icon = editSpace.value.iconUrl;
-        } else if (editSpace.value.iconType === 'gradient') {
+        } else if (editSpace.value.iconType === "gradient") {
             data.icon = editSpace.value.iconGradient;
         }
 
         await workspaceApi.update(editSpace.value.id, data);
         message.success("Space updated successfully");
         isEditModalVisible.value = false;
-        await loadWorkspaces();
+        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
     } catch (error) {
         console.error("Failed to update workspace:", error);
         message.error(error?.response?.data?.message || "Failed to update space");
@@ -495,7 +526,7 @@ const deleteSpace = async (id) => {
     try {
         await workspaceApi.remove(id);
         message.success("Space deleted successfully");
-        await loadWorkspaces();
+        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
     } catch (error) {
         console.error("Failed to delete workspace:", error);
         message.error(error?.response?.data?.message || "Failed to delete space");
@@ -503,7 +534,8 @@ const deleteSpace = async (id) => {
 };
 
 onMounted(() => {
-    loadWorkspaces();
+    loadMySpaces();
+    loadDiscover();
 });
 </script>
 
@@ -534,68 +566,112 @@ onMounted(() => {
     margin-bottom: 24px;
 }
 
-.space-name-cell {
+.section {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #172b4d;
+    margin-bottom: 12px;
+}
+
+.space-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.space-card {
+    border: 1px solid #dfe1e6;
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+    transition: box-shadow 0.2s;
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.space-card:hover {
+    box-shadow: 0 4px 12px rgba(9, 30, 66, 0.12);
+}
+
+.space-card-head {
+    display: flex;
+    align-items: center;
     gap: 12px;
+    cursor: pointer;
 }
 
 .space-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
     flex-shrink: 0;
-    margin-top: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
 }
 
 .space-icon-img {
-    width: 32px;
-    height: 32px;
-    border-radius: 4px;
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
     flex-shrink: 0;
-    margin-top: 2px;
     object-fit: cover;
 }
 
+.space-card-title {
+    min-width: 0;
+}
+
 .space-name {
-    font-weight: 500;
+    font-weight: 600;
     color: #172b4d;
-}
-
-.space-name a {
-    color: #172b4d;
-    text-decoration: none;
-}
-
-.space-name a:hover {
-    color: #0052cc;
-    text-decoration: underline;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .space-desc {
     font-size: 13px;
     color: #6b778c;
-    margin-top: 2px;
-    display: block;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.space-card-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.foot-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .space-key {
     background-color: #f4f5f7;
-    padding: 2px 8px;
+    padding: 1px 6px;
     border-radius: 3px;
-    font-size: 13px;
+    font-size: 12px;
     color: #42526e;
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 .page-count {
-    font-size: 13px;
+    font-size: 12px;
     color: #6b778c;
 }
 
@@ -627,7 +703,7 @@ onMounted(() => {
     width: 40px;
     height: 40px;
     border-radius: 4px;
-    cursor: pointer; 
+    cursor: pointer;
     transition: all 0.2s;
 }
 
@@ -701,19 +777,6 @@ onMounted(() => {
     color: #0052cc;
 }
 
-:deep(.ant-table-thead > tr > th) {
-    background-color: #fafbfc;
-    color: #42526e;
-    font-weight: 600;
-    font-size: 12px;
-    border-bottom: 1px solid #dfe1e6;
-    text-transform: uppercase;
-}
-
-:deep(.ant-table-tbody > tr:hover > td) {
-    background-color: rgba(9, 30, 66, 0.02) !important;
-}
-
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -739,9 +802,8 @@ onMounted(() => {
         width: 100% !important;
     }
 
-    /* Table horizontal scroll */
-    :deep(.ant-table-wrapper) {
-        overflow-x: auto;
+    .space-grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>

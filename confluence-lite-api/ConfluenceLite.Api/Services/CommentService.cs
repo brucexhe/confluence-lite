@@ -11,21 +11,39 @@ namespace ConfluenceLite.Api.Services;
 public class CommentService
 {
     private readonly AppDbContext _db;
+    private readonly WorkspacePermissionService _permissions;
 
-    public CommentService(AppDbContext db)
+    public CommentService(AppDbContext db, WorkspacePermissionService permissions)
     {
         _db = db;
+        _permissions = permissions;
+    }
+
+    /// <summary>
+    /// 校验用户对空间的指定权限位，不满足返回错误信息
+    /// </summary>
+    private async Task<string?> CheckPermissionAsync(long workspaceId, long userId, bool isSiteAdmin, Func<SpacePermissions, bool> requirement, string actionName)
+    {
+        var permissions = await _permissions.GetEffectivePermissionsAsync(userId, isSiteAdmin, workspaceId);
+        return requirement(permissions) ? null : $"无权限{actionName}";
     }
 
     /// <summary>
     /// 创建评论
     /// </summary>
-    public async Task<(CommentDto? comment, string? error)> CreateCommentAsync(long userId, CreateCommentRequest request)
+    public async Task<(CommentDto? comment, string? error)> CreateCommentAsync(long userId, bool isSiteAdmin, CreateCommentRequest request)
     {
         var page = await _db.Pages.GetByIdAsync(request.PageId);
         if (page == null)
         {
             return (null, "页面不存在");
+        }
+
+        // 需要添加评论权限
+        var permissionError = await CheckPermissionAsync(page.WorkspaceId, userId, isSiteAdmin, p => p.AddComment, "添加评论");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
         }
 
         if (request.ParentId.HasValue)
@@ -65,8 +83,21 @@ public class CommentService
     /// <summary>
     /// 获取页面的评论列表
     /// </summary>
-    public async Task<List<CommentDto>> GetCommentsByPageAsync(long pageId)
+    public async Task<(List<CommentDto>? comments, string? error)> GetCommentsByPageAsync(long pageId, long userId, bool isSiteAdmin)
     {
+        var page = await _db.Pages.GetByIdAsync(pageId);
+        if (page == null)
+        {
+            return (null, "页面不存在");
+        }
+
+        // 需要空间查看权限
+        var permissionError = await CheckPermissionAsync(page.WorkspaceId, userId, isSiteAdmin, p => p.ViewSpace, "查看评论");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
+        }
+
         var comments = await _db.Db.Queryable<PageComment>()
             .Where(c => c.PageId == pageId && c.ParentId == null)
             .OrderByDescending(c => c.CreatedAt)
@@ -91,13 +122,13 @@ public class CommentService
             dtos.Add(dto);
         }
 
-        return dtos;
+        return (dtos, null);
     }
 
     /// <summary>
     /// 更新评论
     /// </summary>
-    public async Task<(CommentDto? comment, string? error)> UpdateCommentAsync(long id, long userId, UpdateCommentRequest request)
+    public async Task<(CommentDto? comment, string? error)> UpdateCommentAsync(long id, long userId, bool isSiteAdmin, UpdateCommentRequest request)
     {
         var comment = await _db.PageComments.GetByIdAsync(id);
         if (comment == null)
@@ -119,9 +150,9 @@ public class CommentService
     }
 
     /// <summary>
-    /// 删除评论
+    /// 删除评论（需 DeleteComment 权限，或评论作者本人）
     /// </summary>
-    public async Task<(bool success, string? error)> DeleteCommentAsync(long id, long userId)
+    public async Task<(bool success, string? error)> DeleteCommentAsync(long id, long userId, bool isSiteAdmin)
     {
         var comment = await _db.PageComments.GetByIdAsync(id);
         if (comment == null)
@@ -129,7 +160,14 @@ public class CommentService
             return (false, "评论不存在");
         }
 
-        if (comment.UserId != userId)
+        var page = await _db.Pages.GetByIdAsync(comment.PageId);
+        if (page == null)
+        {
+            return (false, "页面不存在");
+        }
+
+        var permissions = await _permissions.GetEffectivePermissionsAsync(userId, isSiteAdmin, page.WorkspaceId);
+        if (!permissions.DeleteComment && comment.UserId != userId)
         {
             return (false, "无权限删除此评论");
         }

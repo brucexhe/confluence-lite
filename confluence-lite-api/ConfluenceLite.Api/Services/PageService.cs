@@ -11,22 +11,40 @@ namespace ConfluenceLite.Api.Services;
 public class PageService
 {
     private readonly AppDbContext _db;
+    private readonly WorkspacePermissionService _permissions;
 
-    public PageService(AppDbContext db)
+    public PageService(AppDbContext db, WorkspacePermissionService permissions)
     {
         _db = db;
+        _permissions = permissions;
+    }
+
+    /// <summary>
+    /// 校验用户对空间的指定权限位，不满足返回错误信息
+    /// </summary>
+    private async Task<string?> CheckPermissionAsync(long workspaceId, long userId, bool isSiteAdmin, Func<SpacePermissions, bool> requirement, string actionName)
+    {
+        var permissions = await _permissions.GetEffectivePermissionsAsync(userId, isSiteAdmin, workspaceId);
+        return requirement(permissions) ? null : $"无权限{actionName}";
     }
 
     /// <summary>
     /// 创建页面
     /// </summary>
-    public async Task<(PageDto? page, string? error)> CreatePageAsync(long creatorId, CreatePageRequest request)
+    public async Task<(PageDto? page, string? error)> CreatePageAsync(long creatorId, bool isSiteAdmin, CreatePageRequest request)
     {
         // 验证工作空间是否存在
         var workspace = await _db.Workspaces.GetByIdAsync(request.WorkspaceId);
         if (workspace == null)
         {
             return (null, "工作空间不存在");
+        }
+
+        // 需要创建页面权限
+        var permissionError = await CheckPermissionAsync(request.WorkspaceId, creatorId, isSiteAdmin, p => p.CreatePage, "在此空间创建页面");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
         }
 
         // 如果指定了父页面，验证是否存在
@@ -64,10 +82,22 @@ public class PageService
     /// <summary>
     /// 获取页面信息
     /// </summary>
-    public async Task<PageDto?> GetPageByIdAsync(long id)
+    public async Task<(PageDto? page, string? error)> GetPageByIdAsync(long id, long userId, bool isSiteAdmin)
     {
         var page = await _db.Pages.GetByIdAsync(id);
-        return page == null ? null : await MapToDtoAsync(page);
+        if (page == null)
+        {
+            return (null, "页面不存在");
+        }
+
+        // 需要空间查看权限
+        var permissionError = await CheckPermissionAsync(page.WorkspaceId, userId, isSiteAdmin, p => p.ViewSpace, "查看该空间页面");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
+        }
+
+        return (await MapToDtoAsync(page), null);
     }
 
     /// <summary>
@@ -118,8 +148,15 @@ public class PageService
     /// <summary>
     /// 获取工作空间的页面列表
     /// </summary>
-    public async Task<PagedResponse<PageDto>> GetPagesByWorkspaceAsync(long workspaceId, PagedRequest request)
+    public async Task<(PagedResponse<PageDto>? result, string? error)> GetPagesByWorkspaceAsync(long workspaceId, PagedRequest request, long userId, bool isSiteAdmin)
     {
+        // 需要空间查看权限
+        var permissionError = await CheckPermissionAsync(workspaceId, userId, isSiteAdmin, p => p.ViewSpace, "查看该空间页面");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
+        }
+
         var total = await _db.Db.Queryable<Page>()
             .Where(p => p.WorkspaceId == workspaceId)
             .CountAsync();
@@ -138,20 +175,27 @@ public class PageService
             dtos.Add(await MapToDtoAsync(page));
         }
 
-        return new PagedResponse<PageDto>
+        return (new PagedResponse<PageDto>
         {
             Items = dtos,
             Total = total,
             Page = request.Page,
             PageSize = request.PageSize
-        };
+        }, null);
     }
 
     /// <summary>
     /// 获取页面树（包含子页面）
     /// </summary>
-    public async Task<List<PageTreeNodeDto>> GetPageTreeAsync(long workspaceId)
+    public async Task<(List<PageTreeNodeDto>? tree, string? error)> GetPageTreeAsync(long workspaceId, long userId, bool isSiteAdmin)
     {
+        // 需要空间查看权限
+        var permissionError = await CheckPermissionAsync(workspaceId, userId, isSiteAdmin, p => p.ViewSpace, "查看该空间页面树");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
+        }
+
         var pages = await _db.Db.Queryable<Page>()
             .Where(p => p.WorkspaceId == workspaceId)
             .OrderBy(p => p.SortOrder)
@@ -176,14 +220,27 @@ public class PageService
             }
         }
 
-        return rootPages;
+        return (rootPages, null);
     }
 
     /// <summary>
     /// 获取子页面列表
     /// </summary>
-    public async Task<List<PageDto>> GetChildPagesAsync(long parentId)
+    public async Task<(List<PageDto>? pages, string? error)> GetChildPagesAsync(long parentId, long userId, bool isSiteAdmin)
     {
+        var parent = await _db.Pages.GetByIdAsync(parentId);
+        if (parent == null)
+        {
+            return (null, "页面不存在");
+        }
+
+        // 需要空间查看权限
+        var permissionError = await CheckPermissionAsync(parent.WorkspaceId, userId, isSiteAdmin, p => p.ViewSpace, "查看该空间页面");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
+        }
+
         var pages = await _db.Db.Queryable<Page>()
             .Where(p => p.ParentId == parentId)
             .OrderBy(p => p.SortOrder)
@@ -196,13 +253,13 @@ public class PageService
             dtos.Add(await MapToDtoAsync(page));
         }
 
-        return dtos;
+        return (dtos, null);
     }
 
     /// <summary>
     /// 更新页面
     /// </summary>
-    public async Task<(PageDto? page, string? error)> UpdatePageAsync(long id, long userId, UpdatePageRequest request)
+    public async Task<(PageDto? page, string? error)> UpdatePageAsync(long id, long userId, bool isSiteAdmin, UpdatePageRequest request)
     {
         var page = await _db.Pages.GetByIdAsync(id);
         if (page == null)
@@ -210,9 +267,11 @@ public class PageService
             return (null, "页面不存在");
         }
 
-        if (page.CreatorId != userId)
+        // 需要编辑页面权限（替代原有“仅创建者可编辑”校验）
+        var permissionError = await CheckPermissionAsync(page.WorkspaceId, userId, isSiteAdmin, p => p.EditPage, "编辑此页面");
+        if (permissionError != null)
         {
-            return (null, "无权限编辑此页面");
+            return (null, permissionError);
         }
 
         // 先判断标题/正文是否真的变化（用于决定是否生成新版本）
@@ -270,11 +329,18 @@ public class PageService
     /// <summary>
     /// 批量更新页面排序和层级
     /// </summary>
-    public async Task<(bool success, string? error)> BatchSortPagesAsync(BatchSortPageRequest request)
+    public async Task<(bool success, string? error)> BatchSortPagesAsync(BatchSortPageRequest request, long userId, bool isSiteAdmin)
     {
         if (request.Items == null || request.Items.Count == 0)
         {
             return (true, null);
+        }
+
+        // 需要目标空间的编辑权限
+        var permissionError = await CheckPermissionAsync(request.WorkspaceId, userId, isSiteAdmin, p => p.EditPage, "调整该空间页面结构");
+        if (permissionError != null)
+        {
+            return (false, permissionError);
         }
 
         var pageIds = request.Items.Select(i => i.Id).ToList();
@@ -350,12 +416,19 @@ public class PageService
     /// <summary>
     /// 移动单个页面（即时保存，不产生版本快照）
     /// </summary>
-    public async Task<(bool success, string? error)> MovePageAsync(long pageId, MovePageRequest request)
+    public async Task<(bool success, string? error)> MovePageAsync(long pageId, long userId, bool isSiteAdmin, MovePageRequest request)
     {
         var page = await _db.Pages.GetByIdAsync(pageId);
         if (page == null)
         {
             return (false, "页面不存在");
+        }
+
+        // 需要编辑页面权限
+        var permissionError = await CheckPermissionAsync(page.WorkspaceId, userId, isSiteAdmin, p => p.EditPage, "移动此页面");
+        if (permissionError != null)
+        {
+            return (false, permissionError);
         }
 
         // 验证父页面
@@ -423,7 +496,7 @@ public class PageService
     /// <summary>
     /// 删除页面
     /// </summary>
-    public async Task<(bool success, string? error)> DeletePageAsync(long id, long userId)
+    public async Task<(bool success, string? error)> DeletePageAsync(long id, long userId, bool isSiteAdmin)
     {
         var page = await _db.Pages.GetByIdAsync(id);
         if (page == null)
@@ -431,7 +504,10 @@ public class PageService
             return (false, "页面不存在");
         }
 
-        if (page.CreatorId != userId)
+        // 需要 DeletePage 权限，或 DeleteOwnPage 且为自己创建
+        var permissions = await _permissions.GetEffectivePermissionsAsync(userId, isSiteAdmin, page.WorkspaceId);
+        var canDelete = permissions.DeletePage || (permissions.DeleteOwnPage && page.CreatorId == userId);
+        if (!canDelete)
         {
             return (false, "无权限删除此页面");
         }
@@ -490,8 +566,21 @@ public class PageService
     /// <summary>
     /// 获取页面版本列表
     /// </summary>
-    public async Task<List<PageVersionListDto>> GetPageVersionsAsync(long pageId)
+    public async Task<(List<PageVersionListDto>? versions, string? error)> GetPageVersionsAsync(long pageId, long userId, bool isSiteAdmin)
     {
+        var page = await _db.Pages.GetByIdAsync(pageId);
+        if (page == null)
+        {
+            return (null, "页面不存在");
+        }
+
+        // 需要空间查看权限
+        var permissionError = await CheckPermissionAsync(page.WorkspaceId, userId, isSiteAdmin, p => p.ViewSpace, "查看页面版本");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
+        }
+
         var versions = await _db.Db.Queryable<PageVersion>()
             .Where(v => v.PageId == pageId)
             .OrderByDescending(v => v.VersionNumber)
@@ -518,19 +607,32 @@ public class PageService
                 }
             });
         }
-        return dtos;
+        return (dtos, null);
     }
 
     /// <summary>
     /// 获取单个版本详情
     /// </summary>
-    public async Task<PageVersionDto?> GetPageVersionAsync(long versionId)
+    public async Task<(PageVersionDto? version, string? error)> GetPageVersionAsync(long versionId, long userId, bool isSiteAdmin)
     {
         var v = await _db.PageVersions.GetByIdAsync(versionId);
-        if (v == null) return null;
+        if (v == null) return (null, "版本不存在");
+
+        var page = await _db.Pages.GetByIdAsync(v.PageId);
+        if (page == null)
+        {
+            return (null, "页面不存在");
+        }
+
+        // 需要空间查看权限
+        var permissionError = await CheckPermissionAsync(page.WorkspaceId, userId, isSiteAdmin, p => p.ViewSpace, "查看页面版本");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
+        }
 
         var editor = await _db.Users.GetByIdAsync(v.EditorId);
-        return new PageVersionDto
+        return (new PageVersionDto
         {
             Id = v.Id,
             PageId = v.PageId,
@@ -546,18 +648,31 @@ public class PageService
                 Username = editor.Username,
                 DisplayName = editor.DisplayName
             }
-        };
+        }, null);
     }
 
     /// <summary>
     /// 删除页面版本
     /// </summary>
-    public async Task<(bool success, string? error)> DeletePageVersionAsync(long versionId)
+    public async Task<(bool success, string? error)> DeletePageVersionAsync(long versionId, long userId, bool isSiteAdmin)
     {
         var version = await _db.PageVersions.GetByIdAsync(versionId);
         if (version == null)
         {
             return (false, "版本不存在");
+        }
+
+        var page = await _db.Pages.GetByIdAsync(version.PageId);
+        if (page == null)
+        {
+            return (false, "页面不存在");
+        }
+
+        // 需要编辑页面权限
+        var permissionError = await CheckPermissionAsync(page.WorkspaceId, userId, isSiteAdmin, p => p.EditPage, "删除页面版本");
+        if (permissionError != null)
+        {
+            return (false, permissionError);
         }
 
         await _db.PageVersions.DeleteAsync(version);

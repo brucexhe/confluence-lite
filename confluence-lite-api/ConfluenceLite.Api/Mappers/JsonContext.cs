@@ -197,6 +197,22 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(BatchSortPageRequest))]
 // Move Page
 [JsonSerializable(typeof(MovePageRequest))]
+// Workspace Permissions
+[JsonSerializable(typeof(UpdateMemberPermissionsRequest))]
+[JsonSerializable(typeof(SpacePermissions))]
+[JsonSerializable(typeof(ApiResponse<SpacePermissions>))]
+[JsonSerializable(typeof(WorkspaceMemberDto))]
+[JsonSerializable(typeof(List<WorkspaceMemberDto>))]
+[JsonSerializable(typeof(DiscoverWorkspaceDto))]
+[JsonSerializable(typeof(List<DiscoverWorkspaceDto>))]
+[JsonSerializable(typeof(List<UserSummaryDto>))]
+[JsonSerializable(typeof(ApiResponse<WorkspaceMemberDto>))]
+[JsonSerializable(typeof(ApiResponse<List<WorkspaceMemberDto>>))]
+[JsonSerializable(typeof(ApiResponse<PagedResponse<WorkspaceMemberDto>>))]
+[JsonSerializable(typeof(PagedResponse<WorkspaceMemberDto>))]
+[JsonSerializable(typeof(ApiResponse<PagedResponse<DiscoverWorkspaceDto>>))]
+[JsonSerializable(typeof(PagedResponse<DiscoverWorkspaceDto>))]
+[JsonSerializable(typeof(ApiResponse<List<UserSummaryDto>>))]
 public partial class AppJsonContext : JsonSerializerContext
 {
 }

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { userApi } from '../api'
+import { userApi, workspaceApi } from '../api'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(null)
@@ -15,6 +15,21 @@ export const useAuthStore = defineStore('auth', () => {
   }
   const user = ref(getUserFromStorage())
   const router = useRouter()
+
+  /** 从服务端刷新空间列表并同步到 localStorage（加入/退出/创建/被邀请后调用） */
+  async function refreshSpaces() {
+    try {
+      const data = await workspaceApi.getMy()
+      const normalized = (data || []).map(ws => ({
+        ...ws,
+        key: ws.key?.toUpperCase() || ''
+      }))
+      localStorage.setItem('auth_spaces', JSON.stringify(normalized))
+      return normalized
+    } catch {
+      return null
+    }
+  }
 
   async function login(username, password) {
     try {
@@ -70,5 +85,5 @@ export const useAuthStore = defineStore('auth', () => {
     ]))
   }
 
-  return { token, user, login, logout, setFromSetup }
+  return { token, user, login, logout, setFromSetup, refreshSpaces }
 })

@@ -110,6 +110,7 @@ public static class DatabaseInitializer
         AddColumnIfNotExists(db, "workspaces", "homepageid", "BIGINT");
         AddColumnIfNotExists(db, "workspaces", "ispersonal", "BOOLEAN NOT NULL DEFAULT FALSE");
         AddColumnIfNotExists(db, "workspaces", "isdefault", "BOOLEAN NOT NULL DEFAULT FALSE");
+        AddColumnIfNotExists(db, "workspaces", "ispublic", "BOOLEAN NOT NULL DEFAULT FALSE");
         AddColumnIfNotExists(db, "workspaces", "isdeleted", "BOOLEAN NOT NULL DEFAULT FALSE");
         AddColumnIfNotExists(db, "workspaces", "deletedat", "TIMESTAMP");
 

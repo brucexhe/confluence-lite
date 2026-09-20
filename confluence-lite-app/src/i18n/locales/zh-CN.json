@@ -413,7 +413,8 @@
     "noActivity": "暂无活动",
     "noActivityRecord": "暂无活动记录",
     "quickActions": "快速操作",
-    "spaceSettings": "空间设置"
+    "spaceSettings": "空间设置",
+    "members": "空间成员"
   },
   "profile": {
     "title": "个人中心",

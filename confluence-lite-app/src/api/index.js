@@ -125,6 +125,55 @@ export const workspaceApi = {
     return request('/api/workspace/my')
   },
 
+  /** 获取公开空间目录（分页 + 搜索） */
+  discover(page = 1, pageSize = 20, q = '') {
+    const params = new URLSearchParams({ page, pageSize })
+    if (q) params.append('q', q)
+    return request(`/api/workspace/discover?${params.toString()}`)
+  },
+
+  /** 加入公开空间 */
+  join(id) {
+    return request(`/api/workspace/${id}/join`, { method: 'POST' })
+  },
+
+  /** 退出空间 */
+  leave(id) {
+    return request(`/api/workspace/${id}/leave`, { method: 'DELETE' })
+  },
+
+  /** 获取当前用户在某空间的有效权限 */
+  getMyPermissions(id) {
+    return request(`/api/workspace/${id}/my-permissions`)
+  },
+
+  /** 获取空间成员列表（空间管理员） */
+  getMembers(id, page = 1, pageSize = 20, q = '') {
+    const params = new URLSearchParams({ page, pageSize })
+    if (q) params.append('q', q)
+    return request(`/api/workspace/${id}/members?${params.toString()}`)
+  },
+
+  /** 添加/邀请成员（空间管理员） */
+  addMember(id, data) {
+    return request(`/api/workspace/${id}/members`, { method: 'POST', body: data })
+  },
+
+  /** 修改成员权限（空间管理员） */
+  updateMember(id, userId, data) {
+    return request(`/api/workspace/${id}/members/${userId}`, { method: 'PUT', body: data })
+  },
+
+  /** 移除成员（空间管理员） */
+  removeMember(id, userId) {
+    return request(`/api/workspace/${id}/members/${userId}`, { method: 'DELETE' })
+  },
+
+  /** 搜索可邀请的用户（空间管理员） */
+  searchMembers(id, q) {
+    return request(`/api/workspace/${id}/members/search-users?q=${encodeURIComponent(q)}`)
+  },
+
   /** 更新 */
   update(id, data) {
     return request(`/api/workspace/${id}`, { method: 'PUT', body: data })

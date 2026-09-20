@@ -11,7 +11,7 @@
                 </a-breadcrumb-item>
             </a-breadcrumb>
             <div class="page-actions">
-                <a-button @click="enterEditMode">
+                <a-button v-if="canEdit" @click="enterEditMode">
                     <span style="font-size: 14px">{{ $t("page.edit") }}</span>
                 </a-button>
                 <a-button @click="handleShare">
@@ -28,10 +28,10 @@
                                 {{ $t("page.attachments") }}({{ attachmentCount }})
                             </a-menu-item>
                             <a-menu-item @click="handleViewSource">{{ $t("page.viewSource") }}</a-menu-item>
-                            <a-menu-item @click="handleExportPdf">{{ $t("page.exportPdf") }}</a-menu-item>
-                            <a-menu-item @click="handleMove">{{ $t("page.moveTo") }}</a-menu-item>
-                            <a-menu-divider />
-                            <a-menu-item @click="handleDelete" danger>{{ $t("page.delete") }}</a-menu-item>
+                            <a-menu-item @click="handleExportPdf" v-if="canExport">{{ $t("page.exportPdf") }}</a-menu-item>
+                            <a-menu-item @click="handleMove" v-if="canEdit">{{ $t("page.moveTo") }}</a-menu-item>
+                            <a-menu-divider v-if="canDelete" />
+                            <a-menu-item @click="handleDelete" v-if="canDelete" danger>{{ $t("page.delete") }}</a-menu-item>
                         </a-menu>
                     </template>
                 </a-dropdown>
@@ -204,7 +204,7 @@ import UserAvatar from "../../components/UserAvatar.vue";
 import ImagePreview from "../../components/ImagePreview.vue";
 import OfficePreview from "../../components/OfficePreview.vue";
 import VideoPreview from "../../components/VideoPreview.vue";
-import { pageApi, attachmentApi, recentApi, shareApi } from "../../api";
+import { pageApi, attachmentApi, recentApi, shareApi, workspaceApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { usePageTreeStore } from "../../store/pageTree";
 import Prism from "prismjs";
@@ -244,6 +244,33 @@ const pageContent = ref("");
 const pageCreator = ref(null);
 const pageCreatorName = ref("");
 const pageUpdatedTime = ref("");
+
+// 当前空间权限（控制操作按钮显隐，最终以后端校验为准）
+const myPerms = ref(null);
+const canEdit = computed(() => !!myPerms.value?.editPage);
+const canExport = computed(() => !!myPerms.value?.exportPage);
+const canDelete = computed(
+    () =>
+        !!myPerms.value &&
+        (myPerms.value.deletePage ||
+            (myPerms.value.deleteOwnPage && pageCreator.value?.id === authStore.user?.id)),
+);
+
+const loadMyPermissions = async () => {
+    const key = route.params.spaceKey;
+    if (!key) return;
+    try {
+        const spaces = JSON.parse(localStorage.getItem("auth_spaces") || "[]");
+        const space = spaces.find((s) => s.key === key || s.key === key?.toUpperCase());
+        if (!space?.id) {
+            myPerms.value = null;
+            return;
+        }
+        myPerms.value = await workspaceApi.getMyPermissions(space.id);
+    } catch {
+        myPerms.value = null;
+    }
+};
 
 // 面包屑空间名
 const spaceName = computed(() => {
@@ -525,12 +552,21 @@ watch(pageContent, () => {
 onMounted(() => {
     loadPageData();
     loadAttachmentCount();
+    loadMyPermissions();
 });
 
 watch(pageId, () => {
     loadPageData();
     loadAttachmentCount();
 });
+
+// 切换空间时重新加载权限
+watch(
+    () => route.params.spaceKey,
+    () => {
+        loadMyPermissions();
+    },
+);
 
 const enterEditMode = () => {
     router.push({ path: `/${route.params.spaceKey}/page/${pageId.value}/edit` });

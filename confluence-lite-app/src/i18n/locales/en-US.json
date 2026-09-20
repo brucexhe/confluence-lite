@@ -413,7 +413,8 @@
     "noActivity": "No recent activity",
     "noActivityRecord": "No activity records yet",
     "quickActions": "Quick Actions",
-    "spaceSettings": "Space Settings"
+    "spaceSettings": "Space Settings",
+    "members": "Space Members"
   },
   "profile": {
     "title": "User Profile",

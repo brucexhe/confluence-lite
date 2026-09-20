@@ -114,6 +114,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<TokenService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<WorkspaceService>();
+builder.Services.AddScoped<WorkspacePermissionService>();
 builder.Services.AddScoped<PageService>();
 builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<SetupService>();

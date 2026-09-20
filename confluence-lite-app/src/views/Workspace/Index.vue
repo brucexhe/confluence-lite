@@ -87,11 +87,11 @@
                         <span class="card-title">{{ $t('workspace.quickActions') }}</span>
                     </template>
                     <div class="action-buttons">
-                        <a-button block @click="createPage">
+                        <a-button v-if="canCreate" block @click="createPage">
                             <span style="font-size: 14px">{{ $t('workspace.createPage') }}</span>
                         </a-button>
-                        <a-button block @click="goToSettings">
-                            <span style="font-size: 14px">{{ $t('workspace.spaceSettings') }}</span>
+                        <a-button v-if="isSpaceAdmin" block @click="goToMembers">
+                            <span style="font-size: 14px">{{ $t('workspace.members') }}</span>
                         </a-button>
                     </div>
                 </a-card>
@@ -105,7 +105,7 @@ import { ref, computed, onMounted, inject, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { FileText } from "lucide-vue-next";
-import { activityApi } from "@/api";
+import { activityApi, workspaceApi } from "@/api";
 import UserAvatar from "@/components/UserAvatar.vue";
 
 const { t, locale } = useI18n();
@@ -115,6 +115,27 @@ const router = useRouter();
 const loading = ref(false);
 const activities = ref([]);
 const notFound = ref(false);
+
+// 当前空间权限（控制快速操作显隐，最终以后端校验为准）
+const myPerms = ref(null);
+const canCreate = computed(() => !!myPerms.value?.createPage);
+const isSpaceAdmin = computed(() => !!myPerms.value?.isSpaceAdmin);
+
+const loadMyPermissions = async () => {
+    const key = route.params.spaceKey;
+    if (!key) return;
+    try {
+        const keyUpper = key.toUpperCase();
+        const space = spaces.value.find((s) => s.key.toUpperCase() === keyUpper);
+        if (!space?.id) {
+            myPerms.value = null;
+            return;
+        }
+        myPerms.value = await workspaceApi.getMyPermissions(space.id);
+    } catch {
+        myPerms.value = null;
+    }
+};
 
 // 从 MainLayout 注入 setNotFound 方法
 const setNotFound = inject("setNotFound");
@@ -134,6 +155,7 @@ watch(
         notFound.value = false;
         activities.value = [];
         loadActivities();
+        loadMyPermissions();
     },
 );
 
@@ -232,12 +254,13 @@ function createPage() {
     router.push(`/${key}/page/new`);
 }
 
-function goToSettings() {
-    router.push("/spaces");
+function goToMembers() {
+    router.push(`/${route.params.spaceKey}/members`);
 }
 
 onMounted(() => {
     loadActivities();
+    loadMyPermissions();
 });
 </script>
 

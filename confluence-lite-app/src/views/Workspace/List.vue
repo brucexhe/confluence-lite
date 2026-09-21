@@ -384,8 +384,9 @@ const joinSpace = async (space) => {
 const leaveSpace = async (space) => {
     try {
         await workspaceApi.leave(space.id);
-        message.success(`Left "${space.name}"`);
-        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
+        // 与加入空间一致：先写入最新空间列表，再整页刷新同步所有缓存
+        await authStore.refreshSpaces();
+        window.location.reload();
     } catch (error) {
         message.error(error?.response?.data?.message || "Failed to leave space");
     }

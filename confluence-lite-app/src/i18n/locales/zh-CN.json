@@ -641,7 +641,7 @@
       "publicAccess": "公开访问",
       "publicAccessHint": "允许任何人查看此空间",
       "searchPlaceholder": "搜索空间名称",
-      "spaceKeyPattern": "仅限字母和数字",
+      "spaceKeyPattern": "仅限字母、数字、横线和下划线",
       "spaceKeyPlaceholder": "例如 DEV",
       "spaceNamePlaceholder": "输入空间名称",
       "type": "类型"

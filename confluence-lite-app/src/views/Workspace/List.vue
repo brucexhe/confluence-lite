@@ -370,12 +370,13 @@ const joinSpace = async (space) => {
     joiningId.value = space.id;
     try {
         await workspaceApi.join(space.id);
-        message.success(`Joined "${space.name}"`);
-        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
+        // 先把最新空间列表写入 localStorage，再整页刷新，
+        // 确保顶部导航、页面树等直接读缓存的组件同步到新空间
+        await authStore.refreshSpaces();
+        window.location.reload();
     } catch (error) {
-        message.error(error?.response?.data?.message || "Failed to join space");
-    } finally {
         joiningId.value = null;
+        message.error(error?.response?.data?.message || "Failed to join space");
     }
 };
 

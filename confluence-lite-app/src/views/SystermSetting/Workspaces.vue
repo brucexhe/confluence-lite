@@ -81,7 +81,7 @@
                 </a-form-item>
                 <a-form-item :label="$t('settings.workspaces.spaceKey')" name="key" :rules="[
                     { required: true, message: $t('settings.workspaces.spaceKeyRequired') },
-                    { pattern: /^[a-z0-9_-]+$/, message: $t('settings.workspaces.spaceKeyPattern') }
+                    { pattern: /^[a-zA-Z0-9_-]+$/, message: $t('settings.workspaces.spaceKeyPattern') }
                 ]">
                     <a-input
                         v-model:value="formState.key"

@@ -641,7 +641,7 @@
       "publicAccess": "Public Access",
       "publicAccessHint": "Allow anyone to view this space",
       "searchPlaceholder": "Search space name",
-      "spaceKeyPattern": "Letters and numbers only",
+      "spaceKeyPattern": "Only letters, numbers, hyphens and underscores",
       "spaceKeyPlaceholder": "e.g. DEV",
       "spaceNamePlaceholder": "Enter space name",
       "type": "Type"

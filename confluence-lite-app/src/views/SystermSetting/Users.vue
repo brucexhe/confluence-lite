@@ -44,13 +44,12 @@
                         <UserAvatar :user="record" />
                     </template>
                     <template v-else-if="column.key === 'roles'">
-                        <a-tag v-for="role in record.roles" :key="role" :color="getRoleColor(role)">
-                            {{ getRoleLabel(role) }}
-                        </a-tag>
+                        <a-tag v-if="record.isAdmin" color="red">{{ $t('settings.users.roleAdmin') }}</a-tag>
+                        <a-tag v-else>{{ $t('settings.users.roleUser') }}</a-tag>
                     </template>
                     <template v-else-if="column.key === 'status'">
-                        <a-tag :color="record.status === 'active' ? 'green' : 'red'">
-                            {{ record.status == 1 ? $t('settings.users.active') : $t('settings.users.disabled') }}
+                        <a-tag :color="record.status === 1 ? 'green' : 'red'">
+                            {{ record.status === 1 ? $t('settings.users.active') : $t('settings.users.disabled') }}
                         </a-tag>
                     </template>
                     <template v-else-if="column.key === 'createdAt'">
@@ -104,17 +103,16 @@
                 ]">
                     <a-input-password v-model:value="formState.password" />
                 </a-form-item>
-                <a-form-item :label="$t('settings.users.role')" name="roles" :rules="[{ required: true, message: $t('settings.users.roleRequired') }]">
-                    <a-select
-                        v-model:value="formState.roles"
-                        mode="multiple"
-                        :options="roleOptions"
-                    />
+                <a-form-item :label="$t('settings.users.role')" name="isAdmin">
+                    <a-radio-group v-model:value="formState.isAdmin">
+                        <a-radio :value="true">{{ $t('settings.users.roleAdmin') }}</a-radio>
+                        <a-radio :value="false">{{ $t('settings.users.roleUser') }}</a-radio>
+                    </a-radio-group>
                 </a-form-item>
                 <a-form-item :label="$t('settings.users.status')" name="status">
                     <a-radio-group v-model:value="formState.status">
-                        <a-radio value="active">{{ $t('settings.users.active') }}</a-radio>
-                        <a-radio value="inactive">{{ $t('settings.users.disabled') }}</a-radio>
+                        <a-radio :value="1">{{ $t('settings.users.active') }}</a-radio>
+                        <a-radio :value="0">{{ $t('settings.users.disabled') }}</a-radio>
                     </a-radio-group>
                 </a-form-item>
             </a-form>
@@ -157,18 +155,19 @@ const editingUser = ref(null)
 const newPassword = ref('')
 const formRef = ref()
 
+// 与后端 UserDto/CreateUserRequest/UpdateUserRequest 对齐：
+// 角色为 isAdmin（bool），状态为 status（int：0 禁用、1 正常）
 const formState = reactive({
     username: '',
-    name: '',
+    displayName: '',
     email: '',
     password: '',
-    roles: ['user'],
-    status: 'active'
+    isAdmin: false,
+    status: 1
 })
 
 const roleOptions = [
     { label: t('settings.users.roleAdmin'), value: 'admin' },
-    { label: t('settings.users.roleEditor'), value: 'editor' },
     { label: t('settings.users.roleUser'), value: 'user' }
 ]
 
@@ -188,16 +187,6 @@ const columns = [
     { title: t('settings.users.createdAt'), key: 'createdAt' },
     { title: t('common.action'), key: 'action', width: 180 }
 ]
-
-const getRoleColor = (role) => {
-    const colors = { admin: 'red', editor: 'blue', user: 'default' }
-    return colors[role] || 'default'
-}
-
-const getRoleLabel = (role) => {
-    const labels = { admin: t('settings.users.roleAdmin'), editor: t('settings.users.roleEditor'), user: t('settings.users.roleUser') }
-    return labels[role] || role
-}
 
 const loadUsers = async () => {
     loading.value = true
@@ -227,11 +216,11 @@ const showCreateModal = () => {
     editingUser.value = null
     Object.assign(formState, {
         username: '',
-        name: '',
+        displayName: '',
         email: '',
         password: '',
-        roles: ['user'],
-        status: 'active'
+        isAdmin: false,
+        status: 1
     })
     modalVisible.value = true
 }
@@ -239,11 +228,12 @@ const showCreateModal = () => {
 const showEditModal = (user) => {
     editingUser.value = user
     Object.assign(formState, {
-        username: user.username,
-        name: user.name,
-        email: user.email,
-        roles: user.roles || ['user'],
-        status: user.status
+        username: user.username || '',
+        displayName: user.displayName || '',
+        email: user.email || '',
+        password: '',
+        isAdmin: !!user.isAdmin,
+        status: user.status === 0 ? 0 : 1
     })
     modalVisible.value = true
 }
@@ -264,10 +254,21 @@ const handleSubmit = async () => {
     submitting.value = true
     try {
         if (editingUser.value) {
-            await userApi.update(editingUser.value.id, formState)
+            await userApi.update(editingUser.value.id, {
+                email: formState.email,
+                displayName: formState.displayName,
+                status: formState.status,
+                isAdmin: formState.isAdmin
+            })
             message.success(t('settings.users.updateSuccess'))
         } else {
-            await userApi.register(formState)
+            await userApi.register({
+                username: formState.username,
+                password: formState.password,
+                email: formState.email,
+                displayName: formState.displayName,
+                isAdmin: formState.isAdmin
+            })
             message.success(t('settings.users.createSuccess'))
         }
         modalVisible.value = false

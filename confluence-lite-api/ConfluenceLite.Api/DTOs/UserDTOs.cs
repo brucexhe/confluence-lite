@@ -82,6 +82,11 @@ public class CreateUserRequest
     /// </summary>
     [StringLength(100)]
     public string? DisplayName { get; set; }
+
+    /// <summary>
+    /// 是否管理员（仅管理员后台创建时生效）
+    /// </summary>
+    public bool IsAdmin { get; set; }
 }
 
 /// <summary>
@@ -112,6 +117,11 @@ public class UpdateUserRequest
     /// 用户状态: 0-禁用, 1-正常
     /// </summary>
     public int? Status { get; set; }
+
+    /// <summary>
+    /// 是否管理员（升降级；降级时保护最后一个活跃管理员）
+    /// </summary>
+    public bool? IsAdmin { get; set; }
 }
 
 /// <summary>

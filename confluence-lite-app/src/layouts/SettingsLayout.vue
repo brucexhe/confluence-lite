@@ -35,9 +35,10 @@
                         <router-link to="/settings/users" class="nav-item" :class="{ active: route.path === '/settings/users' }">
                             {{ $t('settings.userManagement') }}
                         </router-link>
-                        <router-link to="/settings/groups" class="nav-item" :class="{ active: route.path === '/settings/groups' }">
+                        <!-- 用户组管理：功能孤立（权限体系未消费组），暂时隐藏 -->
+                        <!-- <router-link to="/settings/groups" class="nav-item" :class="{ active: route.path === '/settings/groups' }">
                             {{ $t('settings.groupManagement') }}
-                        </router-link>
+                        </router-link> -->
                     </div>
 
                     <div class="nav-group">

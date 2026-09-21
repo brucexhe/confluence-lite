@@ -104,6 +104,7 @@ public class UserService
             Email = request.Email,
             PasswordHash = PasswordService.HashPassword(request.Password),
             DisplayName = request.DisplayName ?? request.Username,
+            IsAdmin = request.IsAdmin,
             Status = 1,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now
@@ -192,6 +193,22 @@ public class UserService
         if (request.Status.HasValue)
         {
             user.Status = request.Status.Value;
+        }
+
+        // 管理员角色变更：降级时保护最后一个活跃管理员
+        if (request.IsAdmin.HasValue && request.IsAdmin.Value != user.IsAdmin)
+        {
+            if (user.IsAdmin && !request.IsAdmin.Value)
+            {
+                var adminCount = await _db.Db.Queryable<User>()
+                    .Where(u => u.IsAdmin && u.Status == 1 && !u.IsDeleted)
+                    .CountAsync();
+                if (adminCount <= 1)
+                {
+                    return (null, "不能移除最后一个管理员账户");
+                }
+            }
+            user.IsAdmin = request.IsAdmin.Value;
         }
 
         if (request.AvatarUrl != null)

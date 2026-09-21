@@ -144,7 +144,7 @@ const formState = reactive({
     key: '',
     description: '',
     iconStyle: 'blue',
-    isPublic: true
+    isPublic: false
 })
 
 const columns = [
@@ -188,7 +188,8 @@ const loadWorkspaces = async () => {
         workspaces.value = (data?.items || []).map(ws => ({
             ...ws,
             iconStyle: ws.iconStyle || 'blue',
-            isPublic: ws.isPublic !== false
+            // 严格判定：字段缺失/旧后端返回 undefined 时按私有处理（保守语义）
+            isPublic: ws.isPublic === true
         }))
         pagination.total = data?.total || 0
     } catch (error) {
@@ -217,7 +218,7 @@ const showEditModal = (workspace) => {
         key: workspace.key,
         description: workspace.description || '',
         iconStyle: workspace.iconStyle || 'blue',
-        isPublic: workspace.isPublic !== false
+        isPublic: workspace.isPublic === true
     })
     editModalVisible.value = true
 }

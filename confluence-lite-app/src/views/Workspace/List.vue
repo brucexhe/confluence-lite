@@ -479,12 +479,12 @@ const handleCreateSpace = async () => {
         }
 
         await workspaceApi.create(data);
-        message.success("Space created successfully");
-        isCreateModalVisible.value = false;
-        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
+        // 先写入最新空间列表，再整页刷新，避免停留在旧页面（与加入/退出空间一致）
+        await authStore.refreshSpaces();
+        window.location.reload();
     } catch (error) {
         console.error("Failed to create workspace:", error);
-        message.error(error?.response?.data?.message || "Failed to create space");
+        message.error(error?.message || "Failed to create space");
     } finally {
         creating.value = false;
     }
@@ -527,8 +527,9 @@ const handleEditSpace = async () => {
 const deleteSpace = async (id) => {
     try {
         await workspaceApi.remove(id);
-        message.success("Space deleted successfully");
-        await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
+        // 先写入最新空间列表，再整页刷新，避免停留在旧页面（与加入/退出空间一致）
+        await authStore.refreshSpaces();
+        window.location.reload();
     } catch (error) {
         console.error("Failed to delete workspace:", error);
         message.error(error?.response?.data?.message || "Failed to delete space");

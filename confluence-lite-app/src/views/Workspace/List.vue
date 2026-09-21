@@ -47,16 +47,18 @@
                             <a-tag v-if="space.isPublic" color="green">{{ $t('directory.public') }}</a-tag>
                             <a-tag v-if="space.isDefault" color="blue">{{ $t('directory.default') }}</a-tag>
                             <span class="foot-actions">
-                                <a-button v-if="isOwnerOf(space)" type="link" size="small" @click="showEditModal(space)">{{ $t('common.edit') }}</a-button>
-                                <a-popconfirm
-                                    v-if="isOwnerOf(space)"
-                                    :title="$t('directory.confirmDelete')"
-                                    :ok-text="$t('common.yes')"
-                                    :cancel-text="$t('common.no')"
-                                    @confirm="deleteSpace(space.id)"
-                                >
-                                    <a-button type="link" danger size="small">{{ $t('common.delete') }}</a-button>
-                                </a-popconfirm>
+                                <template v-if="isOwnerOf(space)">
+                                    <a-button type="link" size="small" @click="goMembers(space)">{{ $t('workspace.members') }}</a-button>
+                                    <a-button type="link" size="small" @click="showEditModal(space)">{{ $t('common.edit') }}</a-button>
+                                    <a-popconfirm
+                                        :title="$t('directory.confirmDelete')"
+                                        :ok-text="$t('common.yes')"
+                                        :cancel-text="$t('common.no')"
+                                        @confirm="deleteSpace(space.id)"
+                                    >
+                                        <a-button type="link" danger size="small">{{ $t('common.delete') }}</a-button>
+                                    </a-popconfirm>
+                                </template>
                                 <a-popconfirm
                                     v-else
                                     :title="$t('directory.confirmLeave')"
@@ -366,6 +368,11 @@ const loadDiscover = async () => {
 
 const goSpace = (space) => {
     router.push(`/${space.key}`);
+};
+
+// 前往空间成员管理页
+const goMembers = (space) => {
+    router.push(`/${space.key}/members`);
 };
 
 // 加入公开空间

@@ -194,10 +194,10 @@
                         <a-menu-item @click="navigateTo('/profile')">
                             <span style="font-size: 14px; color: #172b4d">{{ $t('nav.userInfo') }}</span>
                         </a-menu-item>
-                        <a-menu-item @click="navigateTo('/settings')">
+                        <a-menu-item v-if="isAdmin" @click="navigateTo('/settings')">
                             <span style="font-size: 14px; color: #172b4d">{{ $t('nav.systemSettings') }}</span>
                         </a-menu-item>
-                        <a-menu-divider />
+                        <a-menu-divider v-if="isAdmin" />
                         <a-menu-item @click="handleLogout">
                             <span style="font-size: 14px; color: #ef4444">{{ $t('nav.logout') }}</span>
                         </a-menu-item>
@@ -299,6 +299,9 @@ const { siteName, siteLogo } = useSiteInfo();
 const spaces = computed(() => {
     return JSON.parse(localStorage.getItem("auth_spaces") || "[]");
 });
+
+// 是否系统管理员（登录态已统一存 isAdmin；保留 role === 'admin' 兼容旧会话）
+const isAdmin = computed(() => authStore.user?.role === 'admin' || authStore.user?.isAdmin === true);
 
 function navigateToSpace(key) {
     const upperKey = key.toUpperCase();

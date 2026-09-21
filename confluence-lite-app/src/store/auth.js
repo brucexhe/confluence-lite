@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
           name: data.user.displayName || data.user.username,
           username: data.user.username,
           avatarUrl: data.user.avatarUrl,
-          role: data.user.isAdmin ? 'admin' : 'user'
+          isAdmin: !!data.user.isAdmin
         }
         localStorage.setItem('auth_user', JSON.stringify(user.value))
         if (data.workspaces) {
@@ -77,7 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = {
       id: setupData.userId,
       name: displayName,
-      role: 'admin'
+      isAdmin: true
     }
     localStorage.setItem('auth_user', JSON.stringify(user.value))
     localStorage.setItem('auth_spaces', JSON.stringify([

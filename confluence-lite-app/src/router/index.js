@@ -158,7 +158,7 @@ const router = createRouter({
         {
             path: '/settings',
             component: SettingsLayout,
-            meta: {requiresAuth: true},
+            meta: {requiresAuth: true, requiresAdmin: true},
             children: [
                 {
                     path: '',
@@ -312,6 +312,13 @@ router.beforeEach(async (to, from, next) => {
         next({name: 'login'})
         return
     } 
+
+    // Admin check - 非管理员禁止访问管理界面（如 /settings）
+    // 登录态已统一存 isAdmin；保留 role === 'admin' 是为了兼容统一前已登录的旧会话（旧格式只有 role 字段）
+    if (to.meta && to.meta.requiresAdmin && !(isAuthenticated?.role === 'admin' || isAuthenticated?.isAdmin === true)) {
+        next({path: '/'})
+        return
+    }
  
 
     // Logged in + on home/login → redirect to first space

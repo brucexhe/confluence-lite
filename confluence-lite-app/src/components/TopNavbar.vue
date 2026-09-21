@@ -97,10 +97,7 @@
                                     </div>
                                 </div>
                             </a-menu-item>
-                            <a-menu-item v-if="spaces.length === 0" key="no-spaces-guide" style="padding: 8px 16px" @click="navigateTo('/spaces')">
-                                <span style="color: #0052cc; font-size: 13px">{{ $t('nav.viewAllSpaces') }}</span>
-                            </a-menu-item>
-                            <a-menu-divider v-if="spaces.length > 0" />
+                            <a-menu-divider v-if="spaces.length >= 0" />
                             <a-menu-item key="view-all" style="padding: 4px 16px" @click="navigateTo('/spaces')">
                                 <span style="color: #0052cc; font-size: 14px; font-weight: 500">{{ $t('nav.viewAllSpaces') }}</span>
                             </a-menu-item>

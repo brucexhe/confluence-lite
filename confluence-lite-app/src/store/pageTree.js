@@ -8,6 +8,8 @@ export const usePageTreeStore = defineStore('pageTree', () => {
 
   const currentWorkspaceId = ref(null)
   const currentTreeData = ref([])
+  // 缓存失效版本号：页面增删改后自增，供 PageTree 组件监听并重新加载
+  const invalidateVersion = ref(0)
 
   /**
    * 获取工作空间的页面树数据
@@ -137,11 +139,13 @@ export const usePageTreeStore = defineStore('pageTree', () => {
    */
   function invalidateWorkspace(workspaceId) {
     clearCache(workspaceId)
+    invalidateVersion.value++
   }
 
   return {
     currentWorkspaceId,
     currentTreeData,
+    invalidateVersion,
     getTree,
     findNode,
     getParentIds,

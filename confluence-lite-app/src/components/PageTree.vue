@@ -80,6 +80,13 @@ async function loadTree() {
 // workspaceId 变化时重新加载
 watch(() => props.workspaceId, loadTree, {immediate: true})
 
+// 页面增删改导致树缓存失效时，重新加载当前空间的树（缓存已清，会真实请求）
+watch(() => pageTreeStore.invalidateVersion, () => {
+    if (props.workspaceId) {
+        loadTree()
+    }
+})
+
 // treeData 加载完成后，自动展开当前页面的父级和子级
 watch(() => treeData.value, (newTree) => {
     if (newTree && newTree.length > 0 && route.params.id) {

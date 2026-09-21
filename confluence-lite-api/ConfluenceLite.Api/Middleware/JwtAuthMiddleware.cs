@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.IdentityModel.Tokens;
 using ConfluenceLite.Api.Data;
 using ConfluenceLite.Api.Mappers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ConfluenceLite.Api.Middleware;
 
@@ -145,6 +146,23 @@ public class JwtAuthMiddleware
             var response = new UnauthorizedResponse();
             await context.Response.WriteAsync(JsonSerializer.Serialize(response, AppJsonContext.Default.UnauthorizedResponse));
             return;
+        }
+
+        // 已登录用户校验账户仍有效（未被删除/停用），使软删除与禁用即时生效，
+        // 避免 JWT 有效期内已删用户仍可凭存量 Cookie 访问
+        if (!isPublicPath && currentUser.IsAuthenticated)
+        {
+            var db = context.RequestServices.GetRequiredService<AppDbContext>();
+            var alive = await db.Db.Queryable<Models.User>()
+                .AnyAsync(u => u.Id == currentUser.UserId && u.Status == 1 && !u.IsDeleted);
+            if (!alive)
+            {
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+                var invalidResponse = new UnauthorizedResponse();
+                await context.Response.WriteAsync(JsonSerializer.Serialize(invalidResponse, AppJsonContext.Default.UnauthorizedResponse));
+                return;
+            }
         }
 
         // 管理接口需要管理员权限

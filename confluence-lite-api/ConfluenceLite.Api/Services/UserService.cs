@@ -24,7 +24,7 @@ public class UserService
     public async Task<(UserDto? user, string? error)> LoginAsync(LoginRequest request)
     {
         var user = await _db.Db.Queryable<User>()
-            .Where(u => u.Username == request.Username && u.Status == 1)
+            .Where(u => u.Username == request.Username && u.Status == 1 && !u.IsDeleted)
             .FirstAsync();
 
         if (user == null)
@@ -128,7 +128,10 @@ public class UserService
     /// </summary>
     public async Task<UserDto?> GetUserByIdAsync(long id)
     {
-        var user = await _db.Users.GetByIdAsync(id);
+        // 已删除用户视为不存在（作者名展示走 JOIN users，不受影响）
+        var user = await _db.Db.Queryable<User>()
+            .Where(u => u.Id == id && !u.IsDeleted)
+            .FirstAsync();
         return user == null ? null : MapToDto(user);
     }
 
@@ -137,9 +140,11 @@ public class UserService
     /// </summary>
     public async Task<PagedResponse<UserDto>> GetUserListAsync(PagedRequest request)
     {
-        var total = await _db.Db.Queryable<User>().CountAsync();
+        // 管理端用户列表不展示已删除用户
+        var total = await _db.Db.Queryable<User>().Where(u => !u.IsDeleted).CountAsync();
 
         var users = await _db.Db.Queryable<User>()
+            .Where(u => !u.IsDeleted)
             .OrderBy(u => u.Id)
             .Skip(request.Skip)
             .Take(request.PageSize)
@@ -160,7 +165,7 @@ public class UserService
     public async Task<(UserDto? user, string? error)> UpdateUserAsync(long id, UpdateUserRequest request)
     {
         var user = await _db.Users.GetByIdAsync(id);
-        if (user == null)
+        if (user == null || user.IsDeleted)
         {
             return (null, "用户不存在");
         }
@@ -245,7 +250,7 @@ public class UserService
         if (user.IsAdmin)
         {
             var adminCount = await _db.Db.Queryable<User>()
-                .Where(u => u.IsAdmin && u.Status == 1)
+                .Where(u => u.IsAdmin && u.Status == 1 && !u.IsDeleted)
                 .CountAsync();
             if (adminCount <= 1)
             {
@@ -253,7 +258,15 @@ public class UserService
             }
         }
 
-        await _db.Users.DeleteAsync(user);
+        // 软删除：标记删除并停用、清除凭据；用户创建的空间/页面/评论等内容全部保留，
+        // 用户行保留使各处 JOIN users 仍能取到作者名，同时也保留恢复的可能
+        user.IsDeleted = true;
+        user.DeletedAt = DateTime.Now;
+        user.Status = 0;
+        user.PasswordHash = string.Empty;
+        user.UpdatedAt = DateTime.Now;
+
+        await _db.Users.UpdateAsync(user);
         return (true, null);
     }
 

@@ -52,6 +52,7 @@
                     <template v-else-if="column.key === 'action'">
                         <a-space>
                             <a-button type="link" size="small" @click="$router.push(`/${record.key}`)">{{ $t('common.view') }}</a-button>
+                            <a-button type="link" size="small" @click="openMembersModal(record)">{{ $t('workspace.members') }}</a-button>
                             <a-button type="link" size="small" @click="showEditModal(record)">{{ $t('common.edit') }}</a-button>
                             <a-popconfirm :title="$t('settings.workspaces.confirmDelete')" @confirm="handleDelete(record.id)">
                                 <a-button type="link" size="small" danger>{{ $t('common.delete') }}</a-button>
@@ -112,6 +113,13 @@
                 </a-form-item>
             </a-form>
         </a-modal>
+
+        <!-- 成员管理弹窗 -->
+        <SpaceMembersModal
+            v-model:open="membersModalVisible"
+            :workspace-id="membersTarget?.id"
+            :space-name="membersTarget?.name"
+        />
     </div>
 </template>
 
@@ -122,6 +130,7 @@ import { useI18n } from 'vue-i18n'
 import { Plus } from 'lucide-vue-next'
 import { workspaceApi } from '@/api'
 import { formatDateTime } from '@/utils/format'
+import SpaceMembersModal from '@/components/SpaceMembersModal.vue'
 
 const { t } = useI18n()
 const loading = ref(false)
@@ -156,7 +165,7 @@ const columns = [
     { title: t('settings.workspaces.type'), key: 'type' },
     { title: t('settings.workspaces.creator'), dataIndex: 'creatorName', key: 'creatorName' },
     { title: t('settings.workspaces.createdAt'), key: 'createdAt' },
-    { title: t('common.action'), key: 'action', width: 150 }
+    { title: t('common.action'), key: 'action', width: 200 }
 ]
 
 const spaceColors = [
@@ -202,6 +211,14 @@ const loadWorkspaces = async () => {
 const handleSearch = () => {
     pagination.current = 1
     loadWorkspaces()
+}
+
+// 成员管理弹窗
+const membersModalVisible = ref(false)
+const membersTarget = ref(null)
+const openMembersModal = (workspace) => {
+    membersTarget.value = workspace
+    membersModalVisible.value = true
 }
 
 const handleTableChange = (pag) => {

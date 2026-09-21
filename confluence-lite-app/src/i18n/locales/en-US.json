@@ -633,7 +633,7 @@
       "editBtn": "Edit",
       "resetPassword": "Reset Password",
       "deleteBtn": "Delete",
-      "confirmDelete": "Are you sure you want to delete user \"{name}\"?",
+      "confirmDelete": "Are you sure you want to delete user \"{name}\"? The user will no longer be able to sign in. Spaces, pages and comments created by them will be preserved.",
       "deleteSuccess": "User deleted successfully",
       "deleteFailed": "Failed to delete user",
       "createSuccess": "User created successfully",

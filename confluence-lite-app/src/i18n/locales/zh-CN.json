@@ -633,7 +633,7 @@
       "editBtn": "编辑",
       "resetPassword": "重置密码",
       "deleteBtn": "删除",
-      "confirmDelete": "确定要删除用户\"{name}\"吗？",
+      "confirmDelete": "确定要删除用户\"{name}\"吗？删除后该用户将无法登录，其创建的空间、页面与评论将保留。",
       "deleteSuccess": "用户删除成功",
       "deleteFailed": "删除用户失败",
       "createSuccess": "用户创建成功",

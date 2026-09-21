@@ -1,15 +1,15 @@
 <template>
     <div class="space-list-container">
         <div class="header-actions">
-            <h2>Space Directory</h2>
-            <a-button type="primary" @click="showCreateModal">Create space</a-button>
+            <h2>{{ $t('directory.title') }}</h2>
+            <a-button type="primary" @click="showCreateModal">{{ $t('directory.createSpace') }}</a-button>
         </div>
 
         <!-- Search -->
         <div class="filter-bar">
             <a-input-search
                 v-model:value="searchText"
-                placeholder="Search public spaces..."
+                :placeholder="$t('directory.searchPlaceholder')"
                 style="width: 300px"
                 allow-clear
                 @search="loadDiscover"
@@ -18,7 +18,7 @@
 
         <!-- My Spaces -->
         <div class="section">
-            <div class="section-title">My spaces</div>
+            <div class="section-title">{{ $t('directory.mySpaces') }}</div>
             <a-spin :spinning="loadingMine">
                 <div v-if="mySpaces.length > 0" class="space-grid">
                     <div v-for="space in mySpaces" :key="space.id" class="space-card">
@@ -43,40 +43,40 @@
                         </div>
                         <div class="space-desc" v-if="space.description">{{ space.description }}</div>
                         <div class="space-card-foot">
-                            <span class="page-count">{{ space.pageCount || 0 }} pages</span>
-                            <a-tag v-if="space.isPublic" color="green">Public</a-tag>
-                            <a-tag v-if="space.isDefault" color="blue">Default</a-tag>
+                            <span class="page-count">{{ $t('directory.pages', { count: space.pageCount || 0 }) }}</span>
+                            <a-tag v-if="space.isPublic" color="green">{{ $t('directory.public') }}</a-tag>
+                            <a-tag v-if="space.isDefault" color="blue">{{ $t('directory.default') }}</a-tag>
                             <span class="foot-actions">
-                                <a-button v-if="isOwnerOf(space)" type="link" size="small" @click="showEditModal(space)">Edit</a-button>
+                                <a-button v-if="isOwnerOf(space)" type="link" size="small" @click="showEditModal(space)">{{ $t('common.edit') }}</a-button>
                                 <a-popconfirm
                                     v-if="isOwnerOf(space)"
-                                    title="Are you sure you want to delete this space?"
-                                    ok-text="Yes"
-                                    cancel-text="No"
+                                    :title="$t('directory.confirmDelete')"
+                                    :ok-text="$t('common.yes')"
+                                    :cancel-text="$t('common.no')"
                                     @confirm="deleteSpace(space.id)"
                                 >
-                                    <a-button type="link" danger size="small">Delete</a-button>
+                                    <a-button type="link" danger size="small">{{ $t('common.delete') }}</a-button>
                                 </a-popconfirm>
                                 <a-popconfirm
                                     v-else
-                                    title="Leave this space?"
-                                    ok-text="Yes"
-                                    cancel-text="No"
+                                    :title="$t('directory.confirmLeave')"
+                                    :ok-text="$t('common.yes')"
+                                    :cancel-text="$t('common.no')"
                                     @confirm="leaveSpace(space)"
                                 >
-                                    <a-button type="link" size="small">Leave</a-button>
+                                    <a-button type="link" size="small">{{ $t('directory.leave') }}</a-button>
                                 </a-popconfirm>
                             </span>
                         </div>
                     </div>
                 </div>
-                <a-empty v-else-if="!loadingMine" description="You have no spaces yet. Create one or join a public space below." />
+                <a-empty v-else-if="!loadingMine" :description="$t('directory.emptyMySpaces')" />
             </a-spin>
         </div>
 
         <!-- Discover Public Spaces -->
         <div class="section">
-            <div class="section-title">Discover public spaces</div>
+            <div class="section-title">{{ $t('directory.discover') }}</div>
             <a-spin :spinning="loadingDiscover">
                 <div v-if="discoverSpaces.length > 0" class="space-grid">
                     <div v-for="space in discoverSpaces" :key="space.id" class="space-card">
@@ -101,63 +101,63 @@
                         </div>
                         <div class="space-desc" v-if="space.description">{{ space.description }}</div>
                         <div class="space-card-foot">
-                            <span class="page-count">{{ space.memberCount }} members · {{ space.pageCount || 0 }} pages</span>
+                            <span class="page-count">{{ $t('directory.memberStats', { members: space.memberCount, pages: space.pageCount || 0 }) }}</span>
                             <span class="foot-actions">
-                                <a-tag v-if="space.isOwner" color="geekblue">Owner</a-tag>
-                                <a-tag v-else-if="space.isJoined" color="cyan">Joined</a-tag>
-                                <a-button v-else type="primary" size="small" :loading="joiningId === space.id" @click="joinSpace(space)">Join</a-button>
+                                <a-tag v-if="space.isOwner" color="geekblue">{{ $t('directory.owner') }}</a-tag>
+                                <a-tag v-else-if="space.isJoined" color="cyan">{{ $t('directory.joined') }}</a-tag>
+                                <a-button v-else type="primary" size="small" :loading="joiningId === space.id" @click="joinSpace(space)">{{ $t('directory.join') }}</a-button>
                             </span>
                         </div>
                     </div>
                 </div>
-                <a-empty v-else-if="!loadingDiscover" description="No public spaces found" />
+                <a-empty v-else-if="!loadingDiscover" :description="$t('directory.emptyDiscover')" />
             </a-spin>
         </div>
 
         <!-- Create Modal -->
         <a-modal
             v-model:open="isCreateModalVisible"
-            title="Create a new space"
+            :title="$t('directory.createTitle')"
             @ok="handleCreateSpace"
-            okText="Create"
-            cancelText="Cancel"
+            :okText="$t('common.create')"
+            :cancelText="$t('common.cancel')"
             :confirmLoading="creating"
             :okButtonProps="{ style: { backgroundColor: '#0052cc' } }"
             :width="isMobile ? '95%' : 600"
         >
             <a-form layout="vertical" style="margin-top: 1rem">
-                <a-form-item label="Space name" required>
+                <a-form-item :label="$t('directory.spaceName')" required>
                     <a-input
                         v-model:value="newSpace.name"
-                        placeholder="E.g. Engineering Team"
+                        :placeholder="$t('directory.spaceNamePlaceholder')"
                         :maxlength="100"
                         showCount
                     />
                 </a-form-item>
-                <a-form-item label="Space key" required>
+                <a-form-item :label="$t('directory.spaceKey')" required>
                     <a-input
                         v-model:value="newSpace.key"
-                        placeholder="E.g. ENG"
+                        :placeholder="$t('directory.spaceKeyPlaceholder')"
                         :maxlength="50"
                         style="width: 200px; text-transform: uppercase"
                     />
-                    <div class="form-hint">2-50 characters, letters, numbers, - and _ only</div>
+                    <div class="form-hint">{{ $t('directory.spaceKeyHint') }}</div>
                 </a-form-item>
-                <a-form-item label="Description">
+                <a-form-item :label="$t('directory.description')">
                     <a-textarea
                         v-model:value="newSpace.description"
                         :rows="3"
-                        placeholder="What is this space about?"
+                        :placeholder="$t('directory.descriptionPlaceholder')"
                         :maxlength="1000"
                         showCount
                     />
                 </a-form-item>
-                <a-form-item label="Icon">
+                <a-form-item :label="$t('directory.icon')">
                     <div class="icon-selector">
                         <div class="icon-type-tabs">
                             <a-radio-group v-model:value="newSpace.iconType" button-style="solid">
-                                <a-radio-button value="gradient">Color</a-radio-button>
-                                <a-radio-button value="image">Image</a-radio-button>
+                                <a-radio-button value="gradient">{{ $t('directory.color') }}</a-radio-button>
+                                <a-radio-button value="image">{{ $t('directory.image') }}</a-radio-button>
                             </a-radio-group>
                         </div>
                         <div v-if="newSpace.iconType === 'gradient'" class="color-picker">
@@ -177,29 +177,29 @@
                                 accept="image/*"
                             >
                                 <div v-if="newSpace.iconUrl" class="image-preview">
-                                    <img :src="newSpace.iconUrl" alt="Space icon" />
+                                    <img :src="newSpace.iconUrl" :alt="$t('directory.spaceIcon')" />
                                     <div class="image-overlay">
-                                        <span>Change</span>
+                                        <span>{{ $t('directory.change') }}</span>
                                     </div>
                                 </div>
                                 <div v-else class="upload-placeholder">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                         <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                     </svg>
-                                    <span>Upload Image</span>
+                                    <span>{{ $t('directory.uploadImage') }}</span>
                                 </div>
                             </a-upload>
-                            <a-button v-if="newSpace.iconUrl" danger size="small" @click="newSpace.iconUrl = ''">Remove</a-button>
+                            <a-button v-if="newSpace.iconUrl" danger size="small" @click="newSpace.iconUrl = ''">{{ $t('directory.remove') }}</a-button>
                         </div>
                     </div>
                 </a-form-item>
-                <a-form-item label="Visibility">
+                <a-form-item :label="$t('directory.visibility')">
                     <a-switch v-model:checked="newSpace.isPublic" />
-                    <span class="form-hint">Public spaces appear in the directory and can be joined by anyone</span>
+                    <span class="form-hint">{{ $t('directory.visibilityHint') }}</span>
                 </a-form-item>
-                <a-form-item label="Set as default space">
+                <a-form-item :label="$t('directory.setDefault')">
                     <a-switch v-model:checked="newSpace.isDefault" />
-                    <span class="form-hint">This will be your primary space</span>
+                    <span class="form-hint">{{ $t('directory.setDefaultHint') }}</span>
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -207,47 +207,47 @@
         <!-- Edit Modal -->
         <a-modal
             v-model:open="isEditModalVisible"
-            title="Edit space"
+            :title="$t('directory.editTitle')"
             @ok="handleEditSpace"
-            okText="Save"
-            cancelText="Cancel"
+            :okText="$t('common.save')"
+            :cancelText="$t('common.cancel')"
             :confirmLoading="editing"
             :okButtonProps="{ style: { backgroundColor: '#0052cc' } }"
             :width="isMobile ? '95%' : 600"
         >
             <a-form layout="vertical" style="margin-top: 1rem">
-                <a-form-item label="Space name" required>
+                <a-form-item :label="$t('directory.spaceName')" required>
                     <a-input
                         v-model:value="editSpace.name"
-                        placeholder="E.g. Engineering Team"
+                        :placeholder="$t('directory.spaceNamePlaceholder')"
                         :maxlength="100"
                         showCount
                     />
                 </a-form-item>
-                <a-form-item label="Space key">
+                <a-form-item :label="$t('directory.spaceKey')">
                     <a-input
                         v-model:value="editSpace.key"
                         disabled
                         style="width: 200px"
                     />
-                    <div class="form-hint">Space keys cannot be changed</div>
+                    <div class="form-hint">{{ $t('directory.keyNotEditable') }}</div>
                 </a-form-item>
-                <a-form-item label="Description">
+                <a-form-item :label="$t('directory.description')">
                     <a-textarea
                         v-model:value="editSpace.description"
                         :rows="3"
-                        placeholder="What is this space about?"
+                        :placeholder="$t('directory.descriptionPlaceholder')"
                         :maxlength="1000"
                         showCount
                     />
                 </a-form-item>
-                <a-form-item label="Visibility">
+                <a-form-item :label="$t('directory.visibility')">
                     <a-switch v-model:checked="editSpace.isPublic" />
-                    <span class="form-hint">Public spaces appear in the directory and can be joined by anyone</span>
+                    <span class="form-hint">{{ $t('directory.visibilityHint') }}</span>
                 </a-form-item>
-                <a-form-item label="Set as default space">
+                <a-form-item :label="$t('directory.setDefault')">
                     <a-switch v-model:checked="editSpace.isDefault" />
-                    <span class="form-hint">This will be your primary space</span>
+                    <span class="form-hint">{{ $t('directory.setDefaultHint') }}</span>
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -258,9 +258,12 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
 import { workspaceApi } from "../../api";
 import { useAuthStore } from "../../store/auth";
 import { getSpaceColorById, getSpaceInitial } from "../../utils/workspace";
+
+const { t } = useI18n();
 
 // Mobile detection
 const isMobile = ref(false);
@@ -376,7 +379,7 @@ const joinSpace = async (space) => {
         window.location.reload();
     } catch (error) {
         joiningId.value = null;
-        message.error(error?.response?.data?.message || "Failed to join space");
+        message.error(error?.response?.data?.message || t("directory.joinFailed"));
     }
 };
 
@@ -388,7 +391,7 @@ const leaveSpace = async (space) => {
         await authStore.refreshSpaces();
         window.location.reload();
     } catch (error) {
-        message.error(error?.response?.data?.message || "Failed to leave space");
+        message.error(error?.response?.data?.message || t("directory.leaveFailed"));
     }
 };
 
@@ -425,12 +428,12 @@ const showEditModal = (space) => {
 const handleBeforeUpload = async (file) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-        message.error("You can only upload image files!");
+        message.error(t("directory.imageOnly"));
         return false;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-        message.error("Image must smaller than 2MB!");
+        message.error(t("directory.imageMaxSize"));
         return false;
     }
 
@@ -440,24 +443,24 @@ const handleBeforeUpload = async (file) => {
         const target = isCreateModalVisible.value ? newSpace.value : editSpace.value;
         target.iconUrl = filePath;
         target.iconType = "image";
-        message.success("Image uploaded successfully");
+        message.success(t("directory.uploadSuccess"));
     } catch (error) {
         console.error("Upload failed:", error);
-        message.error("Failed to upload image");
+        message.error(t("directory.uploadFailed"));
     }
     return false; // Prevent auto upload
 };
 
 const handleCreateSpace = async () => {
     if (!newSpace.value.name || !newSpace.value.key) {
-        message.warning("Name and Key are required.");
+        message.warning(t("directory.nameKeyRequired"));
         return;
     }
 
     // Validate key format
     const keyRegex = /^[a-zA-Z0-9-_]+$/;
     if (!keyRegex.test(newSpace.value.key)) {
-        message.warning("Key can only contain letters, numbers, hyphens and underscores.");
+        message.warning(t("directory.keyPattern"));
         return;
     }
 
@@ -484,7 +487,7 @@ const handleCreateSpace = async () => {
         window.location.reload();
     } catch (error) {
         console.error("Failed to create workspace:", error);
-        message.error(error?.message || "Failed to create space");
+        message.error(error?.message || t("directory.createFailed"));
     } finally {
         creating.value = false;
     }
@@ -492,7 +495,7 @@ const handleCreateSpace = async () => {
 
 const handleEditSpace = async () => {
     if (!editSpace.value.name) {
-        message.warning("Name is required.");
+        message.warning(t("directory.nameRequired"));
         return;
     }
 
@@ -513,12 +516,12 @@ const handleEditSpace = async () => {
         }
 
         await workspaceApi.update(editSpace.value.id, data);
-        message.success("Space updated successfully");
+        message.success(t("directory.updateSuccess"));
         isEditModalVisible.value = false;
         await Promise.all([loadMySpaces(), loadDiscover(), authStore.refreshSpaces()]);
     } catch (error) {
         console.error("Failed to update workspace:", error);
-        message.error(error?.response?.data?.message || "Failed to update space");
+        message.error(error?.response?.data?.message || t("directory.updateFailed"));
     } finally {
         editing.value = false;
     }
@@ -532,7 +535,7 @@ const deleteSpace = async (id) => {
         window.location.reload();
     } catch (error) {
         console.error("Failed to delete workspace:", error);
-        message.error(error?.response?.data?.message || "Failed to delete space");
+        message.error(error?.response?.data?.message || t("directory.deleteFailed"));
     }
 };
 

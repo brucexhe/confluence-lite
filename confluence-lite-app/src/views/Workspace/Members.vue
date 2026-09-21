@@ -2,19 +2,19 @@
     <div class="members-container">
         <div class="header-actions">
             <div>
-                <h2>Space members</h2>
+                <h2>{{ $t('spaceMembers.title') }}</h2>
                 <div class="sub-title" v-if="spaceName">{{ spaceName }}</div>
             </div>
-            <a-button type="primary" @click="openInviteModal">Invite members</a-button>
+            <a-button type="primary" @click="openInviteModal">{{ $t('spaceMembers.invite') }}</a-button>
         </div>
 
-        <a-alert v-if="!isAdmin" type="warning" show-icon message="You need space admin permission to manage members" />
+        <a-alert v-if="!isAdmin" type="warning" show-icon :message="$t('spaceMembers.noPermission')" />
         <template v-else>
             <!-- Search -->
             <div class="filter-bar">
                 <a-input-search
                     v-model:value="searchText"
-                    placeholder="Filter by name or email..."
+                    :placeholder="$t('spaceMembers.filterPlaceholder')"
                     style="width: 300px"
                     allow-clear
                     @search="loadMembers"
@@ -40,8 +40,8 @@
                             <div>
                                 <div class="user-name">
                                     {{ record.user.displayName || record.user.username }}
-                                    <a-tag v-if="record.isOwner" color="geekblue">Owner</a-tag>
-                                    <a-tag v-else-if="record.adminSpace" color="orange">Admin</a-tag>
+                                    <a-tag v-if="record.isOwner" color="geekblue">{{ $t('spaceMembers.owner') }}</a-tag>
+                                    <a-tag v-else-if="record.adminSpace" color="orange">{{ $t('spaceMembers.admin') }}</a-tag>
                                 </div>
                                 <div class="user-username">@{{ record.user.username }}</div>
                             </div>
@@ -49,29 +49,29 @@
                     </template>
                     <template v-else-if="column.key === 'permissions'">
                         <div class="perm-tags">
-                            <a-tag v-if="record.viewSpace" color="blue">View</a-tag>
-                            <a-tag v-if="record.createPage" color="green">Create</a-tag>
-                            <a-tag v-if="record.editPage" color="purple">Edit</a-tag>
-                            <a-tag v-if="record.deletePage" color="red">Delete any</a-tag>
-                            <a-tag v-else-if="record.deleteOwnPage" color="volcano">Delete own</a-tag>
-                            <a-tag v-if="record.addComment" color="cyan">Comment</a-tag>
-                            <a-tag v-if="record.exportPage" color="pink">Export</a-tag>
-                            <span v-if="!hasAnyPermission(record) && !record.isOwner" class="no-perm">No access</span>
+                            <a-tag v-if="record.viewSpace" color="blue">{{ $t('spaceMembers.tagView') }}</a-tag>
+                            <a-tag v-if="record.createPage" color="green">{{ $t('spaceMembers.tagCreate') }}</a-tag>
+                            <a-tag v-if="record.editPage" color="purple">{{ $t('spaceMembers.tagEdit') }}</a-tag>
+                            <a-tag v-if="record.deletePage" color="red">{{ $t('spaceMembers.tagDeleteAny') }}</a-tag>
+                            <a-tag v-else-if="record.deleteOwnPage" color="volcano">{{ $t('spaceMembers.tagDeleteOwn') }}</a-tag>
+                            <a-tag v-if="record.addComment" color="cyan">{{ $t('spaceMembers.tagComment') }}</a-tag>
+                            <a-tag v-if="record.exportPage" color="pink">{{ $t('spaceMembers.tagExport') }}</a-tag>
+                            <span v-if="!hasAnyPermission(record) && !record.isOwner" class="no-perm">{{ $t('spaceMembers.noAccess') }}</span>
                         </div>
                     </template>
                     <template v-else-if="column.key === 'action'">
                         <template v-if="!record.isOwner">
-                            <a-button type="link" size="small" @click="openEditModal(record)">Permissions</a-button>
+                            <a-button type="link" size="small" @click="openEditModal(record)">{{ $t('spaceMembers.permissions') }}</a-button>
                             <a-popconfirm
-                                title="Remove this member from the space?"
-                                ok-text="Yes"
-                                cancel-text="No"
+                                :title="$t('spaceMembers.confirmRemove')"
+                                :ok-text="$t('common.yes')"
+                                :cancel-text="$t('common.no')"
                                 @confirm="removeMember(record)"
                             >
-                                <a-button type="link" danger size="small">Remove</a-button>
+                                <a-button type="link" danger size="small">{{ $t('spaceMembers.remove') }}</a-button>
                             </a-popconfirm>
                         </template>
-                        <span v-else class="owner-hint">All permissions</span>
+                        <span v-else class="owner-hint">{{ $t('spaceMembers.allPermissions') }}</span>
                     </template>
                 </template>
             </a-table>
@@ -80,33 +80,33 @@
         <!-- Invite Modal -->
         <a-modal
             v-model:open="inviteVisible"
-            title="Invite members"
+            :title="$t('spaceMembers.invite')"
             @ok="handleInvite"
-            okText="Invite"
-            cancelText="Cancel"
+            :okText="$t('spaceMembers.invite')"
+            :cancelText="$t('common.cancel')"
             :confirmLoading="inviting"
             :width="isMobile ? '95%' : 560"
         >
             <a-form layout="vertical" style="margin-top: 1rem">
-                <a-form-item label="Search users" required>
+                <a-form-item :label="$t('spaceMembers.searchUsers')" required>
                     <a-select
                         v-model:value="inviteUserIds"
                         mode="multiple"
-                        placeholder="Search by username, display name or email..."
+                        :placeholder="$t('spaceMembers.searchPlaceholder')"
                         :filter-option="false"
                         :options="userOptions"
                         @search="handleUserSearch"
                         style="width: 100%"
                     />
-                    <div class="form-hint">Only users not already in this space are listed</div>
+                    <div class="form-hint">{{ $t('spaceMembers.searchHint') }}</div>
                 </a-form-item>
-                <a-form-item label="Permissions">
+                <a-form-item :label="$t('spaceMembers.permissions')">
                     <div class="perm-grid">
                         <div v-for="p in permissionItems" :key="p.key" class="perm-item">
                             <a-checkbox v-model:checked="invitePerms[p.key]">{{ p.label }}</a-checkbox>
                         </div>
                     </div>
-                    <div class="form-hint">New members need at least "View space" to see the space</div>
+                    <div class="form-hint">{{ $t('spaceMembers.viewHint') }}</div>
                 </a-form-item>
             </a-form>
         </a-modal>
@@ -114,10 +114,10 @@
         <!-- Edit Permissions Modal -->
         <a-modal
             v-model:open="editVisible"
-            title="Member permissions"
+            :title="$t('spaceMembers.memberPermissions')"
             @ok="handleUpdatePerms"
-            okText="Save"
-            cancelText="Cancel"
+            :okText="$t('common.save')"
+            :cancelText="$t('common.cancel')"
             :confirmLoading="updating"
             :width="isMobile ? '95%' : 560"
         >
@@ -130,7 +130,7 @@
                 <span class="user-username">@{{ editingMember.user.username }}</span>
             </div>
             <a-form layout="vertical" style="margin-top: 1rem">
-                <a-form-item label="Permissions">
+                <a-form-item :label="$t('spaceMembers.permissions')">
                     <div class="perm-grid">
                         <div v-for="p in permissionItems" :key="p.key" class="perm-item">
                             <a-checkbox v-model:checked="editPerms[p.key]">{{ p.label }}</a-checkbox>
@@ -146,9 +146,11 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from "vue";
 import { useRoute } from "vue-router";
 import { message } from "ant-design-vue";
+import { useI18n } from "vue-i18n";
 import { workspaceApi } from "../../api";
 
 const route = useRoute();
+const { t } = useI18n();
 
 const isMobile = ref(false);
 function checkMobile() {
@@ -172,28 +174,29 @@ const members = ref([]);
 const searchText = ref("");
 const pagination = reactive({ current: 1, pageSize: 20, total: 0 });
 
-const columns = [
-    { title: "Member", key: "user" },
-    { title: "Permissions", key: "permissions" },
-    { title: "Action", key: "action", width: "220px" },
-];
+// 列定义与权限项均用 computed 包装，切换语言时响应式更新
+const columns = computed(() => [
+    { title: t("spaceMembers.colMember"), key: "user" },
+    { title: t("spaceMembers.colPermissions"), key: "permissions" },
+    { title: t("spaceMembers.colAction"), key: "action", width: "220px" },
+]);
 
-const permissionItems = [
-    { key: "viewSpace", label: "View space" },
-    { key: "createPage", label: "Create page" },
-    { key: "editPage", label: "Edit page" },
-    { key: "deletePage", label: "Delete any page" },
-    { key: "deleteOwnPage", label: "Delete own page" },
-    { key: "addComment", label: "Add comment" },
-    { key: "deleteComment", label: "Delete comment" },
-    { key: "exportPage", label: "Export page" },
-    { key: "adminSpace", label: "Admin space" },
-    { key: "setPermissions", label: "Set permissions" },
-];
+const permissionItems = computed(() => [
+    { key: "viewSpace", label: t("spaceMembers.permViewSpace") },
+    { key: "createPage", label: t("spaceMembers.permCreatePage") },
+    { key: "editPage", label: t("spaceMembers.permEditPage") },
+    { key: "deletePage", label: t("spaceMembers.permDeletePage") },
+    { key: "deleteOwnPage", label: t("spaceMembers.permDeleteOwnPage") },
+    { key: "addComment", label: t("spaceMembers.permAddComment") },
+    { key: "deleteComment", label: t("spaceMembers.permDeleteComment") },
+    { key: "exportPage", label: t("spaceMembers.permExportPage") },
+    { key: "adminSpace", label: t("spaceMembers.permAdminSpace") },
+    { key: "setPermissions", label: t("spaceMembers.permSetPermissions") },
+]);
 
 const defaultPerms = () => {
     const perms = {};
-    permissionItems.forEach((p) => { perms[p.key] = false; });
+    permissionItems.value.forEach((p) => { perms[p.key] = false; });
     perms.viewSpace = true;
     return perms;
 };
@@ -210,7 +213,7 @@ const editingMember = ref(null);
 const editPerms = reactive(defaultPerms());
 
 const hasAnyPermission = (record) => {
-    return permissionItems.some((p) => record[p.key]);
+    return permissionItems.value.some((p) => record[p.key]);
 };
 
 const loadMembers = async () => {
@@ -280,7 +283,7 @@ const openInviteModal = () => {
 
 const handleInvite = async () => {
     if (inviteUserIds.value.length === 0) {
-        message.warning("Please select at least one user.");
+        message.warning(t("spaceMembers.selectUserRequired"));
         return;
     }
     inviting.value = true;
@@ -288,11 +291,11 @@ const handleInvite = async () => {
         for (const userId of inviteUserIds.value) {
             await workspaceApi.addMember(workspaceId.value, { userId, ...invitePerms });
         }
-        message.success("Members invited");
+        message.success(t("spaceMembers.inviteSuccess"));
         inviteVisible.value = false;
         await loadMembers();
     } catch (error) {
-        message.error(error?.response?.data?.message || "Failed to invite members");
+        message.error(error?.response?.data?.message || t("spaceMembers.inviteFailed"));
     } finally {
         inviting.value = false;
     }
@@ -300,7 +303,7 @@ const handleInvite = async () => {
 
 const openEditModal = (record) => {
     editingMember.value = record;
-    permissionItems.forEach((p) => {
+    permissionItems.value.forEach((p) => {
         editPerms[p.key] = !!record[p.key];
     });
     editVisible.value = true;
@@ -314,11 +317,11 @@ const handleUpdatePerms = async () => {
             userId: editingMember.value.user.id,
             ...editPerms
         });
-        message.success("Permissions updated");
+        message.success(t("spaceMembers.updateSuccess"));
         editVisible.value = false;
         await loadMembers();
     } catch (error) {
-        message.error(error?.response?.data?.message || "Failed to update permissions");
+        message.error(error?.response?.data?.message || t("spaceMembers.updateFailed"));
     } finally {
         updating.value = false;
     }
@@ -327,10 +330,10 @@ const handleUpdatePerms = async () => {
 const removeMember = async (record) => {
     try {
         await workspaceApi.removeMember(workspaceId.value, record.user.id);
-        message.success("Member removed");
+        message.success(t("spaceMembers.removeSuccess"));
         await loadMembers();
     } catch (error) {
-        message.error(error?.response?.data?.message || "Failed to remove member");
+        message.error(error?.response?.data?.message || t("spaceMembers.removeFailed"));
     }
 };
 

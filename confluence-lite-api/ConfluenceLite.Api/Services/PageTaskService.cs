@@ -336,19 +336,69 @@ public class PageTaskService
             .OrderBy(t => t.Position)
             .ToListAsync();
 
-        var dtos = tasks.Select(t => new PageTaskDto
-        {
-            Id = t.Id,
-            PageId = t.PageId,
-            TaskUid = t.TaskUid,
-            Content = t.Content,
-            IsCompleted = t.IsCompleted,
-            CompletedAt = t.CompletedAt,
-            Position = t.Position,
-            CreatedAt = t.CreatedAt,
-            UpdatedAt = t.UpdatedAt
-        }).ToList();
+        var dtos = tasks.Select(ToDto).ToList();
 
         return (dtos, null);
+    }
+
+    /// <summary>
+    /// 实体转 DTO
+    /// </summary>
+    private static PageTaskDto ToDto(PageTask t) => new()
+    {
+        Id = t.Id,
+        PageId = t.PageId,
+        TaskUid = t.TaskUid,
+        Content = t.Content,
+        IsCompleted = t.IsCompleted,
+        CompletedAt = t.CompletedAt,
+        Position = t.Position,
+        CreatedAt = t.CreatedAt,
+        UpdatedAt = t.UpdatedAt
+    };
+
+    /// <summary>
+    /// 获取空间全部任务，按页面分组（按页面标题排序，排除已删除页面）
+    /// </summary>
+    public async Task<(List<PageTaskGroupDto>? groups, string? error)> GetWorkspaceTasksAsync(long workspaceId, long userId, bool isSiteAdmin)
+    {
+        var permissionError = await CheckPermissionAsync(workspaceId, userId, isSiteAdmin, p => p.ViewSpace, "查看该空间任务");
+        if (permissionError != null)
+        {
+            return (null, permissionError);
+        }
+
+        var tasks = await _db.Db.Queryable<PageTask>()
+            .Where(t => t.WorkspaceId == workspaceId && !t.IsDeleted)
+            .OrderBy(t => t.PageId)
+            .OrderBy(t => t.Position)
+            .ToListAsync();
+
+        if (tasks.Count == 0)
+        {
+            return ([], null);
+        }
+
+        // 补齐页面标题用于分组展示（仅统计未被删除的页面）
+        var pageIds = tasks.Select(t => t.PageId).Distinct().ToList();
+        var titles = await _db.Db.Queryable<Page>()
+            .Where(p => pageIds.Contains(p.Id) && !p.IsDeleted)
+            .Select(p => new { p.Id, p.Title })
+            .ToListAsync();
+        var titleMap = titles.ToDictionary(p => p.Id, p => p.Title);
+
+        var groups = tasks
+            .Where(t => titleMap.ContainsKey(t.PageId))
+            .GroupBy(t => t.PageId)
+            .Select(g => new PageTaskGroupDto
+            {
+                PageId = g.Key,
+                PageTitle = !string.IsNullOrWhiteSpace(titleMap[g.Key]) ? titleMap[g.Key] : $"#{g.Key}",
+                Tasks = g.Select(ToDto).ToList()
+            })
+            .OrderBy(g => g.PageTitle, StringComparer.CurrentCulture)
+            .ToList();
+
+        return (groups, null);
     }
 }

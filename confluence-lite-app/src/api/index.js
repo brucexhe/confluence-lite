@@ -115,6 +115,11 @@ export const workspaceApi = {
     return request(`/api/workspace/key/${key}`)
   },
 
+  /** 获取空间任务总览（按页面分组） */
+  getTasks(key) {
+    return request(`/api/workspace/key/${key}/tasks`)
+  },
+
   /** 获取列表 */
   getList(page = 1, pageSize = 20) {
     return request(`/api/workspace/list?page=${page}&pageSize=${pageSize}`)

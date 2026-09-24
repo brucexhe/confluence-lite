@@ -71,6 +71,28 @@ public static class WorkspaceRoutes
             return Results.Ok(ApiResponse<WorkspaceDto>.Ok(workspace));
         });
 
+        // 空间任务总览：按页面分组返回空间内全部任务
+        group.MapGet("/key/{key}/tasks", async (
+            string key,
+            HttpContext context,
+            WorkspaceService workspaceService,
+            PageTaskService pageTaskService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+var workspace = await workspaceService.GetWorkspaceByKeyAsync(key);
+            if (workspace == null)
+                return Results.NotFound(ApiResponse<List<PageTaskGroupDto>>.Fail("工作空间不存在"));
+
+var (groups, error) = await pageTaskService.GetWorkspaceTasksAsync(workspace.Id, currentUser.UserId, currentUser.IsAdmin);
+if (groups == null || error != null)
+                return Results.Json(ApiResponse<List<PageTaskGroupDto>>.Fail(error ?? "获取任务列表失败"), AppJsonContext.Default.ApiResponseListPageTaskGroupDto, statusCode: 403);
+
+            return Results.Ok(ApiResponse<List<PageTaskGroupDto>>.Ok(groups));
+        });
+
         // 全量空间列表：仅系统管理员（管理后台专用）
         group.MapGet("/list", async (
             int page,

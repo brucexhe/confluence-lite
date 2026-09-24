@@ -26,3 +26,13 @@ public class UpdatePageTaskRequest
     /// </summary>
     public bool IsCompleted { get; set; }
 }
+
+/// <summary>
+/// 空间任务总览DTO - 按页面分组
+/// </summary>
+public class PageTaskGroupDto
+{
+    public long PageId { get; set; }
+    public string PageTitle { get; set; } = string.Empty;
+    public List<PageTaskDto> Tasks { get; set; } = [];
+}

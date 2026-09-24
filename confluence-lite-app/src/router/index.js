@@ -139,6 +139,11 @@ const router = createRouter({
                     component: () => import('../views/Workspace/Members.vue')
                 },
                 {
+                    path: 'tasks',
+                    name: 'space-tasks',
+                    component: () => import('../views/Workspace/Tasks.vue')
+                },
+                {
                     path: 'page/new',
                     name: 'page-create',
                     component: () => import('../views/Page/Edit.vue')

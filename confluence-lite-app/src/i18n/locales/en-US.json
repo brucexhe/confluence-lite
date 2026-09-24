@@ -122,6 +122,12 @@
     "uploadSuccess": "Image uploaded successfully",
     "uploadFailed": "Failed to upload image"
   },
+  "tasks": {
+      "title": "Tasks",
+      "empty": "No tasks yet. Type [] in a page to create one",
+      "progress": "{done}/{total} completed",
+      "toggleFailed": "Failed to update task"
+    },
   "spaceMembers": {
     "title": "Space members",
     "invite": "Invite members",
@@ -171,6 +177,7 @@
     "spaces": "Spaces",
     "recent": "Recent",
     "people": "People",
+        "tasks": "Tasks",
     "create": "Create",
     "searchPlaceholder": "Search...",
     "spaceList": "Space List",

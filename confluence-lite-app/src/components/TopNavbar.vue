@@ -106,6 +106,7 @@
                 </a-dropdown>
                 <a href="/recent" class="nav-link">{{ $t('nav.recent') }}</a>
                 <a href="/people" class="nav-link">{{ $t('nav.people') }}</a>
+                <a class="nav-link" @click="goTasks">{{ $t('nav.tasks') }}</a>
                 <button v-if="!isMobile" class="create-btn" @click="handleCreate">{{ $t('nav.create') }}</button>
             </nav>
         </div>
@@ -332,6 +333,20 @@ const handleCreate = () => {
         const spacesList = spaces.value;
         if (spacesList.length > 0) {
             router.push({ path: `/${spacesList[0].key}/page/new` });
+        }
+    }
+};
+
+// 顶部导航“任务”入口：进入当前空间的任务总览页
+const goTasks = () => {
+    const key = route.params.spaceKey;
+    if (key) {
+        router.push(`/${key}/tasks`);
+    } else {
+        // 如果没有空间 key，跳转到第一个空间的任务页
+        const spacesList = spaces.value;
+        if (spacesList.length > 0) {
+            router.push(`/${spacesList[0].key}/tasks`);
         }
     }
 };

@@ -203,6 +203,9 @@ namespace ConfluenceLite.Api.Mappers;
 [JsonSerializable(typeof(UpdatePageTaskRequest))]
 [JsonSerializable(typeof(ApiResponse<PageTaskDto>))]
 [JsonSerializable(typeof(ApiResponse<List<PageTaskDto>>))]
+[JsonSerializable(typeof(PageTaskGroupDto))]
+[JsonSerializable(typeof(List<PageTaskGroupDto>))]
+[JsonSerializable(typeof(ApiResponse<List<PageTaskGroupDto>>))]
 // Workspace Permissions
 [JsonSerializable(typeof(UpdateMemberPermissionsRequest))]
 [JsonSerializable(typeof(SpacePermissions))]

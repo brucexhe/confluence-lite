@@ -71,6 +71,47 @@ function insertTaskItem(editor) {
     }
 }
 
+// 行首输入 [] 后将整段就地转为任务项，保留已有文字与行内格式
+function convertBlockToTaskItem(editor, block) {
+    const doc = editor.getDoc();
+    // 深度优先查找首个非空文本节点（[] 前缀可能位于行内元素内）
+    const walker = doc.createTreeWalker(block, window.NodeFilter.SHOW_TEXT, null);
+    let textNode = null;
+    let node;
+    while ((node = walker.nextNode())) {
+        if (node.textContent.trim() !== '') { textNode = node; break; }
+    }
+    if (!textNode) return;
+    const raw = textNode.textContent;
+    const trimmedStart = raw.trimStart();
+    if (!trimmedStart.startsWith('[]') && !trimmedStart.startsWith('［］')) return;
+    const lead = raw.length - trimmedStart.length;
+    textNode.deleteData(lead, 2); // []/［］各占 2 个 UTF-16 单元
+
+    const li = doc.createElement('li');
+    li.setAttribute('data-task-id', generateTaskUid());
+    while (block.firstChild) li.appendChild(block.firstChild);
+    if (!li.textContent.trim() && !li.querySelector('img,br')) {
+        li.appendChild(doc.createTextNode('\u00a0')); // 空任务占位，保证光标可入
+    }
+    const ul = doc.createElement('ul');
+    ul.className = 'task-list';
+    ul.appendChild(li);
+    block.parentNode.replaceChild(ul, block);
+    // 任务列表位于内容末尾时补一个空段，便于回车跳出列表
+    if (!ul.nextSibling) {
+        const tail = doc.createElement('p');
+        tail.appendChild(doc.createElement('br'));
+        ul.parentNode.appendChild(tail);
+    }
+    editor.selection.select(li, false);
+    editor.selection.collapse(false);
+    editor.undoManager.add();
+    editor.setDirty(true);
+    editor.fire('Change');
+    editor.fire('input');
+}
+
 // Mobile detection
 const isMobile = ref(false);
 function checkMobile() {
@@ -390,14 +431,10 @@ const editorConfig = computed(() => {
                 ? editor.dom.getParent(container, 'p')
                 : (container.nodeName === 'P' ? container : null);
             if (!block) return;
+            // 段落以 []/［］ 开头即触发：空行新建任务，或已有文字的整行转为任务（类 Markdown）
             const blockText = (block.textContent || '').trim();
-            if (blockText !== '[]' && blockText !== '［］') return;
-            // 段落内容仅为 [] 时触发，清空文本后走与工具栏按钮一致的插入路径
-            Array.from(block.childNodes).forEach((n) => {
-                if (n.nodeType === 3) n.remove();
-            });
-            editor.selection.setCursorLocation(block, 0);
-            insertTaskItem(editor);
+            if (!blockText.startsWith('[]') && !blockText.startsWith('［］')) return;
+            convertBlockToTaskItem(editor, block);
         });
 
         editor.on('ExecCommand', (e) => {

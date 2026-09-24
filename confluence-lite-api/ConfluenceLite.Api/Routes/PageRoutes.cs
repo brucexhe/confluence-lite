@@ -233,6 +233,41 @@ public static class PageRoutes
             return Results.Ok(ApiResponse<bool>.Ok(true, "版本已删除"));
         });
 
+        // ========== 任务列表 ==========
+        group.MapGet("/{pageId}/tasks", async (
+            long pageId,
+            HttpContext context,
+            PageTaskService pageTaskService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            var (tasks, error) = await pageTaskService.GetPageTasksAsync(pageId, currentUser.UserId, currentUser.IsAdmin);
+            if (tasks == null || error != null)
+                return Results.Json(ApiResponse<List<PageTaskDto>>.Fail(error ?? "获取任务列表失败"), AppJsonContext.Default.ApiResponseListPageTaskDto, statusCode: 403);
+            return Results.Ok(ApiResponse<List<PageTaskDto>>.Ok(tasks));
+        });
+
+        // 勾选/取消任务（即时保存，不产生版本快照）
+        group.MapPut("/{pageId}/tasks/{taskUid}", async (
+            long pageId,
+            string taskUid,
+            UpdatePageTaskRequest request,
+            HttpContext context,
+            PageTaskService pageTaskService) =>
+        {
+            var currentUser = context.Items["CurrentUser"] as CurrentUser;
+            if (currentUser == null || !currentUser.IsAuthenticated)
+                return Results.Unauthorized();
+
+            var (success, error) = await pageTaskService.ToggleTaskAsync(pageId, taskUid, currentUser.UserId, currentUser.IsAdmin, request.IsCompleted);
+            if (!success || error != null)
+                return Results.BadRequest(ApiResponse<bool>.Fail(error ?? "更新任务状态失败"));
+
+            return Results.Ok(ApiResponse<bool>.Ok(true, "任务状态已更新"));
+        });
+
         // ========== 评论 ==========
         group.MapGet("/{pageId}/comments", async (
             long pageId,

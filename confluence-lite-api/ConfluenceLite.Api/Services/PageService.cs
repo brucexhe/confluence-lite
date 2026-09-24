@@ -12,11 +12,13 @@ public class PageService
 {
     private readonly AppDbContext _db;
     private readonly WorkspacePermissionService _permissions;
+    private readonly PageTaskService _pageTasks;
 
-    public PageService(AppDbContext db, WorkspacePermissionService permissions)
+    public PageService(AppDbContext db, WorkspacePermissionService permissions, PageTaskService pageTasks)
     {
         _db = db;
         _permissions = permissions;
+        _pageTasks = pageTasks;
     }
 
     /// <summary>
@@ -75,6 +77,9 @@ public class PageService
 
         // 保存初始版本
         await SaveVersionAsync(pageId, page, creatorId);
+
+        // 从内容中提取任务并同步到 page_tasks 表
+        await _pageTasks.SyncFromContentAsync(pageId, page.WorkspaceId, creatorId, page.Content);
 
         return (await MapToDtoAsync(page), null);
     }
@@ -323,6 +328,12 @@ public class PageService
 
         await _db.Pages.UpdateAsync(page);
 
+        // 内容变化时同步任务索引（页面内容是任务的唯一事实来源）
+        if (contentChanged)
+        {
+            await _pageTasks.SyncFromContentAsync(id, page.WorkspaceId, userId, page.Content);
+        }
+
         return (await MapToDtoAsync(page), null);
     }
 
@@ -538,6 +549,8 @@ public class PageService
         await _db.Db.Deleteable<Page>().In(pageId).ExecuteCommandAsync();
         // 删除页面的所有版本
         await _db.Db.Deleteable<PageVersion>().Where(v => v.PageId == pageId).ExecuteCommandAsync();
+        // 软删除页面对应的任务记录
+        await _pageTasks.DeleteByPageAsync(pageId);
     }
 
     /// <summary>

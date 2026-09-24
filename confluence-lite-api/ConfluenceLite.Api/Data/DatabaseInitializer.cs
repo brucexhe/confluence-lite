@@ -242,6 +242,26 @@ public static class DatabaseInitializer
             )");
         CreateIndexIfNotExists(db, "ix_pt_workspace", "page_templates", "workspaceid");
         CreateIndexIfNotExists(db, "ix_pt_status", "page_templates", "status");
+    
+        db.Ado.ExecuteCommand(@"
+            CREATE TABLE IF NOT EXISTS ""page_tasks"" (
+                ""id"" BIGSERIAL PRIMARY KEY,
+                ""pageid"" BIGINT NOT NULL,
+                ""workspaceid"" BIGINT NOT NULL,
+                ""taskuid"" VARCHAR(40) NOT NULL,
+                ""content"" TEXT,
+                ""iscompleted"" BOOLEAN NOT NULL DEFAULT FALSE,
+                ""completedat"" TIMESTAMP,
+                ""completedbyid"" BIGINT,
+                ""position"" INT NOT NULL DEFAULT 0,
+                ""creatorid"" BIGINT NOT NULL,
+                ""isdeleted"" BOOLEAN NOT NULL DEFAULT FALSE,
+                ""createdat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc'),
+                ""updatedat"" TIMESTAMP NOT NULL DEFAULT (NOW() AT TIME ZONE 'utc'),
+                CONSTRAINT uq_page_task UNIQUE (""pageid"", ""taskuid"")
+            )");
+        CreateIndexIfNotExists(db, "ix_pgt_page", "page_tasks", "pageid");
+        CreateIndexIfNotExists(db, "ix_pgt_workspace", "page_tasks", "workspaceid, iscompleted");
     }
 
     private static void CreateContentTables(ISqlSugarClient db)

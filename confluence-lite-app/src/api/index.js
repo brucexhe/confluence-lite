@@ -248,6 +248,19 @@ export const pageApi = {
     })
   },
 
+  /** 获取页面任务列表 */
+  getTasks(pageId) {
+    return request(`/api/page/${pageId}/tasks`)
+  },
+
+  /** 勾选/取消页面任务（即时保存，不产生版本） */
+  updateTask(pageId, taskUid, isCompleted) {
+    return request(`/api/page/${pageId}/tasks/${taskUid}`, {
+      method: 'PUT',
+      body: { isCompleted }
+    })
+  },
+
   /** 获取页面版本列表 */
   getVersions(pageId) {
     return request(`/api/page/${pageId}/versions`)

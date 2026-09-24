@@ -50,6 +50,27 @@ import { usePageTreeStore } from "../../store/pageTree";
 // TinyMCE 已在 index.html 中从 /tinymce/ 全局加载
 // 这里不需要任何 import 语句
 
+// ===== 任务列表（Task List）=====
+// 勾选框用 CSS 伪元素渲染，点击 li 左侧区域切换 task-done class
+const TASK_LIST_CSS = ` ul.task-list { list-style: none; padding-left: 4px; margin: 8px 0; } ul.task-list > li { position: relative; padding-left: 28px; margin: 4px 0; } ul.task-list > li::before { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; border: 2px solid #42526e; border-radius: 3px; background: #fff; box-sizing: border-box; cursor: pointer; } ul.task-list > li.task-done::before { background: #0052cc; border-color: #0052cc; } ul.task-list > li.task-done::after { content: ''; position: absolute; left: 5px; top: 5px; width: 10px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg); pointer-events: none; } ul.task-list > li.task-done { color: #6b778c; text-decoration: line-through; }`;
+
+function generateTaskUid() {
+    return (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'task-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+}
+
+function insertTaskItem(editor) {
+    const uid = generateTaskUid();
+    editor.insertContent(`<ul class="task-list"><li data-task-id="${uid}">&nbsp;</li></ul><p>&nbsp;</p>`);
+    // 光标置于任务项内，可直接输入内容（回车延续/Tab 嵌套由 TinyMCE lists 原生提供）
+    const item = editor.dom.select(`li[data-task-id="${uid}"]`)[0];
+    if (item) {
+        editor.selection.select(item, false);
+        editor.selection.collapse(false);
+    }
+}
+
 // Mobile detection
 const isMobile = ref(false);
 function checkMobile() {
@@ -305,16 +326,80 @@ const editorConfig = computed(() => {
         // paste is built-in, no need to declare
     ],
     toolbar: mobile
-        ? "undo redo | bold italic | alignleft aligncenter alignright | bullist numlist | image codesample | removeformat"
+        ? "undo redo | bold italic | alignleft aligncenter alignright | bullist numlist tasklist | image codesample | removeformat"
         : "undo redo | formatselect | " +
           "bold italic forecolor backcolor | alignleft aligncenter " +
-          "alignright alignjustify | bullist numlist | " +
+          "alignright alignjustify | bullist numlist tasklist | " +
           "table image codesample | removeformat",
+    // 保险：确保任务项的 class 与 data-task-id 不被 schema 过滤
+    extended_valid_elements: "li[class|data-task-id]",
     table_header_type: "section",
     table_use_colgroups: false,
     table_default_styles: {},
     table_default_attributes: {},
     setup(editor) {
+        // ===== 任务列表 =====
+        editor.ui.registry.addButton('tasklist', {
+            icon: 'checklist', // TinyMCE 内置图标
+            tooltip: t('editor.taskList'),
+            onAction: () => insertTaskItem(editor),
+        });
+
+        // 点击任务项左侧勾选区切换完成状态（class 变更后同步 undo 栈与 v-model）
+        editor.on('click', (e) => {
+            const li = e.target?.closest?.('li[data-task-id]');
+            if (!li) return;
+            const rect = li.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            if (x >= 0 && x <= 28) {
+                li.classList.toggle('task-done');
+                editor.undoManager.add();
+                editor.setDirty(true);
+                editor.fire('Change');
+                editor.fire('input');
+            }
+        });
+
+        // 回车延续/粘贴产生的任务项若缺少或重复 data-task-id（lists 插件会克隆 li 属性），自动分配新 uid
+        editor.on('NodeChange', (e) => {
+            const el = e.element;
+            if (!el || !el.closest) return;
+            const list = el.closest('ul.task-list');
+            if (!list) return;
+            const uids = new Set();
+            list.querySelectorAll('li').forEach((li) => {
+                const uid = li.getAttribute('data-task-id');
+                if (!uid || uids.has(uid)) {
+                    li.setAttribute('data-task-id', generateTaskUid());
+                } else {
+                    uids.add(uid);
+                }
+            });
+        });
+
+        // 空行行首输入 []（含全角［］）自动转换为任务项（跳过中文输入法组合过程）
+        let taskComposing = false;
+        editor.on('compositionstart', () => { taskComposing = true; });
+        editor.on('compositionend', () => { taskComposing = false; });
+        editor.on('keyup', () => {
+            if (taskComposing) return;
+            const rng = editor.selection.getRng();
+            if (!rng.collapsed) return;
+            const container = rng.startContainer;
+            const block = container.nodeType === 3
+                ? editor.dom.getParent(container, 'p')
+                : (container.nodeName === 'P' ? container : null);
+            if (!block) return;
+            const blockText = (block.textContent || '').trim();
+            if (blockText !== '[]' && blockText !== '［］') return;
+            // 段落内容仅为 [] 时触发，清空文本后走与工具栏按钮一致的插入路径
+            Array.from(block.childNodes).forEach((n) => {
+                if (n.nodeType === 3) n.remove();
+            });
+            editor.selection.setCursorLocation(block, 0);
+            insertTaskItem(editor);
+        });
+
         editor.on('ExecCommand', (e) => {
             if (e.command === 'mceInsertContent' || e.command === 'mceTableInsert') {
                 setTimeout(() => {
@@ -388,9 +473,9 @@ const editorConfig = computed(() => {
             throw error;
         }
     },
-    content_style: mobile
+    content_style: (mobile
         ? `body { margin: 0 !important; padding:5px 16px 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #172b4d; } table { border-collapse: collapse !important; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; } table th, table td {min-width:30px; border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; } table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; } pre[class*="language-"] { background: #f5f2f0; border-radius: 3px; padding: 16px; margin: 16px 0; border: 1px solid #dfe1e6; overflow-x: auto; } code { font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; } p {margin: 10px 0 0}`
-        : `body { margin: 0 !important; padding:5px 40px 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #172b4d; } table { border-collapse: collapse !important; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; } table th, table td {min-width:30px; border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; } table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; } pre[class*="language-"] { background: #f5f2f0; border-radius: 3px; padding: 16px; margin: 16px 0; border: 1px solid #dfe1e6; overflow-x: auto; } code { font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; } p {margin: 10px 0 0}`,
+        : `body { margin: 0 !important; padding:5px 40px 0 !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 20px; color: #172b4d; } table { border-collapse: collapse !important; margin: 16px 0; border: 1px solid #dfe1e6 !important; font-size: 14px; } table th, table td {min-width:30px; border: 1px solid #dfe1e6 !important; padding: 8px 12px; text-align: left; vertical-align: top; line-height: 1.5; } table th { background: #f4f5f7 center right no-repeat; color: #172b4d; font-weight: 600; padding-right: 24px; } pre[class*="language-"] { background: #f5f2f0; border-radius: 3px; padding: 16px; margin: 16px 0; border: 1px solid #dfe1e6; overflow-x: auto; } code { font-family: SFMono-Regular, Consolas, Liberation Mono, Menlo, monospace; } p {margin: 10px 0 0}`) + TASK_LIST_CSS,
 }});
 
 const onEditorInit = () => {

@@ -116,6 +116,7 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<WorkspaceService>();
 builder.Services.AddScoped<WorkspacePermissionService>();
 builder.Services.AddScoped<PageService>();
+builder.Services.AddScoped<PageTaskService>();
 builder.Services.AddScoped<CommentService>();
 builder.Services.AddScoped<SetupService>();
 builder.Services.AddScoped<UploadService>();

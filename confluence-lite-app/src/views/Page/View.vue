@@ -470,6 +470,39 @@ function initVideoPreview() {
     });
 }
 
+// 为 v-html 渲染内容中的任务列表项绑定勾选交互
+function initTaskList() {
+    nextTick(() => {
+        const el = contentRef.value;
+        if (!el) return;
+        el.querySelectorAll("li[data-task-id]").forEach((li) => {
+            if (li.dataset.taskInit) return;
+            li.dataset.taskInit = "true";
+
+            // 插入真实 checkbox（查看页 DOM 不经过 TinyMCE 序列化，无丢状态问题）
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.className = "task-checkbox";
+            cb.checked = li.classList.contains("task-done");
+            // 勾选需要页面编辑权限（与 Confluence 行为一致）
+            cb.disabled = !canEdit.value;
+            cb.title = canEdit.value ? "" : t("page.taskEditPermissionRequired");
+            cb.addEventListener("change", async () => {
+                const checked = cb.checked;
+                try {
+                    await pageApi.updateTask(pageId.value, li.dataset.taskId, checked);
+                    li.classList.toggle("task-done", checked);
+                } catch (e) {
+                    console.error("更新任务状态失败:", e);
+                    // 失败回滚勾选状态
+                    cb.checked = !checked;
+                }
+            });
+            li.insertBefore(cb, li.firstChild);
+        });
+    });
+}
+
 // 为 v-html 渲染内容中的普通 a 标签设置新窗口打开
 // 注意：a.file、a.video 走各自的预览逻辑，不应添加 _blank
 function initExternalLinks() {
@@ -547,6 +580,7 @@ watch(pageContent, () => {
     initOfficePreview();
     initVideoPreview();
     initExternalLinks();
+    initTaskList();
 });
 
 onMounted(() => {
@@ -846,6 +880,34 @@ onUnmounted(() => {
     line-height: 1.714;
     color: #172b4d;
     margin-bottom: 4px;
+}
+
+/* 任务列表（Task List） */
+:deep(.page-content ul.task-list) {
+    list-style: none;
+    padding-left: 4px;
+}
+:deep(.page-content ul.task-list > li[data-task-id]) {
+    position: relative;
+    padding-left: 26px;
+}
+:deep(.page-content ul.task-list input[type="checkbox"]) {
+    position: absolute;
+    left: 0;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #0052cc;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+:deep(.page-content ul.task-list input[type="checkbox"]:disabled) {
+    cursor: not-allowed;
+}
+:deep(.page-content ul.task-list > li.task-done) {
+    color: #6b778c;
+    text-decoration: line-through;
 }
 :deep(.page-content h2) {
     font-size: 20px;

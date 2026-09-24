@@ -73,6 +73,7 @@ public class AppDbContext
             typeof(PageRestriction),
             typeof(PageLabel),
             typeof(PageTemplate),
+            typeof(PageTask),
             typeof(Attachment),
             typeof(Draft),
             typeof(ContentProperty),
@@ -151,6 +152,11 @@ public class AppDbContext
     /// 获取页面模板表的SimpleClient
     /// </summary>
     public SimpleClient<PageTemplate> PageTemplates => new(_db);
+
+    /// <summary>
+    /// 获取页面任务表的SimpleClient
+    /// </summary>
+    public SimpleClient<PageTask> PageTasks => new(_db);
 
     /// <summary>
     /// 获取附件表的SimpleClient

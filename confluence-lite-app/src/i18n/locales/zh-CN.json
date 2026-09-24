@@ -280,7 +280,8 @@
     "linkCopied": "链接已复制到剪贴板",
     "shareCreated": "分享链接已创建",
     "createShareFailed": "创建分享失败",
-    "pleaseSelectUser": "请选择用户"
+    "pleaseSelectUser": "请选择用户",
+    "taskEditPermissionRequired": "需要页面编辑权限才能勾选任务"
   },
   "editor": {
     "uploading": "上传中... {percent}%",
@@ -295,7 +296,8 @@
     "unsupportedFileType": "暂不支持此文件类型",
     "fileInsertFailed": "文件插入失败",
     "enterTitle": "请输入页面标题",
-    "savePageFailed": "保存失败，请重试"
+    "savePageFailed": "保存失败，请重试",
+    "taskList": "任务列表"
   },
   "comment": {
     "comments": "评论 ({count})",

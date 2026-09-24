@@ -280,7 +280,8 @@
     "linkCopied": "Link copied to clipboard",
     "shareCreated": "Share link created",
     "createShareFailed": "Failed to create share",
-    "pleaseSelectUser": "Please select a user"
+    "pleaseSelectUser": "Please select a user",
+    "taskEditPermissionRequired": "Edit permission is required to check tasks"
   },
   "editor": {
     "uploading": "Uploading... {percent}%",
@@ -295,7 +296,8 @@
     "unsupportedFileType": "This file type is not supported",
     "fileInsertFailed": "File insert failed",
     "enterTitle": "Please enter a page title",
-    "savePageFailed": "Save failed, please try again"
+    "savePageFailed": "Save failed, please try again",
+    "taskList": "Task list"
   },
   "comment": {
     "comments": "Comments ({count})",

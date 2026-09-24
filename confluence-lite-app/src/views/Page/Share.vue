@@ -574,6 +574,50 @@ function formatTime(dateStr) {
     height: auto;
 }
 
+/* 任务列表（Task List，只读呈现：伪元素勾选框，无交互） */
+.share-page-body :deep(ul.task-list) {
+    list-style: none;
+    padding-left: 4px;
+    margin: 8px 0;
+}
+.share-page-body :deep(ul.task-list > li[data-task-id]) {
+    position: relative;
+    padding-left: 28px;
+    margin: 4px 0;
+}
+.share-page-body :deep(ul.task-list > li[data-task-id]::before) {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 4px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #42526e;
+    border-radius: 3px;
+    background: #fff;
+    box-sizing: border-box;
+}
+.share-page-body :deep(ul.task-list > li.task-done::before) {
+    background: #0052cc;
+    border-color: #0052cc;
+}
+.share-page-body :deep(ul.task-list > li.task-done::after) {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 7px;
+    width: 10px;
+    height: 5px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg);
+    pointer-events: none;
+}
+.share-page-body :deep(ul.task-list > li.task-done) {
+    color: #6b778c;
+    text-decoration: line-through;
+}
+
 .share-page-body :deep(p) {
     font-size: 14px;
     margin-bottom: 12px;
